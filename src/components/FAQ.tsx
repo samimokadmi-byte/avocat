@@ -22,6 +22,18 @@ const items = [
     q: 'Prenez-vous des participations au capital ?',
     a: "Non. Notre modèle est purement honoraire. Cette indépendance est la garantie d'un conseil objectif, sans conflit d'intérêts avec vos autres actionnaires.",
   },
+  {
+    q: 'Quels documents préparer pour le premier rendez-vous ?',
+    a: "Pour une levée de fonds : statuts, pacte d'associés existant, cap table actuel, dernières liasses fiscales et deck investisseurs. Pour une structuration : documents constitutifs et accords entre associés. En l'absence de documents, le diagnostic reste possible — nous partons de votre situation réelle.",
+  },
+  {
+    q: 'Quels sont les délais moyens pour une levée de fonds ?',
+    a: "Un processus bien préparé dure entre 3 et 6 mois, du premier contact investisseur à la signature des actes définitifs. La phase juridique (term sheet → closing) représente généralement 6 à 10 semaines. Une préparation en amont réduit significativement ces délais.",
+  },
+  {
+    q: 'Comment se déroule le suivi de mon dossier ?',
+    a: "Chaque client dispose d'un espace numérique sécurisé pour suivre l'avancement, consulter les documents et poser ses questions. Un point hebdomadaire est organisé sur les missions actives. Nous répondons à tout email sous 24h ouvrées.",
+  },
 ]
 
 function FAQItem({ q, a }: { q: string; a: string }) {

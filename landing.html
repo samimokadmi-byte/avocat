@@ -1,0 +1,836 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="Cabinet Sami Mokadmi - Avocat spécialisé en droit des affaires et Tech. Levées de fonds, pactes d'associés, optimisation fiscale pour startups.">
+  <meta name="keywords" content="avocat droit des affaires, levée de fonds, BSPCE, pacte d'associés, optimisation fiscale, startup Tech, M&A, Paris">
+  <title>Sami Mokadmi — Avocat en Droit des Affaires & Tech</title>
+
+  <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>⚖️</text></svg>">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Playfair+Display:ital,wght@0,600;0,700;1,400&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+  <style>
+    :root {
+      --primary: #0066cc;
+      --primary-dark: #0052a3;
+      --primary-light: #e8f0fb;
+      --navy: #0A192F;
+      --text: #1a1a2e;
+      --text-muted: #64748b;
+      --text-light: #94a3b8;
+      --bg: #ffffff;
+      --bg-soft: #f8fafc;
+      --border: #e2e8f0;
+      --shadow-sm: 0 1px 3px rgba(0,0,0,.08);
+      --shadow: 0 4px 16px rgba(0,0,0,.08);
+      --shadow-lg: 0 8px 32px rgba(0,0,0,.12);
+      --radius: 10px;
+      --transition: all .25s ease;
+      --max-w: 1100px;
+    }
+
+    *, *::before, *::after { margin:0; padding:0; box-sizing:border-box; }
+    html { scroll-behavior:smooth; font-size:16px; }
+    body { font-family:'Inter',system-ui,sans-serif; color:var(--text); background:var(--bg); line-height:1.6; -webkit-font-smoothing:antialiased; overflow-x:hidden; }
+
+    img { max-width:100%; display:block; }
+    a { color:var(--primary); text-decoration:none; transition:var(--transition); }
+    a:hover { color:var(--primary-dark); }
+
+    .container { width:100%; max-width:var(--max-w); margin:0 auto; padding:0 1.5rem; }
+    section { padding:5rem 0; }
+
+    /* ─── TYPOGRAPHY ─── */
+    .eyebrow { font-size:.7rem; font-weight:600; letter-spacing:.18em; text-transform:uppercase; color:var(--primary); margin-bottom:.75rem; }
+    .section-title { font-family:'Playfair Display',Georgia,serif; font-size:clamp(1.75rem,3vw,2.4rem); color:var(--text); line-height:1.2; margin-bottom:1rem; }
+    .section-lead { font-size:1.05rem; color:var(--text-muted); max-width:56ch; margin-bottom:3rem; }
+    .centered { text-align:center; }
+    .centered .section-lead { margin-left:auto; margin-right:auto; }
+
+    /* ─── BUTTONS ─── */
+    .btn { display:inline-flex; align-items:center; gap:.5rem; padding:.85rem 1.75rem; font-weight:600; font-size:.9rem; border-radius:var(--radius); cursor:pointer; border:none; transition:var(--transition); }
+    .btn-primary { background:var(--primary); color:#fff; }
+    .btn-primary:hover { background:var(--primary-dark); transform:translateY(-2px); box-shadow:0 6px 20px rgba(0,102,204,.3); color:#fff; }
+    .btn-outline { background:transparent; color:var(--primary); border:2px solid var(--primary); }
+    .btn-outline:hover { background:var(--primary); color:#fff; transform:translateY(-2px); }
+
+    /* ─── HEADER ─── */
+    .header { position:sticky; top:0; z-index:100; background:#fff; border-bottom:1px solid var(--border); }
+    .header-inner { display:flex; align-items:center; justify-content:space-between; height:68px; }
+    .logo-name { font-family:'Playfair Display',serif; font-size:1.2rem; font-weight:700; color:var(--text); }
+    .logo-tag { font-size:.72rem; color:var(--text-muted); margin-top:.1rem; }
+    .nav-links { display:flex; align-items:center; gap:2rem; list-style:none; }
+    .nav-links a { font-size:.875rem; font-weight:500; color:var(--text-muted); padding:.4rem 0; position:relative; }
+    .nav-links a::after { content:''; position:absolute; bottom:0; left:0; width:0; height:2px; background:var(--primary); transition:var(--transition); }
+    .nav-links a:hover { color:var(--primary); }
+    .nav-links a:hover::after { width:100%; }
+    .nav-cta { background:var(--primary); color:#fff !important; padding:.5rem 1.25rem; border-radius:var(--radius); font-size:.875rem !important; }
+    .nav-cta:hover { background:var(--primary-dark) !important; }
+    .nav-cta::after { display:none !important; }
+    .hamburger { display:none; background:none; border:none; cursor:pointer; padding:.5rem; }
+    .hamburger span { display:block; width:22px; height:2px; background:var(--text); margin:5px 0; transition:var(--transition); border-radius:2px; }
+    .mobile-nav { display:none; background:#fff; border-top:1px solid var(--border); padding:1rem 1.5rem; }
+    .mobile-nav.open { display:block; }
+    .mobile-nav ul { list-style:none; }
+    .mobile-nav li { border-bottom:1px solid var(--border); }
+    .mobile-nav a { display:block; padding:.85rem 0; font-size:.9rem; color:var(--text-muted); font-weight:500; }
+    .mobile-nav a:hover { color:var(--primary); }
+
+    /* ─── HERO ─── */
+    .hero { padding:6rem 0 5rem; background:linear-gradient(160deg,#f0f6ff 0%,#fafbff 60%,#fff 100%); }
+    .hero-inner { display:grid; grid-template-columns:1fr auto; gap:4rem; align-items:center; }
+    .hero-badge { display:inline-flex; align-items:center; gap:.5rem; background:var(--primary-light); color:var(--primary); font-size:.78rem; font-weight:600; padding:.4rem .9rem; border-radius:50px; margin-bottom:1.5rem; }
+    .hero h1 { font-family:'Playfair Display',serif; font-size:clamp(2.2rem,4.5vw,3.4rem); line-height:1.1; color:var(--text); margin-bottom:1.25rem; }
+    .hero-sub { font-size:1.1rem; color:var(--text-muted); max-width:52ch; margin-bottom:2rem; line-height:1.7; }
+    .hero-actions { display:flex; gap:1rem; flex-wrap:wrap; }
+    .hero-stats { display:flex; flex-direction:column; gap:1.5rem; }
+    .stat-box { background:#fff; border:1px solid var(--border); border-radius:var(--radius); padding:1.25rem 1.5rem; text-align:center; box-shadow:var(--shadow-sm); min-width:130px; }
+    .stat-number { font-family:'Playfair Display',serif; font-size:2rem; font-weight:700; color:var(--primary); line-height:1; }
+    .stat-label { font-size:.75rem; color:var(--text-muted); margin-top:.25rem; font-weight:500; }
+
+    /* ─── SYSTÈME ─── */
+    .system { background:var(--bg-soft); }
+    .system-grid { display:grid; grid-template-columns:repeat(3,1fr); gap:1.5rem; }
+    .system-card { background:#fff; border:1px solid var(--border); border-radius:var(--radius); padding:2rem; transition:var(--transition); }
+    .system-card:hover { border-color:var(--primary); box-shadow:var(--shadow); transform:translateY(-3px); }
+    .card-icon { width:48px; height:48px; background:var(--primary-light); border-radius:10px; display:flex; align-items:center; justify-content:center; color:var(--primary); font-size:1.25rem; margin-bottom:1.25rem; }
+    .card-title { font-size:1.05rem; font-weight:700; color:var(--text); margin-bottom:.6rem; }
+    .card-text { font-size:.88rem; color:var(--text-muted); line-height:1.7; }
+
+    /* ─── EXPERTISES ─── */
+    .expertises-grid { display:grid; grid-template-columns:repeat(3,1fr); gap:1.5rem; }
+    .expertise-card { background:#fff; border:1px solid var(--border); border-radius:var(--radius); padding:1.75rem; transition:var(--transition); }
+    .expertise-card:hover { border-color:var(--primary); box-shadow:var(--shadow); transform:translateY(-3px); }
+    .expertise-icon { font-size:1.5rem; color:var(--primary); margin-bottom:1rem; }
+    .expertise-title { font-size:1rem; font-weight:700; color:var(--text); margin-bottom:.5rem; }
+    .expertise-text { font-size:.85rem; color:var(--text-muted); line-height:1.7; margin-bottom:1rem; }
+    .tags { display:flex; flex-wrap:wrap; gap:.4rem; }
+    .tag { font-size:.7rem; font-weight:600; color:var(--primary); background:var(--primary-light); padding:.25rem .6rem; border-radius:50px; }
+
+    /* ─── MÉTHODE (timeline) ─── */
+    .methode { background:var(--bg-soft); }
+    .timeline { position:relative; max-width:720px; margin:0 auto; }
+    .timeline::before { content:''; position:absolute; left:28px; top:0; bottom:0; width:2px; background:var(--border); }
+    .timeline-item { display:flex; gap:2rem; padding-bottom:2.5rem; position:relative; }
+    .timeline-item:last-child { padding-bottom:0; }
+    .tl-dot { flex:none; width:56px; height:56px; background:var(--primary); border-radius:50%; display:flex; align-items:center; justify-content:center; color:#fff; font-weight:700; font-size:.85rem; position:relative; z-index:1; box-shadow:0 0 0 4px var(--primary-light); }
+    .tl-content { padding-top:.6rem; }
+    .tl-label { font-size:.7rem; font-weight:600; letter-spacing:.12em; text-transform:uppercase; color:var(--primary); margin-bottom:.3rem; }
+    .tl-title { font-family:'Playfair Display',serif; font-size:1.3rem; color:var(--text); margin-bottom:.5rem; }
+    .tl-text { font-size:.88rem; color:var(--text-muted); line-height:1.7; max-width:52ch; }
+    .tl-duration { display:inline-block; font-size:.72rem; font-weight:600; color:var(--text-muted); border:1px solid var(--border); padding:.2rem .6rem; border-radius:50px; margin-top:.6rem; }
+
+    /* ─── HONORAIRES ─── */
+    .honoraires-grid { display:grid; grid-template-columns:1fr 1fr; gap:3rem; align-items:start; }
+    .steps-list { display:flex; flex-direction:column; gap:1.5rem; }
+    .step-item { display:flex; gap:1rem; }
+    .step-num { flex:none; width:40px; height:40px; background:var(--primary-light); border-radius:8px; display:flex; align-items:center; justify-content:center; color:var(--primary); font-weight:700; font-size:.85rem; }
+    .step-title { font-size:.95rem; font-weight:700; color:var(--text); margin-bottom:.3rem; }
+    .step-text { font-size:.85rem; color:var(--text-muted); line-height:1.7; }
+    .pricing-table { background:#fff; border:1px solid var(--border); border-radius:var(--radius); overflow:hidden; box-shadow:var(--shadow-sm); }
+    .pricing-header { background:var(--navy); color:#fff; padding:1rem 1.5rem; font-size:.8rem; font-weight:600; letter-spacing:.12em; text-transform:uppercase; }
+    .pricing-row { display:flex; justify-content:space-between; align-items:center; padding:1rem 1.5rem; border-bottom:1px solid var(--border); gap:1rem; }
+    .pricing-row:last-child { border-bottom:none; }
+    .pricing-type { font-size:.88rem; font-weight:600; color:var(--text); }
+    .pricing-amount { text-align:right; }
+    .pricing-price { font-size:.95rem; font-weight:700; color:var(--primary); display:block; }
+    .pricing-note { font-size:.72rem; color:var(--text-light); }
+
+    /* ─── RÉSULTATS ─── */
+    .results { background:var(--navy); }
+    .results .eyebrow { color:#60a5fa; }
+    .results .section-title { color:#fff; }
+    .results .section-lead { color:#94a3b8; }
+    .results-grid { display:grid; grid-template-columns:repeat(3,1fr); gap:1.5rem; }
+    .result-card { background:rgba(255,255,255,.06); border:1px solid rgba(255,255,255,.1); border-radius:var(--radius); padding:2rem; text-align:center; }
+    .result-number { font-family:'Playfair Display',serif; font-size:3rem; font-weight:700; color:#fff; line-height:1; margin-bottom:.5rem; }
+    .result-label { font-size:.9rem; font-weight:600; color:#cbd5e1; margin-bottom:.3rem; }
+    .result-note { font-size:.78rem; color:#64748b; }
+
+    /* ─── CAS ÉTUDES ─── */
+    .cas-grid { display:flex; flex-direction:column; gap:1.5rem; }
+    .cas-card { background:#fff; border:1px solid var(--border); border-radius:var(--radius); padding:2rem; display:grid; grid-template-columns:auto 1fr 1fr; gap:2rem; transition:var(--transition); }
+    .cas-card:hover { border-color:var(--primary); box-shadow:var(--shadow); }
+    .cas-meta { }
+    .cas-sector { font-size:.72rem; font-weight:700; text-transform:uppercase; letter-spacing:.12em; color:var(--primary); margin-bottom:.75rem; }
+    .cas-impact { background:var(--primary-light); color:var(--primary); padding:.6rem .9rem; border-radius:8px; font-size:.82rem; font-weight:700; line-height:1.4; }
+    .cas-label { font-size:.7rem; font-weight:700; text-transform:uppercase; letter-spacing:.1em; color:var(--text-light); margin-bottom:.5rem; }
+    .cas-text { font-size:.875rem; color:var(--text-muted); line-height:1.7; }
+
+    /* ─── FILTRE ─── */
+    .filtre { background:var(--bg-soft); }
+    .filtre-box { background:#fff; border:2px solid var(--border); border-radius:var(--radius); padding:2.5rem 3rem; max-width:800px; margin:0 auto; }
+    .filtre-list { display:grid; grid-template-columns:1fr 1fr; gap:1rem; margin-top:1.5rem; }
+    .filtre-item { display:flex; align-items:flex-start; gap:.75rem; font-size:.88rem; color:var(--text-muted); }
+    .filtre-item i { color:#ef4444; margin-top:.15rem; flex:none; }
+
+    /* ─── VEILLE ─── */
+    .veille-grid { display:flex; flex-direction:column; gap:1rem; }
+    .veille-card { background:#fff; border:1px solid var(--border); border-radius:var(--radius); padding:1.75rem; display:grid; grid-template-columns:140px 1fr; gap:2rem; align-items:start; transition:var(--transition); }
+    .veille-card:hover { border-color:var(--primary); box-shadow:var(--shadow); }
+    .veille-meta { }
+    .veille-domaine { font-size:.7rem; font-weight:700; text-transform:uppercase; letter-spacing:.12em; color:var(--primary); display:block; margin-bottom:.3rem; }
+    .veille-date { font-size:.75rem; color:var(--text-light); }
+    .veille-titre { font-family:'Playfair Display',serif; font-size:1rem; font-weight:600; color:var(--text); margin-bottom:.6rem; line-height:1.4; }
+    .veille-extrait { font-size:.85rem; color:var(--text-muted); line-height:1.7; margin-bottom:.75rem; }
+    .veille-link { font-size:.8rem; font-weight:600; color:var(--primary); display:inline-flex; align-items:center; gap:.4rem; }
+    .veille-link:hover { gap:.6rem; }
+
+    /* ─── TÉMOIGNAGES ─── */
+    .temoignages { background:var(--bg-soft); }
+    .temoignages-grid { display:flex; flex-direction:column; gap:1.5rem; }
+    .temoignage-card { background:#fff; border:1px solid var(--border); border-radius:var(--radius); padding:2rem; transition:var(--transition); }
+    .temoignage-card:hover { border-color:var(--primary); box-shadow:var(--shadow); }
+    .quote-mark { font-family:'Playfair Display',serif; font-size:3.5rem; line-height:.8; color:var(--primary-light); margin-bottom:.5rem; }
+    .quote-text { font-family:'Playfair Display',serif; font-size:1.05rem; font-style:italic; color:var(--text); line-height:1.7; margin-bottom:1.25rem; }
+    .quote-author { font-size:.85rem; font-weight:700; color:var(--text); }
+    .quote-role { font-size:.78rem; color:var(--text-muted); margin-top:.15rem; }
+
+    /* ─── FAQ ─── */
+    .faq-list { max-width:760px; margin:0 auto; }
+    .faq-item { border-bottom:1px solid var(--border); }
+    .faq-btn { width:100%; display:flex; justify-content:space-between; align-items:center; gap:1rem; padding:1.25rem 0; background:none; border:none; cursor:pointer; text-align:left; }
+    .faq-q { font-size:.9rem; font-weight:600; color:var(--text); }
+    .faq-icon { flex:none; width:24px; height:24px; background:var(--primary-light); border-radius:50%; display:flex; align-items:center; justify-content:center; color:var(--primary); font-size:.7rem; transition:var(--transition); }
+    .faq-item.open .faq-icon { background:var(--primary); color:#fff; transform:rotate(45deg); }
+    .faq-answer { display:none; padding-bottom:1.25rem; }
+    .faq-item.open .faq-answer { display:block; }
+    .faq-answer p { font-size:.875rem; color:var(--text-muted); line-height:1.8; }
+
+    /* ─── BOOKING ─── */
+    .booking { background:var(--navy); }
+    .booking .eyebrow { color:#60a5fa; }
+    .booking .section-title { color:#fff; }
+    .booking-inner { display:grid; grid-template-columns:1fr 1fr; gap:4rem; align-items:start; }
+    .booking-left p { color:#94a3b8; font-size:.9rem; line-height:1.8; margin-bottom:1.5rem; }
+    .booking-list { list-style:none; display:flex; flex-direction:column; gap:.75rem; margin-bottom:2rem; }
+    .booking-list li { display:flex; align-items:center; gap:.75rem; color:#cbd5e1; font-size:.875rem; }
+    .booking-list i { color:#60a5fa; width:16px; }
+    .booking-meta { display:flex; flex-direction:column; gap:.6rem; }
+    .booking-meta span { display:flex; align-items:center; gap:.6rem; font-size:.8rem; color:#64748b; }
+    .booking-meta i { color:#60a5fa; width:14px; }
+    .booking-form { background:rgba(255,255,255,.05); border:1px solid rgba(255,255,255,.1); border-radius:var(--radius); padding:2rem; }
+    .form-group { display:flex; flex-direction:column; gap:.4rem; margin-bottom:1.25rem; }
+    .form-label { font-size:.72rem; font-weight:700; text-transform:uppercase; letter-spacing:.1em; color:#94a3b8; }
+    .form-input { background:rgba(255,255,255,.07); border:1px solid rgba(255,255,255,.12); border-radius:8px; padding:.75rem 1rem; font-size:.9rem; color:#fff; font-family:'Inter',sans-serif; transition:var(--transition); outline:none; }
+    .form-input:focus { border-color:rgba(96,165,250,.6); background:rgba(255,255,255,.1); }
+    .form-input::placeholder { color:#475569; }
+    .form-submit { width:100%; margin-top:.5rem; justify-content:center; }
+
+    /* ─── FOOTER ─── */
+    .footer { background:#060f1c; padding:2rem 0; }
+    .footer-inner { display:flex; justify-content:space-between; align-items:center; }
+    .footer-copy { font-size:.8rem; color:#475569; }
+    .footer-bar { font-size:.78rem; color:#334155; }
+
+    /* ─── RESPONSIVE ─── */
+    @media (max-width:1024px) {
+      .system-grid, .expertises-grid, .results-grid { grid-template-columns:repeat(2,1fr); }
+      .cas-card { grid-template-columns:1fr; }
+      .honoraires-grid { grid-template-columns:1fr; }
+    }
+
+    @media (max-width:768px) {
+      section { padding:3.5rem 0; }
+      .nav-links { display:none; }
+      .hamburger { display:block; }
+      .hero { padding:4rem 0 3rem; }
+      .hero-inner { grid-template-columns:1fr; }
+      .hero-stats { flex-direction:row; flex-wrap:wrap; justify-content:center; }
+      .stat-box { min-width:100px; }
+      .system-grid, .expertises-grid, .results-grid { grid-template-columns:1fr; }
+      .veille-card { grid-template-columns:1fr; }
+      .booking-inner { grid-template-columns:1fr; }
+      .footer-inner { flex-direction:column; gap:1rem; text-align:center; }
+      .filtre-list { grid-template-columns:1fr; }
+      .honoraires-grid { grid-template-columns:1fr; }
+    }
+
+    @media (max-width:480px) {
+      .hero-actions { flex-direction:column; }
+      .btn { width:100%; justify-content:center; }
+      .filtre-box { padding:1.5rem; }
+    }
+  </style>
+</head>
+<body>
+
+<!-- ═══════════════════════════════ HEADER ═══════════════════════════════ -->
+<header class="header">
+  <div class="container">
+    <div class="header-inner">
+      <a href="#hero" style="text-decoration:none">
+        <div class="logo-name">Sami Mokadmi</div>
+        <div class="logo-tag">Avocat — Droit des Affaires & Tech</div>
+      </a>
+      <nav>
+        <ul class="nav-links">
+          <li><a href="#expertises">Expertises</a></li>
+          <li><a href="#methode">Méthode</a></li>
+          <li><a href="#resultats">Résultats</a></li>
+          <li><a href="#veille">Veille</a></li>
+          <li><a href="#faq">FAQ</a></li>
+          <li><a href="#booking" class="nav-cta">Contact</a></li>
+        </ul>
+        <button class="hamburger" onclick="toggleMobile()" aria-label="Menu">
+          <span></span><span></span><span></span>
+        </button>
+      </nav>
+    </div>
+  </div>
+  <div class="mobile-nav" id="mobileNav">
+    <ul>
+      <li><a href="#expertises" onclick="closeMobile()">Expertises</a></li>
+      <li><a href="#methode" onclick="closeMobile()">Méthode</a></li>
+      <li><a href="#resultats" onclick="closeMobile()">Résultats</a></li>
+      <li><a href="#veille" onclick="closeMobile()">Veille</a></li>
+      <li><a href="#faq" onclick="closeMobile()">FAQ</a></li>
+      <li><a href="#booking" onclick="closeMobile()">Contact</a></li>
+    </ul>
+  </div>
+</header>
+
+<!-- ═══════════════════════════════ HERO ═══════════════════════════════ -->
+<section class="hero" id="hero">
+  <div class="container">
+    <div class="hero-inner">
+      <div>
+        <div class="hero-badge"><i class="fas fa-balance-scale"></i> Barreau de Paris · 24 ans d'expérience</div>
+        <h1>24 ans d'ingénierie juridique au service de la Tech</h1>
+        <p class="hero-sub">Sécuriser vos levées de fonds, structurer vos pactes d'associés et optimiser votre fiscalité — avec la précision d'un ingénieur et l'autorité d'un praticien de 24 ans.</p>
+        <div class="hero-actions">
+          <a href="#booking" class="btn btn-primary"><i class="fas fa-calendar-check"></i> Réserver un diagnostic stratégique</a>
+          <a href="#expertises" class="btn btn-outline">Voir les expertises</a>
+        </div>
+      </div>
+      <div class="hero-stats">
+        <div class="stat-box">
+          <div class="stat-number">24</div>
+          <div class="stat-label">ans d'expérience</div>
+        </div>
+        <div class="stat-box">
+          <div class="stat-number">15M€</div>
+          <div class="stat-label">levées sécurisées</div>
+        </div>
+        <div class="stat-box">
+          <div class="stat-number">97%</div>
+          <div class="stat-label">dossiers closés</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════════════════════════ SYSTÈME ═══════════════════════════════ -->
+<section class="system" id="systeme">
+  <div class="container">
+    <div class="eyebrow centered">Le Système</div>
+    <h2 class="section-title centered">Trois leviers. Un seul objectif.</h2>
+    <p class="section-lead centered">Une approche intégrée qui couvre l'ensemble des besoins juridiques d'une entreprise Tech en croissance.</p>
+    <div class="system-grid">
+      <div class="system-card">
+        <div class="card-icon"><i class="fas fa-chart-line"></i></div>
+        <div class="card-title">Ingénierie Financière</div>
+        <p class="card-text">Structuration de levées de fonds en equity ou dette convertible. Négociation des term sheets, pactes d'actionnaires et clauses de liquidité préférentielle.</p>
+      </div>
+      <div class="system-card">
+        <div class="card-icon"><i class="fas fa-shield-halved"></i></div>
+        <div class="card-title">Conformité Tech</div>
+        <p class="card-text">RGPD, propriété intellectuelle des logiciels, contrats SaaS et licences. Sécurisation juridique de votre stack produit et de vos données stratégiques.</p>
+      </div>
+      <div class="system-card">
+        <div class="card-icon"><i class="fas fa-scale-balanced"></i></div>
+        <div class="card-title">Optimisation Fiscale</div>
+        <p class="card-text">Schémas BSA/BSPCE, holding patrimoniale, transmission d'entreprise. Chaque structure est conçue pour minimiser la friction fiscale à chaque étape.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════════════════════════ EXPERTISES ═══════════════════════════════ -->
+<section id="expertises">
+  <div class="container">
+    <div class="eyebrow centered">Expertises Sectorielles</div>
+    <h2 class="section-title centered">Une expertise verticale, pas un service généraliste.</h2>
+    <p class="section-lead centered">Six secteurs couverts avec une connaissance approfondie de leurs contraintes juridiques et opérationnelles.</p>
+    <div class="expertises-grid">
+      <div class="expertise-card">
+        <div class="expertise-icon"><i class="fas fa-bolt"></i></div>
+        <div class="expertise-title">Startups Tech & SaaS</div>
+        <p class="expertise-text">De la création à la série B : structuration juridique, pactes fondateurs, levées de fonds, BSPCE et gouvernance.</p>
+        <div class="tags"><span class="tag">Levées de fonds</span><span class="tag">BSPCE</span><span class="tag">Term Sheet</span></div>
+      </div>
+      <div class="expertise-card">
+        <div class="expertise-icon"><i class="fas fa-lock"></i></div>
+        <div class="expertise-title">Protection des Données & IA</div>
+        <p class="expertise-text">RGPD, IA Act européen, contrats de traitement de données, privacy by design. Conformité sans freiner votre roadmap.</p>
+        <div class="tags"><span class="tag">RGPD</span><span class="tag">IA Act</span><span class="tag">DPA</span></div>
+      </div>
+      <div class="expertise-card">
+        <div class="expertise-icon"><i class="fas fa-handshake"></i></div>
+        <div class="expertise-title">Capital-Risque & M&A</div>
+        <p class="expertise-text">Due diligence juridique, structuration d'acquisitions, négociation des garanties d'actif-passif sur les transactions cross-border.</p>
+        <div class="tags"><span class="tag">Due diligence</span><span class="tag">M&A</span><span class="tag">GAP</span></div>
+      </div>
+      <div class="expertise-card">
+        <div class="expertise-icon"><i class="fas fa-globe"></i></div>
+        <div class="expertise-title">Expansion Internationale</div>
+        <p class="expertise-text">Implantation en Europe, structuration de holdings étrangères, contrats de distribution internationaux.</p>
+        <div class="tags"><span class="tag">Holding</span><span class="tag">Droit européen</span><span class="tag">International</span></div>
+      </div>
+      <div class="expertise-card">
+        <div class="expertise-icon"><i class="fas fa-building"></i></div>
+        <div class="expertise-title">Immobilier & PropTech</div>
+        <p class="expertise-text">Acquisition de locaux commerciaux, baux professionnels, structuration de SCI et montages PropTech.</p>
+        <div class="tags"><span class="tag">SCI</span><span class="tag">Baux commerciaux</span><span class="tag">PropTech</span></div>
+      </div>
+      <div class="expertise-card">
+        <div class="expertise-icon"><i class="fas fa-microchip"></i></div>
+        <div class="expertise-title">Propriété Intellectuelle</div>
+        <p class="expertise-text">Dépôts de marques, protection du code source, contrats de licence logicielle et cession de droits.</p>
+        <div class="tags"><span class="tag">Marques</span><span class="tag">Logiciels</span><span class="tag">Licences</span></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════════════════════════ MÉTHODE ═══════════════════════════════ -->
+<section class="methode" id="methode">
+  <div class="container">
+    <div class="eyebrow centered">Méthode</div>
+    <h2 class="section-title centered">Un processus en trois actes, sans improvisation.</h2>
+    <p class="section-lead centered" style="margin-bottom:3.5rem">Chaque mission suit un cadre éprouvé qui garantit rigueur, transparence et résultats mesurables.</p>
+    <div class="timeline">
+      <div class="timeline-item">
+        <div class="tl-dot">01</div>
+        <div class="tl-content">
+          <div class="tl-label">Phase 1</div>
+          <div class="tl-title">Audit</div>
+          <p class="tl-text">Analyse complète de votre situation juridique, fiscale et capitalistique. Identification des risques latents et des opportunités non exploitées dans votre structure actuelle.</p>
+          <span class="tl-duration"><i class="fas fa-clock"></i> 1 semaine</span>
+        </div>
+      </div>
+      <div class="timeline-item">
+        <div class="tl-dot">02</div>
+        <div class="tl-content">
+          <div class="tl-label">Phase 2</div>
+          <div class="tl-title">Structuration</div>
+          <p class="tl-text">Élaboration de la feuille de route juridique sur mesure. Choix des véhicules, rédaction des documents fondateurs, arbitrages stratégiques entre les options disponibles.</p>
+          <span class="tl-duration"><i class="fas fa-clock"></i> 2–3 semaines</span>
+        </div>
+      </div>
+      <div class="timeline-item">
+        <div class="tl-dot">03</div>
+        <div class="tl-content">
+          <div class="tl-label">Phase 3</div>
+          <div class="tl-title">Exécution</div>
+          <p class="tl-text">Accompagnement lors des négociations, des signatures et des levées. Vous n'êtes jamais seul face aux investisseurs ou aux contreparties — nous sommes dans la salle.</p>
+          <span class="tl-duration"><i class="fas fa-clock"></i> Continu</span>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════════════════════════ HONORAIRES ═══════════════════════════════ -->
+<section id="honoraires">
+  <div class="container">
+    <div class="eyebrow">Méthodologie & Honoraires</div>
+    <h2 class="section-title">Un cadre clair, dès le premier jour.</h2>
+    <p class="section-lead">Pas de surprise en fin de mission : périmètre, livrables et budget sont définis avant tout démarrage.</p>
+    <div class="honoraires-grid">
+      <div class="steps-list">
+        <div class="step-item">
+          <div class="step-num"><i class="fas fa-comments"></i></div>
+          <div>
+            <div class="step-title">Consultation initiale</div>
+            <p class="step-text">90 minutes pour cartographier votre situation et déterminer si une collaboration est pertinente. Facturé 350 € HT, imputable sur toute mission.</p>
+          </div>
+        </div>
+        <div class="step-item">
+          <div class="step-num"><i class="fas fa-file-signature"></i></div>
+          <div>
+            <div class="step-title">Convention d'honoraires</div>
+            <p class="step-text">Chaque mission est encadrée par une convention claire : périmètre, livrables, calendrier et budget. Le cadre est fixé avant le début des travaux.</p>
+          </div>
+        </div>
+        <div class="step-item">
+          <div class="step-num"><i class="fas fa-laptop"></i></div>
+          <div>
+            <div class="step-title">Suivi numérique</div>
+            <p class="step-text">Espace client sécurisé pour suivre l'avancement, échanger les documents et valider les étapes. Réponse par email sous 24h ouvrées.</p>
+          </div>
+        </div>
+        <div class="step-item">
+          <div class="step-num"><i class="fas fa-circle-check"></i></div>
+          <div>
+            <div class="step-title">Clôture & bilan</div>
+            <p class="step-text">Compte-rendu structuré récapitulant décisions, documents produits et points de vigilance. Votre dossier reste accessible à tout moment.</p>
+          </div>
+        </div>
+      </div>
+      <div>
+        <div class="pricing-table">
+          <div class="pricing-header">Grille tarifaire indicative</div>
+          <div class="pricing-row">
+            <div class="pricing-type">Diagnostic stratégique</div>
+            <div class="pricing-amount"><span class="pricing-price">350 € HT</span><span class="pricing-note">90 min · imputable</span></div>
+          </div>
+          <div class="pricing-row">
+            <div class="pricing-type">Structuration simple</div>
+            <div class="pricing-amount"><span class="pricing-price">À partir de 3 500 € HT</span><span class="pricing-note">Forfait · périmètre défini</span></div>
+          </div>
+          <div class="pricing-row">
+            <div class="pricing-type">Accompagnement levée</div>
+            <div class="pricing-amount"><span class="pricing-price">Sur devis</span><span class="pricing-note">Seed à Série B</span></div>
+          </div>
+          <div class="pricing-row">
+            <div class="pricing-type">Retainer mensuel</div>
+            <div class="pricing-amount"><span class="pricing-price">À partir de 1 800 € HT/mois</span><span class="pricing-note">Conseil continu</span></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════════════════════════ RÉSULTATS ═══════════════════════════════ -->
+<section class="results" id="resultats">
+  <div class="container">
+    <div class="eyebrow centered">Résultats</div>
+    <h2 class="section-title centered">Des chiffres, pas des promesses.</h2>
+    <p class="section-lead centered" style="color:#94a3b8;margin-bottom:3rem">Des missions closes, des dossiers finalisés, des structures qui tiennent dans le temps.</p>
+    <div class="results-grid">
+      <div class="result-card">
+        <div class="result-number">15M€</div>
+        <div class="result-label">sécurisés en levées de fonds</div>
+        <div class="result-note">Séries A et B accompagnées depuis 2019</div>
+      </div>
+      <div class="result-card">
+        <div class="result-number">22%</div>
+        <div class="result-label">d'optimisation fiscale</div>
+        <div class="result-note">Réduction moyenne sur holdings constituées</div>
+      </div>
+      <div class="result-card">
+        <div class="result-number">97%</div>
+        <div class="result-label">de dossiers finalisés</div>
+        <div class="result-note">Taux de closing sur transactions engagées</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════════════════════════ CAS ÉTUDES ═══════════════════════════════ -->
+<section id="cas">
+  <div class="container">
+    <div class="eyebrow">Études de Cas</div>
+    <h2 class="section-title">Des problématiques réelles. Des solutions mesurables.</h2>
+    <p class="section-lead">Les détails identifiants ont été modifiés dans le respect du secret professionnel.</p>
+    <div class="cas-grid">
+      <div class="cas-card">
+        <div class="cas-meta">
+          <div class="cas-sector">SaaS B2B · Série A</div>
+          <div class="cas-impact">4,2 M€ levés<br>Closing en 3 semaines</div>
+        </div>
+        <div>
+          <div class="cas-label">Problématique</div>
+          <p class="cas-text">Une startup de 12 personnes arrivait en closing de série A avec un cap table désorganisé : trois pactes contradictoires, des BSPCE mal structurés et un investisseur lead qui menaçait de se retirer.</p>
+        </div>
+        <div>
+          <div class="cas-label">Solution apportée</div>
+          <p class="cas-text">Audit complet en 5 jours ouvrés, restructuration du cap table, fusion des pactes en un document unique, renégociation des clauses de liquidité. Closing finalisé 3 semaines après notre intervention.</p>
+        </div>
+      </div>
+      <div class="cas-card">
+        <div class="cas-meta">
+          <div class="cas-sector">Acquisition · PME Tech</div>
+          <div class="cas-impact">18% de réduction<br>du prix d'acquisition</div>
+        </div>
+        <div>
+          <div class="cas-label">Problématique</div>
+          <p class="cas-text">Un groupe industriel souhaitait acquérir une PME éditrice de logiciels. La data room révélait des risques cachés : contrats clients sans clause de cession, propriété intellectuelle incertaine sur le core code.</p>
+        </div>
+        <div>
+          <div class="cas-label">Solution apportée</div>
+          <p class="cas-text">Due diligence approfondie avec reclassification des risques, renégociation du prix à la baisse de 18%, mise en place d'un earn-out conditionné à la rétention des développeurs clés.</p>
+        </div>
+      </div>
+      <div class="cas-card">
+        <div class="cas-meta">
+          <div class="cas-sector">Fondateur · Exit</div>
+          <div class="cas-impact">22% d'économie<br>fiscale sur la sortie</div>
+        </div>
+        <div>
+          <div class="cas-label">Problématique</div>
+          <p class="cas-text">Un fondateur cédait sa société à un acquéreur américain. Le traitement fiscal de la plus-value et le régime applicable aux BSPCE exercés n'avaient pas été anticipés.</p>
+        </div>
+        <div>
+          <div class="cas-label">Solution apportée</div>
+          <p class="cas-text">Structuration via holding patrimoniale, optimisation du calendrier fiscal, mise en place d'un apport-cession conforme à l'article 150-0 B ter du CGI. Économie fiscale de 22% sur la plus-value.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════════════════════════ FILTRE ═══════════════════════════════ -->
+<section class="filtre" id="filtre">
+  <div class="container">
+    <div class="filtre-box">
+      <div class="eyebrow centered">Filtre Sélectif</div>
+      <h2 class="section-title centered">Ce cabinet n'est pas fait pour tout le monde.</h2>
+      <p style="text-align:center;color:var(--text-muted);font-size:.9rem;max-width:56ch;margin:0 auto 1rem">Travailler avec des fondateurs ambitieux exige une sélection rigoureuse. Voici les cas que nous ne traitons pas.</p>
+      <div class="filtre-list">
+        <div class="filtre-item"><i class="fas fa-circle-xmark"></i><span>Les porteurs de projet sans structure juridique existante</span></div>
+        <div class="filtre-item"><i class="fas fa-circle-xmark"></i><span>Les dossiers contentieux et litiges — ce n'est pas notre terrain</span></div>
+        <div class="filtre-item"><i class="fas fa-circle-xmark"></i><span>Les TPE/PME sans ambition de croissance ou de cession</span></div>
+        <div class="filtre-item"><i class="fas fa-circle-xmark"></i><span>Les entrepreneurs cherchant un prestataire, pas un partenaire stratégique</span></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════════════════════════ VEILLE ═══════════════════════════════ -->
+<section id="veille">
+  <div class="container">
+    <div class="eyebrow">Jurisprudence & Veille</div>
+    <h2 class="section-title">L'autorité intellectuelle au service de votre stratégie.</h2>
+    <p class="section-lead">Analyses des décisions récentes qui impactent directement les entreprises Tech et les opérations de capital.</p>
+    <div class="veille-grid">
+      <div class="veille-card">
+        <div class="veille-meta">
+          <span class="veille-domaine">Droit Numérique</span>
+          <span class="veille-date">Avril 2024</span>
+        </div>
+        <div>
+          <div class="veille-titre">IA générative & responsabilité contractuelle : ce que change la position de la CNIL</div>
+          <p class="veille-extrait">La CNIL a précisé les contours de la responsabilité des entreprises intégrant des outils d'IA dans leurs processus métiers. Cette décision redéfinit les obligations des co-responsables de traitement et ouvre la voie à une nouvelle architecture contractuelle.</p>
+          <a href="#booking" class="veille-link">Discuter de l'impact <i class="fas fa-arrow-right"></i></a>
+        </div>
+      </div>
+      <div class="veille-card">
+        <div class="veille-meta">
+          <span class="veille-domaine">Droit Commercial</span>
+          <span class="veille-date">Mars 2024</span>
+        </div>
+        <div>
+          <div class="veille-titre">Pactes d'actionnaires : la Cour de cassation renforce l'exécution forcée des clauses de préemption</div>
+          <p class="veille-extrait">Par un arrêt du 14 mars 2024, la chambre commerciale confirme qu'un associé peut obtenir en référé l'exécution forcée d'une clause de préemption violée. Impact direct sur la rédaction des pactes et la protection des minoritaires.</p>
+          <a href="#booking" class="veille-link">Discuter de l'impact <i class="fas fa-arrow-right"></i></a>
+        </div>
+      </div>
+      <div class="veille-card">
+        <div class="veille-meta">
+          <span class="veille-domaine">Fiscalité Tech</span>
+          <span class="veille-date">Février 2024</span>
+        </div>
+        <div>
+          <div class="veille-titre">BSPCE et salariés non-résidents : clarification du régime après la loi de finances 2024</div>
+          <p class="veille-extrait">La loi de finances rectificative précise le traitement fiscal des BSPCE exercés par des bénéficiaires ayant quitté la France. Un point de vigilance majeur pour les startups à dimension internationale avant toute levée.</p>
+          <a href="#booking" class="veille-link">Discuter de l'impact <i class="fas fa-arrow-right"></i></a>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════════════════════════ TÉMOIGNAGES ═══════════════════════════════ -->
+<section class="temoignages" id="temoignages">
+  <div class="container">
+    <div class="eyebrow centered">Témoignages</div>
+    <h2 class="section-title centered">Ce que disent ceux qui ont franchi le pas.</h2>
+    <div class="temoignages-grid" style="max-width:800px;margin:0 auto">
+      <div class="temoignage-card">
+        <div class="quote-mark">"</div>
+        <p class="quote-text">En six mois, notre cap table était propre, notre série A sécurisée et nos BSPCE structurés. Ce n'est pas de la prestation juridique, c'est de l'ingénierie de croissance.</p>
+        <div class="quote-author">Thomas R.</div>
+        <div class="quote-role">Co-fondateur & CEO, SaaS B2B · 2023</div>
+      </div>
+      <div class="temoignage-card">
+        <div class="quote-mark">"</div>
+        <p class="quote-text">J'ai rencontré beaucoup d'avocats d'affaires. Ici, c'est différent — la précision technique est au niveau des meilleurs fonds, et la réactivité est celle d'un co-fondateur.</p>
+        <div class="quote-author">Isabelle M.</div>
+        <div class="quote-role">Partner, Fonds de Venture Capital · 2024</div>
+      </div>
+      <div class="temoignage-card">
+        <div class="quote-mark">"</div>
+        <p class="quote-text">Notre acquisition par un groupe américain aurait été un enfer sans cet accompagnement. La structuration de la cession nous a permis d'économiser 18% sur la fiscalité de sortie.</p>
+        <div class="quote-author">Sébastien L.</div>
+        <div class="quote-role">Fondateur, Exitée en 2024</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════════════════════════ FAQ ═══════════════════════════════ -->
+<section id="faq">
+  <div class="container">
+    <div class="eyebrow centered">FAQ</div>
+    <h2 class="section-title centered">Questions fréquentes.</h2>
+    <div class="faq-list">
+      <div class="faq-item">
+        <button class="faq-btn" onclick="toggleFaq(this)">
+          <span class="faq-q">Quels sont vos honoraires ?</span>
+          <div class="faq-icon"><i class="fas fa-plus"></i></div>
+        </button>
+        <div class="faq-answer"><p>Nos honoraires sont fixés au forfait après audit initial. Le diagnostic stratégique (90 min) est facturé 350 € HT et imputable sur toute mission engagée. Les forfaits d'accompagnement démarrent à 3 500 € HT pour une structuration simple.</p></div>
+      </div>
+      <div class="faq-item">
+        <button class="faq-btn" onclick="toggleFaq(this)">
+          <span class="faq-q">Intervenez-vous en dehors de Paris ?</span>
+          <div class="faq-icon"><i class="fas fa-plus"></i></div>
+        </button>
+        <div class="faq-answer"><p>Oui. L'ensemble de notre travail est dématérialisé. Nous accompagnons des fondateurs à Lyon, Bordeaux, Londres et Barcelone. Les réunions se tiennent en visio ou en présentiel selon votre préférence.</p></div>
+      </div>
+      <div class="faq-item">
+        <button class="faq-btn" onclick="toggleFaq(this)">
+          <span class="faq-q">Quels documents préparer pour le premier rendez-vous ?</span>
+          <div class="faq-icon"><i class="fas fa-plus"></i></div>
+        </button>
+        <div class="faq-answer"><p>Pour une levée de fonds : statuts, pacte d'associés existant, cap table actuel, dernières liasses fiscales et deck investisseurs. Pour une structuration : documents constitutifs et accords entre associés. En l'absence de documents, le diagnostic reste possible.</p></div>
+      </div>
+      <div class="faq-item">
+        <button class="faq-btn" onclick="toggleFaq(this)">
+          <span class="faq-q">Quels sont les délais moyens pour une levée de fonds ?</span>
+          <div class="faq-icon"><i class="fas fa-plus"></i></div>
+        </button>
+        <div class="faq-answer"><p>Un processus bien préparé dure entre 3 et 6 mois, du premier contact investisseur à la signature des actes définitifs. La phase juridique (term sheet → closing) représente généralement 6 à 10 semaines. Une préparation en amont réduit significativement ces délais.</p></div>
+      </div>
+      <div class="faq-item">
+        <button class="faq-btn" onclick="toggleFaq(this)">
+          <span class="faq-q">Dans quels délais pouvez-vous intervenir ?</span>
+          <div class="faq-icon"><i class="fas fa-plus"></i></div>
+        </button>
+        <div class="faq-answer"><p>Nous maintenons une liste d'attente courte pour garantir la qualité. En général, le premier diagnostic peut être fixé dans la semaine. Pour les urgences (closing imminent), contactez-nous directement.</p></div>
+      </div>
+      <div class="faq-item">
+        <button class="faq-btn" onclick="toggleFaq(this)">
+          <span class="faq-q">Accompagnez-vous aussi des entreprises étrangères ?</span>
+          <div class="faq-icon"><i class="fas fa-plus"></i></div>
+        </button>
+        <div class="faq-answer"><p>Oui, notamment pour les structures françaises avec des investisseurs étrangers ou les fondateurs étrangers souhaitant s'établir en France. Nous travaillons en français et en anglais.</p></div>
+      </div>
+      <div class="faq-item">
+        <button class="faq-btn" onclick="toggleFaq(this)">
+          <span class="faq-q">Prenez-vous des participations au capital ?</span>
+          <div class="faq-icon"><i class="fas fa-plus"></i></div>
+        </button>
+        <div class="faq-answer"><p>Non. Notre modèle est purement honoraire. Cette indépendance est la garantie d'un conseil objectif, sans conflit d'intérêts avec vos autres actionnaires.</p></div>
+      </div>
+      <div class="faq-item">
+        <button class="faq-btn" onclick="toggleFaq(this)">
+          <span class="faq-q">Comment se déroule le suivi de mon dossier ?</span>
+          <div class="faq-icon"><i class="fas fa-plus"></i></div>
+        </button>
+        <div class="faq-answer"><p>Chaque client dispose d'un espace numérique sécurisé pour suivre l'avancement, consulter les documents et poser ses questions. Un point hebdomadaire est organisé sur les missions actives. Nous répondons à tout email sous 24h ouvrées.</p></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════════════════════════ BOOKING ═══════════════════════════════ -->
+<section class="booking" id="booking">
+  <div class="container">
+    <div class="eyebrow">Diagnostic Stratégique</div>
+    <h2 class="section-title" style="color:#fff;margin-bottom:3rem">Prenez le contrôle de votre structure juridique.</h2>
+    <div class="booking-inner">
+      <div class="booking-left">
+        <p>Un premier échange de 90 minutes pour cartographier votre situation, identifier les risques et définir les priorités. Sans engagement, avec une feuille de route concrète.</p>
+        <ul class="booking-list">
+          <li><i class="fas fa-check"></i> Levées de fonds (Seed à Série B)</li>
+          <li><i class="fas fa-check"></i> Pactes d'associés & gouvernance</li>
+          <li><i class="fas fa-check"></i> BSPCE, BSA, stock-options</li>
+          <li><i class="fas fa-check"></i> Acquisitions & cessions</li>
+          <li><i class="fas fa-check"></i> Conformité RGPD & IA Act</li>
+        </ul>
+        <div class="booking-meta">
+          <span><i class="fas fa-clock"></i> 90 minutes · En visio ou présentiel</span>
+          <span><i class="fas fa-location-dot"></i> Paris & remote (France, Europe)</span>
+          <span><i class="fas fa-envelope"></i> contact@samimoakdmi-avocat.fr</span>
+          <span><i class="fas fa-phone"></i> +33 (0)1 XX XX XX XX</span>
+        </div>
+      </div>
+      <div class="booking-form">
+        <form onsubmit="handleSubmit(event)">
+          <div class="form-group">
+            <label class="form-label">Nom complet</label>
+            <input type="text" class="form-input" placeholder="Jean Dupont" required>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Email</label>
+            <input type="email" class="form-input" placeholder="jean@startup.fr" required>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Société (optionnel)</label>
+            <input type="text" class="form-input" placeholder="Ma Startup SAS">
+          </div>
+          <div class="form-group">
+            <label class="form-label">Sujet</label>
+            <input type="text" class="form-input" placeholder="Levée de fonds / BSPCE / M&A / Autre">
+          </div>
+          <button type="submit" class="btn btn-primary form-submit">
+            <i class="fas fa-paper-plane"></i> Envoyer la demande
+          </button>
+        </form>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════════════════════════ FOOTER ═══════════════════════════════ -->
+<footer class="footer">
+  <div class="container">
+    <div class="footer-inner">
+      <div class="footer-copy">© 2024 Sami Mokadmi — Avocat. Tous droits réservés.</div>
+      <div class="footer-bar">Barreau de Paris · RPVA · Membre du CNB</div>
+    </div>
+  </div>
+</footer>
+
+<script>
+  function toggleMobile() {
+    document.getElementById('mobileNav').classList.toggle('open');
+  }
+  function closeMobile() {
+    document.getElementById('mobileNav').classList.remove('open');
+  }
+
+  function toggleFaq(btn) {
+    const item = btn.closest('.faq-item');
+    const isOpen = item.classList.contains('open');
+    document.querySelectorAll('.faq-item.open').forEach(el => el.classList.remove('open'));
+    if (!isOpen) item.classList.add('open');
+  }
+
+  function handleSubmit(e) {
+    e.preventDefault();
+    const btn = e.target.querySelector('.form-submit');
+    btn.innerHTML = '<i class="fas fa-check"></i> Message envoyé !';
+    btn.style.background = '#16a34a';
+    setTimeout(() => {
+      btn.innerHTML = '<i class="fas fa-paper-plane"></i> Envoyer la demande';
+      btn.style.background = '';
+      e.target.reset();
+    }, 3000);
+  }
+
+  // Active nav highlight on scroll
+  const sections = document.querySelectorAll('section[id]');
+  const navLinks = document.querySelectorAll('.nav-links a');
+  window.addEventListener('scroll', () => {
+    const pos = window.scrollY + 100;
+    sections.forEach(s => {
+      if (pos >= s.offsetTop && pos < s.offsetTop + s.offsetHeight) {
+        navLinks.forEach(a => {
+          a.style.color = a.getAttribute('href') === '#' + s.id ? 'var(--primary)' : '';
+        });
+      }
+    });
+  }, { passive: true });
+</script>
+</body>
+</html>

@@ -4,7 +4,7 @@ import { useAuth } from '../contexts/AuthContext'
 import {
   LayoutDashboard, FolderOpen, FileUp, MessageSquare, LogOut,
   CheckCircle2, Clock, Circle, ChevronRight, Upload, File,
-  FileText, Trash2, Menu, X, Shield, CalendarDays
+  FileText, Trash2, Menu, X, Shield, CalendarDays, Plus, Pencil
 } from 'lucide-react'
 import CalendarView, { Appointment } from '../components/CalendarView'
 import TodoList, { Todo } from '../components/TodoList'
@@ -340,68 +340,232 @@ function Documents({ documents, setDocuments }: { documents: Document[]; setDocu
 
 // ─── Rendez-vous + Todos ──────────────────────────────────────────────────────
 
-function Rendezvous({ rdvs, todos, setTodos }: {
+function Rendezvous({ rdvs, setRdvs, todos, setTodos, userId }: {
   rdvs: Appointment[]
+  setRdvs: (r: Appointment[] | ((prev: Appointment[]) => Appointment[])) => void
   todos: Todo[]
   setTodos: (t: Todo[] | ((prev: Todo[]) => Todo[])) => void
+  userId: string
 }) {
   const [selectedDate, setSelectedDate] = useState<string | null>(null)
+  const [section, setSection] = useState<'rdv' | 'todo'>('rdv')
+
+  // RDV state
+  const [showRdvForm, setShowRdvForm] = useState(false)
+  const [editRdv, setEditRdv] = useState<Appointment | null>(null)
+  const [rdvForm, setRdvForm] = useState({
+    title: '', date: new Date().toISOString().split('T')[0],
+    time: '10:00', type: 'visio' as Appointment['type'], notes: '',
+  })
+
+  // Todo state
+  const [showTodoForm, setShowTodoForm] = useState(false)
+  const [editTodo, setEditTodo] = useState<Todo | null>(null)
+  const [todoForm, setTodoForm] = useState({ title: '', priority: 'normale' as Todo['priority'], dueDate: '' })
+
   const upcoming = [...rdvs]
     .filter(r => r.date >= new Date().toISOString().split('T')[0])
     .sort((a, b) => a.date.localeCompare(b.date))
 
-  const toggleTodo = (id: string) =>
-    setTodos((prev: Todo[]) => prev.map(t => t.id === id ? { ...t, done: !t.done } : t))
+  // ── RDV actions ──
+  const openNewRdv = () => {
+    setEditRdv(null)
+    setRdvForm({ title: '', date: selectedDate ?? new Date().toISOString().split('T')[0], time: '10:00', type: 'visio', notes: '' })
+    setShowRdvForm(true)
+  }
+  const openEditRdv = (r: Appointment) => {
+    setEditRdv(r)
+    setRdvForm({ title: r.title, date: r.date, time: r.time, type: r.type, notes: r.notes ?? '' })
+    setShowRdvForm(true)
+  }
+  const saveRdv = () => {
+    if (!rdvForm.title || !rdvForm.date) return
+    if (editRdv) {
+      setRdvs((prev: Appointment[]) => prev.map(r => r.id === editRdv.id ? { ...r, ...rdvForm } : r))
+    } else {
+      const newRdv: Appointment = { id: crypto.randomUUID(), clientId: userId, ...rdvForm }
+      setRdvs((prev: Appointment[]) => [...prev, newRdv])
+    }
+    setShowRdvForm(false)
+    setEditRdv(null)
+  }
+  const deleteRdv = (id: string) => setRdvs((prev: Appointment[]) => prev.filter(r => r.id !== id))
+
+  // ── Todo actions ──
+  const openNewTodo = () => {
+    setEditTodo(null)
+    setTodoForm({ title: '', priority: 'normale', dueDate: '' })
+    setShowTodoForm(true)
+  }
+  const openEditTodo = (t: Todo) => {
+    setEditTodo(t)
+    setTodoForm({ title: t.title, priority: t.priority, dueDate: t.dueDate ?? '' })
+    setShowTodoForm(true)
+  }
+  const saveTodo = () => {
+    if (!todoForm.title) return
+    if (editTodo) {
+      setTodos((prev: Todo[]) => prev.map(t => t.id === editTodo.id ? { ...t, ...todoForm, dueDate: todoForm.dueDate || undefined } : t))
+    } else {
+      const newTodo: Todo = { id: crypto.randomUUID(), clientId: userId, done: false, createdAt: new Date().toISOString(), ...todoForm, dueDate: todoForm.dueDate || undefined }
+      setTodos((prev: Todo[]) => [...prev, newTodo])
+    }
+    setShowTodoForm(false)
+    setEditTodo(null)
+  }
+  const toggleTodo = (id: string) => setTodos((prev: Todo[]) => prev.map(t => t.id === id ? { ...t, done: !t.done } : t))
+  const deleteTodo = (id: string) => setTodos((prev: Todo[]) => prev.filter(t => t.id !== id))
+
+  const rdvTypeLabel = (t: Appointment['type']) => t === 'visio' ? 'Visioconférence' : t === 'presentiel' ? 'Présentiel' : 'Téléphone'
 
   return (
-    <div className="flex flex-col gap-10">
-      {/* Calendar */}
+    <div className="flex flex-col gap-6">
       <div>
         <p className="text-xs font-medium tracking-[0.2em] uppercase text-navy/40 mb-2">Agenda</p>
-        <h2 className="font-serif text-2xl text-navy mb-6">Mes Rendez-vous</h2>
+        <h2 className="font-serif text-2xl text-navy">Planning & Tâches</h2>
+      </div>
 
-        <CalendarView appointments={rdvs} selectedDate={selectedDate} onSelectDate={setSelectedDate} />
+      {/* Section tabs */}
+      <div className="flex gap-1 border-b border-navy/10">
+        {(['rdv', 'todo'] as const).map(s => (
+          <button key={s} onClick={() => setSection(s)}
+            className={`text-sm font-medium px-4 py-2 border-b-2 transition-colors ${section === s ? 'border-navy text-navy' : 'border-transparent text-navy/40 hover:text-navy'}`}>
+            {s === 'rdv' ? `Rendez-vous (${rdvs.length})` : `Tâches (${todos.filter(t => !t.done).length} en cours)`}
+          </button>
+        ))}
+      </div>
 
-        {upcoming.length > 0 && (
-          <div className="mt-6">
-            <p className="text-xs font-medium text-navy/40 uppercase tracking-wide mb-3">Prochains rendez-vous</p>
-            <div className="flex flex-col gap-px bg-navy/10">
-              {upcoming.slice(0, 4).map(r => (
-                <div key={r.id} className="bg-offwhite px-6 py-4 flex items-center gap-4">
-                  <div className="flex-none text-center w-10">
-                    <p className="text-xs font-bold text-navy leading-none">
-                      {new Date(r.date + 'T12:00:00').toLocaleDateString('fr-FR', { day: 'numeric' })}
-                    </p>
-                    <p className="text-[10px] text-navy/40 uppercase">
-                      {new Date(r.date + 'T12:00:00').toLocaleDateString('fr-FR', { month: 'short' })}
-                    </p>
-                  </div>
-                  <div className="w-px h-8 bg-navy/10 flex-none" />
-                  <div className="flex-1 min-w-0">
-                    <p className="text-sm font-medium text-navy truncate">{r.title}</p>
-                    <p className="text-xs text-navy/40 mt-0.5">{r.time} · {r.type === 'visio' ? 'Visioconférence' : r.type === 'presentiel' ? 'Présentiel' : 'Téléphone'}</p>
-                  </div>
-                </div>
-              ))}
-            </div>
+      {/* ── RDV ── */}
+      {section === 'rdv' && (
+        <div className="flex flex-col gap-6">
+          <div className="flex justify-end">
+            <button onClick={openNewRdv}
+              className="flex items-center gap-2 bg-navy text-offwhite text-xs font-medium px-4 py-2.5 hover:bg-navy/90 transition-colors">
+              <Plus size={13} strokeWidth={1.5} /> Ajouter un RDV
+            </button>
           </div>
-        )}
 
-        <div className="mt-4 border border-navy/10 px-6 py-4 text-sm text-navy/50">
-          Pour modifier un rendez-vous, contactez le cabinet à{' '}
-          <a href="mailto:contact@samimokadmi-avocat.fr" className="text-navy underline">contact@samimokadmi-avocat.fr</a>
+          {showRdvForm && (
+            <div className="border border-navy/15 p-6 flex flex-col gap-4">
+              <div className="flex items-center justify-between">
+                <p className="text-sm font-medium text-navy">{editRdv ? 'Modifier le rendez-vous' : 'Nouveau rendez-vous'}</p>
+                <button onClick={() => setShowRdvForm(false)} className="text-navy/30 hover:text-navy transition-colors"><X size={14} strokeWidth={1.5} /></button>
+              </div>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div className="flex flex-col gap-1.5 sm:col-span-2">
+                  <label className="text-xs font-medium text-navy/40 uppercase tracking-wide">Titre</label>
+                  <input type="text" value={rdvForm.title} onChange={e => setRdvForm(f => ({ ...f, title: e.target.value }))} placeholder="Ex: Point sur la levée de fonds" className="border-b border-navy/15 bg-transparent py-2 text-sm text-navy placeholder:text-navy/25 focus:outline-none focus:border-navy transition-colors" />
+                </div>
+                <div className="flex flex-col gap-1.5">
+                  <label className="text-xs font-medium text-navy/40 uppercase tracking-wide">Date</label>
+                  <input type="date" value={rdvForm.date} onChange={e => setRdvForm(f => ({ ...f, date: e.target.value }))} className="border-b border-navy/15 bg-transparent py-2 text-sm text-navy focus:outline-none focus:border-navy transition-colors" />
+                </div>
+                <div className="flex flex-col gap-1.5">
+                  <label className="text-xs font-medium text-navy/40 uppercase tracking-wide">Heure</label>
+                  <input type="time" value={rdvForm.time} onChange={e => setRdvForm(f => ({ ...f, time: e.target.value }))} className="border-b border-navy/15 bg-transparent py-2 text-sm text-navy focus:outline-none focus:border-navy transition-colors" />
+                </div>
+                <div className="flex flex-col gap-1.5">
+                  <label className="text-xs font-medium text-navy/40 uppercase tracking-wide">Type</label>
+                  <select value={rdvForm.type} onChange={e => setRdvForm(f => ({ ...f, type: e.target.value as Appointment['type'] }))} className="border-b border-navy/15 bg-transparent py-2 text-sm text-navy focus:outline-none focus:border-navy transition-colors">
+                    <option value="visio">Visioconférence</option>
+                    <option value="presentiel">Présentiel</option>
+                    <option value="telephone">Téléphone</option>
+                  </select>
+                </div>
+                <div className="flex flex-col gap-1.5">
+                  <label className="text-xs font-medium text-navy/40 uppercase tracking-wide">Notes <span className="normal-case text-navy/30">(optionnel)</span></label>
+                  <input type="text" value={rdvForm.notes} onChange={e => setRdvForm(f => ({ ...f, notes: e.target.value }))} placeholder="Détails, lieu, lien visio…" className="border-b border-navy/15 bg-transparent py-2 text-sm text-navy placeholder:text-navy/25 focus:outline-none focus:border-navy transition-colors" />
+                </div>
+              </div>
+              <div className="flex gap-3 mt-1">
+                <button onClick={saveRdv} className="bg-navy text-offwhite text-xs font-medium px-5 py-2.5 hover:bg-navy/90 transition-colors">
+                  {editRdv ? 'Enregistrer' : 'Ajouter'}
+                </button>
+                <button onClick={() => setShowRdvForm(false)} className="text-xs text-navy/40 hover:text-navy transition-colors px-3">Annuler</button>
+              </div>
+            </div>
+          )}
+
+          <CalendarView appointments={rdvs} selectedDate={selectedDate} onSelectDate={d => { setSelectedDate(d); setRdvForm(f => ({ ...f, date: d })) }} />
+
+          {upcoming.length > 0 && (
+            <div>
+              <p className="text-xs font-medium text-navy/40 uppercase tracking-wide mb-3">Prochains rendez-vous</p>
+              <div className="flex flex-col gap-px bg-navy/10">
+                {upcoming.map(r => (
+                  <div key={r.id} className="bg-offwhite px-5 py-4 flex items-center gap-4 group">
+                    <div className="flex-none text-center w-10">
+                      <p className="text-xs font-bold text-navy leading-none">{new Date(r.date + 'T12:00:00').toLocaleDateString('fr-FR', { day: 'numeric' })}</p>
+                      <p className="text-[10px] text-navy/40 uppercase">{new Date(r.date + 'T12:00:00').toLocaleDateString('fr-FR', { month: 'short' })}</p>
+                    </div>
+                    <div className="w-px h-8 bg-navy/10 flex-none" />
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-medium text-navy truncate">{r.title}</p>
+                      <p className="text-xs text-navy/40 mt-0.5">{r.time} · {rdvTypeLabel(r.type)}{r.notes ? ` · ${r.notes}` : ''}</p>
+                    </div>
+                    <div className="flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                      <button onClick={() => openEditRdv(r)} className="text-navy/30 hover:text-navy transition-colors p-1">
+                        <Pencil size={13} strokeWidth={1.5} />
+                      </button>
+                      <button onClick={() => deleteRdv(r.id)} className="text-navy/20 hover:text-red-500 transition-colors p-1">
+                        <Trash2 size={13} strokeWidth={1.5} />
+                      </button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+          {rdvs.length === 0 && <p className="text-sm text-navy/30 text-center py-6">Aucun rendez-vous. Ajoutez-en un ci-dessus.</p>}
         </div>
-      </div>
+      )}
 
-      {/* To-do list */}
-      <div className="border-t border-navy/10 pt-10">
-        <p className="text-xs font-medium tracking-[0.2em] uppercase text-navy/40 mb-2">Tâches</p>
-        <h2 className="font-serif text-2xl text-navy mb-6">Ma To-Do List</h2>
-        <TodoList todos={todos} onToggle={toggleTodo} readOnly={false} />
-        {todos.length === 0 && (
-          <p className="text-sm text-navy/30 text-center py-6">Aucune tâche assignée par le cabinet.</p>
-        )}
-      </div>
+      {/* ── Todos ── */}
+      {section === 'todo' && (
+        <div className="flex flex-col gap-4">
+          <div className="flex justify-end">
+            <button onClick={openNewTodo}
+              className="flex items-center gap-2 bg-navy text-offwhite text-xs font-medium px-4 py-2.5 hover:bg-navy/90 transition-colors">
+              <Plus size={13} strokeWidth={1.5} /> Nouvelle tâche
+            </button>
+          </div>
+
+          {showTodoForm && (
+            <div className="border border-navy/15 p-6 flex flex-col gap-4">
+              <div className="flex items-center justify-between">
+                <p className="text-sm font-medium text-navy">{editTodo ? 'Modifier la tâche' : 'Nouvelle tâche'}</p>
+                <button onClick={() => setShowTodoForm(false)} className="text-navy/30 hover:text-navy transition-colors"><X size={14} strokeWidth={1.5} /></button>
+              </div>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div className="flex flex-col gap-1.5 sm:col-span-2">
+                  <label className="text-xs font-medium text-navy/40 uppercase tracking-wide">Tâche</label>
+                  <input type="text" value={todoForm.title} onChange={e => setTodoForm(f => ({ ...f, title: e.target.value }))} placeholder="Ex: Préparer les statuts" className="border-b border-navy/15 bg-transparent py-2 text-sm text-navy placeholder:text-navy/25 focus:outline-none focus:border-navy transition-colors" />
+                </div>
+                <div className="flex flex-col gap-1.5">
+                  <label className="text-xs font-medium text-navy/40 uppercase tracking-wide">Priorité</label>
+                  <select value={todoForm.priority} onChange={e => setTodoForm(f => ({ ...f, priority: e.target.value as Todo['priority'] }))} className="border-b border-navy/15 bg-transparent py-2 text-sm text-navy focus:outline-none focus:border-navy transition-colors">
+                    <option value="normale">Normale</option>
+                    <option value="urgente">Urgente</option>
+                  </select>
+                </div>
+                <div className="flex flex-col gap-1.5">
+                  <label className="text-xs font-medium text-navy/40 uppercase tracking-wide">Échéance <span className="normal-case text-navy/30">(optionnel)</span></label>
+                  <input type="date" value={todoForm.dueDate} onChange={e => setTodoForm(f => ({ ...f, dueDate: e.target.value }))} className="border-b border-navy/15 bg-transparent py-2 text-sm text-navy focus:outline-none focus:border-navy transition-colors" />
+                </div>
+              </div>
+              <div className="flex gap-3 mt-1">
+                <button onClick={saveTodo} className="bg-navy text-offwhite text-xs font-medium px-5 py-2.5 hover:bg-navy/90 transition-colors">
+                  {editTodo ? 'Enregistrer' : 'Ajouter'}
+                </button>
+                <button onClick={() => setShowTodoForm(false)} className="text-xs text-navy/40 hover:text-navy transition-colors px-3">Annuler</button>
+              </div>
+            </div>
+          )}
+
+          <TodoList todos={todos} onToggle={toggleTodo} onDelete={deleteTodo} onEdit={openEditTodo} />
+          {todos.length === 0 && <p className="text-sm text-navy/30 text-center py-6">Aucune tâche. Ajoutez-en une ci-dessus.</p>}
+        </div>
+      )}
     </div>
   )
 }
@@ -447,7 +611,7 @@ export default function DashboardPage() {
 
   const [dossiers] = useLocalState<Dossier[]>(`avocat_dossiers_${user?.id}`, [])
   const [documents, setDocuments] = useLocalState<Document[]>(`avocat_documents_${user?.id}`, [])
-  const [rdvs] = useLocalState<Appointment[]>(`avocat_rdv_${user?.id}`, [])
+  const [rdvs, setRdvs] = useLocalState<Appointment[]>(`avocat_rdv_${user?.id}`, [])
   const [todos, setTodos] = useLocalState<Todo[]>(`avocat_todos_${user?.id}`, [])
 
   const handleLogout = () => { logout(); navigate('/') }
@@ -532,7 +696,7 @@ export default function DashboardPage() {
           {tab === 'apercu' && <Apercu dossiers={dossiers} documents={documents} userName={user?.name ?? ''} />}
           {tab === 'dossiers' && <Dossiers dossiers={dossiers} />}
           {tab === 'documents' && <Documents documents={documents} setDocuments={setDocuments} />}
-          {tab === 'rendezvous' && <Rendezvous rdvs={rdvs} todos={todos} setTodos={setTodos} />}
+          {tab === 'rendezvous' && <Rendezvous rdvs={rdvs} setRdvs={setRdvs} todos={todos} setTodos={setTodos} userId={user?.id ?? ''} />}
           {tab === 'messagerie' && <Messagerie />}
         </main>
       </div>

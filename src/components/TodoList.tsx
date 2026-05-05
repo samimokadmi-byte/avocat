@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { CheckSquare, Square, Trash2, AlertCircle, Clock } from 'lucide-react'
+import { CheckSquare, Square, Trash2, AlertCircle, Clock, Pencil } from 'lucide-react'
 
 export interface Todo {
   id: string
@@ -16,10 +16,11 @@ interface Props {
   todos: Todo[]
   onToggle?: (id: string) => void
   onDelete?: (id: string) => void
+  onEdit?: (todo: Todo) => void
   readOnly?: boolean
 }
 
-export default function TodoList({ todos, onToggle, onDelete, readOnly }: Props) {
+export default function TodoList({ todos, onToggle, onDelete, onEdit, readOnly }: Props) {
   const [filter, setFilter] = useState<'toutes' | 'en_cours' | 'faites'>('en_cours')
 
   const filtered = todos.filter(t =>
@@ -95,13 +96,25 @@ export default function TodoList({ todos, onToggle, onDelete, readOnly }: Props)
                     </div>
                   </div>
 
-                  {!readOnly && onDelete && (
-                    <button
-                      onClick={() => onDelete(todo.id)}
-                      className="flex-none text-navy/20 hover:text-red-500 transition-colors mt-0.5"
-                    >
-                      <Trash2 size={13} strokeWidth={1.5} />
-                    </button>
+                  {!readOnly && (
+                    <div className="flex gap-1 mt-0.5">
+                      {onEdit && (
+                        <button
+                          onClick={() => onEdit(todo)}
+                          className="flex-none text-navy/20 hover:text-navy transition-colors"
+                        >
+                          <Pencil size={13} strokeWidth={1.5} />
+                        </button>
+                      )}
+                      {onDelete && (
+                        <button
+                          onClick={() => onDelete(todo.id)}
+                          className="flex-none text-navy/20 hover:text-red-500 transition-colors"
+                        >
+                          <Trash2 size={13} strokeWidth={1.5} />
+                        </button>
+                      )}
+                    </div>
                   )}
                 </div>
               )

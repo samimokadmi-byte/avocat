@@ -4,8 +4,9 @@ import { useAuth } from '../contexts/AuthContext'
 import {
   LayoutDashboard, FolderOpen, FileUp, MessageSquare, LogOut,
   CheckCircle2, Clock, Circle, ChevronRight, Upload, File,
-  FileText, Trash2, Menu, X, Shield
+  FileText, Trash2, Menu, X, Shield, CalendarDays
 } from 'lucide-react'
+import CalendarView, { Appointment } from '../components/CalendarView'
 
 // ─── Types ───────────────────────────────────────────────────────────────────
 
@@ -336,6 +337,61 @@ function Documents({ documents, setDocuments }: { documents: Document[]; setDocu
   )
 }
 
+// ─── Rendez-vous ─────────────────────────────────────────────────────────────
+
+function Rendezvous({ rdvs }: { rdvs: Appointment[] }) {
+  const [selectedDate, setSelectedDate] = useState<string | null>(null)
+  const upcoming = [...rdvs]
+    .filter(r => r.date >= new Date().toISOString().split('T')[0])
+    .sort((a, b) => a.date.localeCompare(b.date))
+
+  return (
+    <div className="flex flex-col gap-6">
+      <div>
+        <p className="text-xs font-medium tracking-[0.2em] uppercase text-navy/40 mb-2">Agenda</p>
+        <h2 className="font-serif text-2xl text-navy">Mes Rendez-vous</h2>
+      </div>
+
+      <CalendarView
+        appointments={rdvs}
+        selectedDate={selectedDate}
+        onSelectDate={setSelectedDate}
+        readOnly={false}
+      />
+
+      {upcoming.length > 0 && (
+        <div>
+          <p className="text-xs font-medium text-navy/40 uppercase tracking-wide mb-3">Prochains rendez-vous</p>
+          <div className="flex flex-col gap-px bg-navy/10">
+            {upcoming.slice(0, 4).map(r => (
+              <div key={r.id} className="bg-offwhite px-6 py-4 flex items-center gap-4">
+                <div className="flex-none text-center w-10">
+                  <p className="text-xs font-bold text-navy leading-none">
+                    {new Date(r.date + 'T12:00:00').toLocaleDateString('fr-FR', { day: 'numeric' })}
+                  </p>
+                  <p className="text-[10px] text-navy/40 uppercase">
+                    {new Date(r.date + 'T12:00:00').toLocaleDateString('fr-FR', { month: 'short' })}
+                  </p>
+                </div>
+                <div className="w-px h-8 bg-navy/10 flex-none" />
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm font-medium text-navy truncate">{r.title}</p>
+                  <p className="text-xs text-navy/40 mt-0.5">{r.time} · {r.type === 'visio' ? 'Visioconférence' : r.type === 'presentiel' ? 'Présentiel' : 'Téléphone'}</p>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      <div className="border border-navy/10 px-6 py-4 text-sm text-navy/50">
+        Pour modifier ou annuler un rendez-vous, contactez le cabinet à{' '}
+        <a href="mailto:contact@samimokadmi-avocat.fr" className="text-navy underline">contact@samimokadmi-avocat.fr</a>
+      </div>
+    </div>
+  )
+}
+
 // ─── Messagerie ───────────────────────────────────────────────────────────────
 
 function Messagerie() {
@@ -365,6 +421,7 @@ const navItems = [
   { id: 'apercu', label: 'Aperçu', icon: LayoutDashboard },
   { id: 'dossiers', label: 'Dossiers', icon: FolderOpen },
   { id: 'documents', label: 'Documents', icon: FileUp },
+  { id: 'rendezvous', label: 'Agenda', icon: CalendarDays },
   { id: 'messagerie', label: 'Messagerie', icon: MessageSquare },
 ]
 
@@ -376,6 +433,7 @@ export default function DashboardPage() {
 
   const [dossiers] = useLocalState<Dossier[]>(`avocat_dossiers_${user?.id}`, [])
   const [documents, setDocuments] = useLocalState<Document[]>(`avocat_documents_${user?.id}`, [])
+  const [rdvs] = useLocalState<Appointment[]>(`avocat_rdv_${user?.id}`, [])
 
   const handleLogout = () => { logout(); navigate('/') }
 
@@ -459,6 +517,7 @@ export default function DashboardPage() {
           {tab === 'apercu' && <Apercu dossiers={dossiers} documents={documents} userName={user?.name ?? ''} />}
           {tab === 'dossiers' && <Dossiers dossiers={dossiers} />}
           {tab === 'documents' && <Documents documents={documents} setDocuments={setDocuments} />}
+          {tab === 'rendezvous' && <Rendezvous rdvs={rdvs} />}
           {tab === 'messagerie' && <Messagerie />}
         </main>
       </div>

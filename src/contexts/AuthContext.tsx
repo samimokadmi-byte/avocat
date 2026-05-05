@@ -89,6 +89,10 @@ export function useAuth() {
 }
 
 function seedDemoData(userId: string) {
+  const today = new Date()
+  const fmt = (d: Date) => d.toISOString().split('T')[0]
+  const addDays = (n: number) => { const d = new Date(today); d.setDate(d.getDate() + n); return d }
+
   const dossiers = [
     {
       id: crypto.randomUUID(),
@@ -133,6 +137,13 @@ function seedDemoData(userId: string) {
       ],
     },
   ]
+  const rdvs = [
+    { id: crypto.randomUUID(), title: 'Point d\'avancement — Série A', date: fmt(addDays(3)), time: '10:00', type: 'visio', notes: 'Revue du term sheet avec l\'investisseur lead.', clientId: userId },
+    { id: crypto.randomUUID(), title: 'Signature pacte d\'associés', date: fmt(addDays(7)), time: '14:30', type: 'presentiel', notes: 'Réunion au cabinet. Prévoir les documents constitutifs.', clientId: userId },
+    { id: crypto.randomUUID(), title: 'Consultation RGPD', date: fmt(addDays(14)), time: '11:00', type: 'telephone', notes: 'Premier point sur le plan de conformité.', clientId: userId },
+  ]
+
   localStorage.setItem(`avocat_dossiers_${userId}`, JSON.stringify(dossiers))
   localStorage.setItem(`avocat_documents_${userId}`, JSON.stringify([]))
+  localStorage.setItem(`avocat_rdv_${userId}`, JSON.stringify(rdvs))
 }

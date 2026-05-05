@@ -9,6 +9,7 @@ export interface Appointment {
   type: 'visio' | 'presentiel' | 'telephone'
   notes?: string
   clientId: string
+  dossierId?: string
 }
 
 const TYPE_LABEL: Record<Appointment['type'], string> = {

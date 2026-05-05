@@ -4,10 +4,11 @@ import { useAuth } from '../contexts/AuthContext'
 import {
   LayoutDashboard, FolderOpen, FileUp, MessageSquare, LogOut,
   CheckCircle2, Clock, Circle, ChevronRight, Upload, File,
-  FileText, Trash2, Menu, X, Shield, CalendarDays, Plus, Pencil
+  FileText, Trash2, Menu, X, Shield, CalendarDays, Plus, Pencil, Bell
 } from 'lucide-react'
 import CalendarView, { Appointment } from '../components/CalendarView'
 import TodoList, { Todo } from '../components/TodoList'
+import { useReminders } from '../hooks/useReminders'
 
 // ─── Types ───────────────────────────────────────────────────────────────────
 
@@ -130,10 +131,15 @@ function Apercu({ dossiers, documents, userName }: { dossiers: Dossier[]; docume
 
 // ─── Dossiers ─────────────────────────────────────────────────────────────────
 
-function Dossiers({ dossiers }: { dossiers: Dossier[] }) {
+function Dossiers({ dossiers, rdvs, todos }: { dossiers: Dossier[]; rdvs: Appointment[]; todos: Todo[] }) {
   const [selected, setSelected] = useState<Dossier | null>(null)
 
   if (selected) {
+    const linkedRdvs = rdvs
+      .filter(r => r.dossierId === selected.id)
+      .sort((a, b) => a.date.localeCompare(b.date))
+    const linkedTodos = todos.filter(t => t.dossierId === selected.id)
+
     return (
       <div className="flex flex-col gap-6">
         <button
@@ -189,6 +195,44 @@ function Dossiers({ dossiers }: { dossiers: Dossier[] }) {
             </p>
           </div>
         )}
+
+        {linkedRdvs.length > 0 && (
+          <div>
+            <p className="text-xs font-medium text-navy/40 uppercase tracking-wide mb-3">Rendez-vous liés</p>
+            <div className="flex flex-col gap-px bg-navy/10">
+              {linkedRdvs.map(r => (
+                <div key={r.id} className="bg-offwhite px-5 py-3 flex items-center gap-3">
+                  <CalendarDays size={13} strokeWidth={1.25} className="text-navy/30 flex-none" />
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-medium text-navy truncate">{r.title}</p>
+                    <p className="text-xs text-navy/40 mt-0.5">
+                      {new Date(r.date + 'T12:00:00').toLocaleDateString('fr-FR', { weekday: 'short', day: 'numeric', month: 'short' })} · {r.time}
+                    </p>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {linkedTodos.length > 0 && (
+          <div>
+            <p className="text-xs font-medium text-navy/40 uppercase tracking-wide mb-3">Tâches liées</p>
+            <div className="flex flex-col gap-px bg-navy/10">
+              {linkedTodos.map(t => (
+                <div key={t.id} className={`bg-offwhite px-5 py-3 flex items-center gap-3 ${t.done ? 'opacity-50' : ''}`}>
+                  {t.done
+                    ? <CheckCircle2 size={13} strokeWidth={1.5} className="text-navy flex-none" />
+                    : <Circle size={13} strokeWidth={1.5} className="text-navy/30 flex-none" />}
+                  <p className={`text-sm flex-1 min-w-0 truncate ${t.done ? 'line-through text-navy/40' : 'text-navy font-medium'}`}>{t.title}</p>
+                  {t.priority === 'urgente' && !t.done && (
+                    <span className="text-[10px] font-semibold text-red-600 flex-none">Urgent</span>
+                  )}
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
       </div>
     )
   }
@@ -201,34 +245,44 @@ function Dossiers({ dossiers }: { dossiers: Dossier[] }) {
       </div>
 
       <div className="flex flex-col gap-px bg-navy/10">
-        {dossiers.map(dossier => (
-          <button
-            key={dossier.id}
-            onClick={() => setSelected(dossier)}
-            className="bg-offwhite px-8 py-6 flex items-center justify-between gap-4 text-left hover:bg-navy/[0.02] transition-colors group"
-          >
-            <div className="flex items-start gap-4 min-w-0">
-              <FolderOpen size={16} strokeWidth={1.25} className="text-navy/30 flex-none mt-0.5" />
-              <div className="min-w-0">
-                <p className="text-sm font-medium text-navy mb-1">{dossier.titre}</p>
-                <p className="text-xs text-navy/40 truncate">{dossier.description}</p>
-                <div className="flex items-center gap-3 mt-2">
-                  <span className="text-xs text-navy/30">
-                    Ouvert le {new Date(dossier.dateOuverture).toLocaleDateString('fr-FR', { day: 'numeric', month: 'short', year: 'numeric' })}
-                  </span>
-                  <span className="text-xs text-navy/20">·</span>
-                  <span className="text-xs text-navy/30">
-                    {dossier.etapes.filter(e => e.statut === 'done').length}/{dossier.etapes.length} étapes
-                  </span>
+        {dossiers.map(dossier => {
+          const rdvCount = rdvs.filter(r => r.dossierId === dossier.id).length
+          const todoCount = todos.filter(t => t.dossierId === dossier.id && !t.done).length
+          return (
+            <button
+              key={dossier.id}
+              onClick={() => setSelected(dossier)}
+              className="bg-offwhite px-8 py-6 flex items-center justify-between gap-4 text-left hover:bg-navy/[0.02] transition-colors group"
+            >
+              <div className="flex items-start gap-4 min-w-0">
+                <FolderOpen size={16} strokeWidth={1.25} className="text-navy/30 flex-none mt-0.5" />
+                <div className="min-w-0">
+                  <p className="text-sm font-medium text-navy mb-1">{dossier.titre}</p>
+                  <p className="text-xs text-navy/40 truncate">{dossier.description}</p>
+                  <div className="flex items-center gap-3 mt-2 flex-wrap">
+                    <span className="text-xs text-navy/30">
+                      Ouvert le {new Date(dossier.dateOuverture).toLocaleDateString('fr-FR', { day: 'numeric', month: 'short', year: 'numeric' })}
+                    </span>
+                    <span className="text-xs text-navy/20">·</span>
+                    <span className="text-xs text-navy/30">
+                      {dossier.etapes.filter(e => e.statut === 'done').length}/{dossier.etapes.length} étapes
+                    </span>
+                    {rdvCount > 0 && (
+                      <span className="text-xs text-blue-500">{rdvCount} RDV</span>
+                    )}
+                    {todoCount > 0 && (
+                      <span className="text-xs text-amber-600">{todoCount} tâche{todoCount > 1 ? 's' : ''}</span>
+                    )}
+                  </div>
                 </div>
               </div>
-            </div>
-            <div className="flex items-center gap-3 flex-none">
-              <StatusBadge statut={dossier.statut} />
-              <ChevronRight size={14} strokeWidth={1.5} className="text-navy/20 group-hover:text-navy/50 transition-colors" />
-            </div>
-          </button>
-        ))}
+              <div className="flex items-center gap-3 flex-none">
+                <StatusBadge statut={dossier.statut} />
+                <ChevronRight size={14} strokeWidth={1.5} className="text-navy/20 group-hover:text-navy/50 transition-colors" />
+              </div>
+            </button>
+          )
+        })}
       </div>
     </div>
   )
@@ -340,15 +394,18 @@ function Documents({ documents, setDocuments }: { documents: Document[]; setDocu
 
 // ─── Rendez-vous + Todos ──────────────────────────────────────────────────────
 
-function Rendezvous({ rdvs, setRdvs, todos, setTodos, userId }: {
+function Rendezvous({ rdvs, setRdvs, todos, setTodos, userId, dossiers }: {
   rdvs: Appointment[]
   setRdvs: (r: Appointment[] | ((prev: Appointment[]) => Appointment[])) => void
   todos: Todo[]
   setTodos: (t: Todo[] | ((prev: Todo[]) => Todo[])) => void
   userId: string
+  dossiers: Dossier[]
 }) {
   const [selectedDate, setSelectedDate] = useState<string | null>(null)
   const [section, setSection] = useState<'rdv' | 'todo'>('rdv')
+
+  const dossierMap: Record<string, string> = Object.fromEntries(dossiers.map(d => [d.id, d.titre]))
 
   // RDV state
   const [showRdvForm, setShowRdvForm] = useState(false)
@@ -356,12 +413,16 @@ function Rendezvous({ rdvs, setRdvs, todos, setTodos, userId }: {
   const [rdvForm, setRdvForm] = useState({
     title: '', date: new Date().toISOString().split('T')[0],
     time: '10:00', type: 'visio' as Appointment['type'], notes: '',
+    dossierId: undefined as string | undefined,
   })
 
   // Todo state
   const [showTodoForm, setShowTodoForm] = useState(false)
   const [editTodo, setEditTodo] = useState<Todo | null>(null)
-  const [todoForm, setTodoForm] = useState({ title: '', priority: 'normale' as Todo['priority'], dueDate: '' })
+  const [todoForm, setTodoForm] = useState({
+    title: '', priority: 'normale' as Todo['priority'], dueDate: '',
+    dossierId: undefined as string | undefined,
+  })
 
   const upcoming = [...rdvs]
     .filter(r => r.date >= new Date().toISOString().split('T')[0])
@@ -370,12 +431,12 @@ function Rendezvous({ rdvs, setRdvs, todos, setTodos, userId }: {
   // ── RDV actions ──
   const openNewRdv = () => {
     setEditRdv(null)
-    setRdvForm({ title: '', date: selectedDate ?? new Date().toISOString().split('T')[0], time: '10:00', type: 'visio', notes: '' })
+    setRdvForm({ title: '', date: selectedDate ?? new Date().toISOString().split('T')[0], time: '10:00', type: 'visio', notes: '', dossierId: undefined })
     setShowRdvForm(true)
   }
   const openEditRdv = (r: Appointment) => {
     setEditRdv(r)
-    setRdvForm({ title: r.title, date: r.date, time: r.time, type: r.type, notes: r.notes ?? '' })
+    setRdvForm({ title: r.title, date: r.date, time: r.time, type: r.type, notes: r.notes ?? '', dossierId: r.dossierId })
     setShowRdvForm(true)
   }
   const saveRdv = () => {
@@ -394,12 +455,12 @@ function Rendezvous({ rdvs, setRdvs, todos, setTodos, userId }: {
   // ── Todo actions ──
   const openNewTodo = () => {
     setEditTodo(null)
-    setTodoForm({ title: '', priority: 'normale', dueDate: '' })
+    setTodoForm({ title: '', priority: 'normale', dueDate: '', dossierId: undefined })
     setShowTodoForm(true)
   }
   const openEditTodo = (t: Todo) => {
     setEditTodo(t)
-    setTodoForm({ title: t.title, priority: t.priority, dueDate: t.dueDate ?? '' })
+    setTodoForm({ title: t.title, priority: t.priority, dueDate: t.dueDate ?? '', dossierId: t.dossierId })
     setShowTodoForm(true)
   }
   const saveTodo = () => {
@@ -473,6 +534,13 @@ function Rendezvous({ rdvs, setRdvs, todos, setTodos, userId }: {
                   </select>
                 </div>
                 <div className="flex flex-col gap-1.5">
+                  <label className="text-xs font-medium text-navy/40 uppercase tracking-wide">Dossier <span className="normal-case text-navy/30">(optionnel)</span></label>
+                  <select value={rdvForm.dossierId ?? ''} onChange={e => setRdvForm(f => ({ ...f, dossierId: e.target.value || undefined }))} className="border-b border-navy/15 bg-transparent py-2 text-sm text-navy focus:outline-none focus:border-navy transition-colors">
+                    <option value="">— Aucun dossier —</option>
+                    {dossiers.map(d => <option key={d.id} value={d.id}>{d.titre}</option>)}
+                  </select>
+                </div>
+                <div className="flex flex-col gap-1.5">
                   <label className="text-xs font-medium text-navy/40 uppercase tracking-wide">Notes <span className="normal-case text-navy/30">(optionnel)</span></label>
                   <input type="text" value={rdvForm.notes} onChange={e => setRdvForm(f => ({ ...f, notes: e.target.value }))} placeholder="Détails, lieu, lien visio…" className="border-b border-navy/15 bg-transparent py-2 text-sm text-navy placeholder:text-navy/25 focus:outline-none focus:border-navy transition-colors" />
                 </div>
@@ -501,7 +569,14 @@ function Rendezvous({ rdvs, setRdvs, todos, setTodos, userId }: {
                     <div className="w-px h-8 bg-navy/10 flex-none" />
                     <div className="flex-1 min-w-0">
                       <p className="text-sm font-medium text-navy truncate">{r.title}</p>
-                      <p className="text-xs text-navy/40 mt-0.5">{r.time} · {rdvTypeLabel(r.type)}{r.notes ? ` · ${r.notes}` : ''}</p>
+                      <div className="flex items-center gap-2 mt-0.5 flex-wrap">
+                        <span className="text-xs text-navy/40">{r.time} · {rdvTypeLabel(r.type)}{r.notes ? ` · ${r.notes}` : ''}</span>
+                        {r.dossierId && dossierMap[r.dossierId] && (
+                          <span className="flex items-center gap-1 text-[10px] text-navy/40 border border-navy/10 px-1.5 py-0.5">
+                            <FolderOpen size={9} strokeWidth={1.5} /> {dossierMap[r.dossierId]}
+                          </span>
+                        )}
+                      </div>
                     </div>
                     <div className="flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
                       <button onClick={() => openEditRdv(r)} className="text-navy/30 hover:text-navy transition-colors p-1">
@@ -552,6 +627,13 @@ function Rendezvous({ rdvs, setRdvs, todos, setTodos, userId }: {
                   <label className="text-xs font-medium text-navy/40 uppercase tracking-wide">Échéance <span className="normal-case text-navy/30">(optionnel)</span></label>
                   <input type="date" value={todoForm.dueDate} onChange={e => setTodoForm(f => ({ ...f, dueDate: e.target.value }))} className="border-b border-navy/15 bg-transparent py-2 text-sm text-navy focus:outline-none focus:border-navy transition-colors" />
                 </div>
+                <div className="flex flex-col gap-1.5 sm:col-span-2">
+                  <label className="text-xs font-medium text-navy/40 uppercase tracking-wide">Dossier <span className="normal-case text-navy/30">(optionnel)</span></label>
+                  <select value={todoForm.dossierId ?? ''} onChange={e => setTodoForm(f => ({ ...f, dossierId: e.target.value || undefined }))} className="border-b border-navy/15 bg-transparent py-2 text-sm text-navy focus:outline-none focus:border-navy transition-colors">
+                    <option value="">— Aucun dossier —</option>
+                    {dossiers.map(d => <option key={d.id} value={d.id}>{d.titre}</option>)}
+                  </select>
+                </div>
               </div>
               <div className="flex gap-3 mt-1">
                 <button onClick={saveTodo} className="bg-navy text-offwhite text-xs font-medium px-5 py-2.5 hover:bg-navy/90 transition-colors">
@@ -562,7 +644,7 @@ function Rendezvous({ rdvs, setRdvs, todos, setTodos, userId }: {
             </div>
           )}
 
-          <TodoList todos={todos} onToggle={toggleTodo} onDelete={deleteTodo} onEdit={openEditTodo} />
+          <TodoList todos={todos} onToggle={toggleTodo} onDelete={deleteTodo} onEdit={openEditTodo} dossierMap={dossierMap} />
           {todos.length === 0 && <p className="text-sm text-navy/30 text-center py-6">Aucune tâche. Ajoutez-en une ci-dessus.</p>}
         </div>
       )}
@@ -614,6 +696,8 @@ export default function DashboardPage() {
   const [rdvs, setRdvs] = useLocalState<Appointment[]>(`avocat_rdv_${user?.id}`, [])
   const [todos, setTodos] = useLocalState<Todo[]>(`avocat_todos_${user?.id}`, [])
 
+  const { alerts, dismiss } = useReminders(rdvs, todos)
+
   const handleLogout = () => { logout(); navigate('/') }
 
   const changeTab = (id: string) => { setTab(id); setMobileOpen(false) }
@@ -627,6 +711,12 @@ export default function DashboardPage() {
           <span className="text-[10px] text-navy/40 tracking-wide">Espace Client</span>
         </Link>
         <div className="flex items-center gap-4">
+          {alerts.length > 0 && (
+            <button onClick={() => changeTab('rendezvous')} className="relative text-navy/40 hover:text-navy transition-colors" title="Rappels">
+              <Bell size={16} strokeWidth={1.5} />
+              <span className="absolute -top-1 -right-1 w-3.5 h-3.5 bg-red-500 text-white text-[8px] font-bold flex items-center justify-center">{alerts.length}</span>
+            </button>
+          )}
           <div className="hidden sm:flex flex-col items-end">
             <span className="text-xs font-medium text-navy">{user?.name}</span>
             {user?.company && <span className="text-[10px] text-navy/40">{user.company}</span>}
@@ -646,6 +736,21 @@ export default function DashboardPage() {
           </button>
         </div>
       </header>
+
+      {/* Reminder banner */}
+      {alerts.length > 0 && (
+        <div className="border-b border-amber-200 bg-amber-50 px-6 py-2.5 flex flex-col gap-1.5">
+          {alerts.map(alert => (
+            <div key={alert.id} className="flex items-center gap-3 max-w-3xl">
+              <Bell size={12} strokeWidth={1.5} className={`flex-none ${alert.urgency === 'high' ? 'text-red-500' : 'text-amber-600'}`} />
+              <p className={`text-xs flex-1 ${alert.urgency === 'high' ? 'text-red-700 font-medium' : 'text-amber-700'}`}>{alert.message}</p>
+              <button onClick={() => dismiss(alert.id)} className="text-navy/30 hover:text-navy transition-colors flex-none" aria-label="Fermer">
+                <X size={11} strokeWidth={1.5} />
+              </button>
+            </div>
+          ))}
+        </div>
+      )}
 
       <div className="flex flex-1">
         {/* Sidebar desktop */}
@@ -694,9 +799,9 @@ export default function DashboardPage() {
         {/* Main content */}
         <main className="flex-1 px-6 md:px-12 py-10 max-w-3xl">
           {tab === 'apercu' && <Apercu dossiers={dossiers} documents={documents} userName={user?.name ?? ''} />}
-          {tab === 'dossiers' && <Dossiers dossiers={dossiers} />}
+          {tab === 'dossiers' && <Dossiers dossiers={dossiers} rdvs={rdvs} todos={todos} />}
           {tab === 'documents' && <Documents documents={documents} setDocuments={setDocuments} />}
-          {tab === 'rendezvous' && <Rendezvous rdvs={rdvs} setRdvs={setRdvs} todos={todos} setTodos={setTodos} userId={user?.id ?? ''} />}
+          {tab === 'rendezvous' && <Rendezvous rdvs={rdvs} setRdvs={setRdvs} todos={todos} setTodos={setTodos} userId={user?.id ?? ''} dossiers={dossiers} />}
           {tab === 'messagerie' && <Messagerie />}
         </main>
       </div>

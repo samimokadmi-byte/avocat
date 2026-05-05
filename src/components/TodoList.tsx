@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { CheckSquare, Square, Trash2, AlertCircle, Clock, Pencil } from 'lucide-react'
+import { CheckSquare, Square, Trash2, AlertCircle, Clock, Pencil, FolderOpen } from 'lucide-react'
 
 export interface Todo {
   id: string
@@ -9,8 +9,8 @@ export interface Todo {
   dueDate?: string // YYYY-MM-DD
   clientId: string
   createdAt: string
+  dossierId?: string
 }
-
 
 interface Props {
   todos: Todo[]
@@ -18,9 +18,10 @@ interface Props {
   onDelete?: (id: string) => void
   onEdit?: (todo: Todo) => void
   readOnly?: boolean
+  dossierMap?: Record<string, string>
 }
 
-export default function TodoList({ todos, onToggle, onDelete, onEdit, readOnly }: Props) {
+export default function TodoList({ todos, onToggle, onDelete, onEdit, readOnly, dossierMap }: Props) {
   const [filter, setFilter] = useState<'toutes' | 'en_cours' | 'faites'>('en_cours')
 
   const filtered = todos.filter(t =>
@@ -64,6 +65,7 @@ export default function TodoList({ todos, onToggle, onDelete, onEdit, readOnly }
             })
             .map(todo => {
               const overdue = !todo.done && todo.dueDate && todo.dueDate < todayStr
+              const dossierName = todo.dossierId && dossierMap ? dossierMap[todo.dossierId] : undefined
               return (
                 <div key={todo.id} className={`bg-offwhite px-5 py-4 flex items-start gap-3 ${todo.done ? 'opacity-50' : ''}`}>
                   <button
@@ -91,6 +93,11 @@ export default function TodoList({ todos, onToggle, onDelete, onEdit, readOnly }
                           <Clock size={10} strokeWidth={1.5} />
                           {overdue ? 'En retard · ' : ''}
                           {new Date(todo.dueDate + 'T12:00:00').toLocaleDateString('fr-FR', { day: 'numeric', month: 'short' })}
+                        </span>
+                      )}
+                      {dossierName && (
+                        <span className="flex items-center gap-1 text-[10px] text-navy/40 border border-navy/10 px-1.5 py-0.5">
+                          <FolderOpen size={9} strokeWidth={1.5} /> {dossierName}
                         </span>
                       )}
                     </div>

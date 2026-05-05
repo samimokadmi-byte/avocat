@@ -25,27 +25,31 @@ interface Dossier {
   etapes: Etape[]
 }
 
-interface Document {
+export interface Document {
   id: string
   name: string
   size: number
   type: string
   uploadedAt: string
   dossierId?: string
+  content?: string // base64
 }
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
 
-function useLocalState<T>(key: string, fallback: T) {
+function useLocalState<T>(key: string, fallback: T): [T, (val: T | ((prev: T) => T)) => void] {
   const [state, setStateRaw] = useState<T>(() => {
     try { return JSON.parse(localStorage.getItem(key) ?? 'null') ?? fallback }
     catch { return fallback }
   })
-  const setState = (val: T) => {
-    setStateRaw(val)
-    localStorage.setItem(key, JSON.stringify(val))
+  const setState = (val: T | ((prev: T) => T)) => {
+    setStateRaw(prev => {
+      const next = typeof val === 'function' ? (val as (p: T) => T)(prev) : val
+      localStorage.setItem(key, JSON.stringify(next))
+      return next
+    })
   }
-  return [state, setState] as const
+  return [state, setState]
 }
 
 function formatSize(bytes: number) {
@@ -230,20 +234,27 @@ function Dossiers({ dossiers }: { dossiers: Dossier[] }) {
 
 // ─── Documents ────────────────────────────────────────────────────────────────
 
-function Documents({ documents, setDocuments }: { documents: Document[]; setDocuments: (d: Document[]) => void }) {
+function Documents({ documents, setDocuments }: { documents: Document[]; setDocuments: (d: Document[] | ((prev: Document[]) => Document[])) => void }) {
   const [dragging, setDragging] = useState(false)
   const inputRef = useRef<HTMLInputElement>(null)
 
   const addFiles = (files: FileList | null) => {
     if (!files) return
-    const newDocs: Document[] = Array.from(files).map(f => ({
-      id: crypto.randomUUID(),
-      name: f.name,
-      size: f.size,
-      type: f.type,
-      uploadedAt: new Date().toISOString(),
-    }))
-    setDocuments([...documents, ...newDocs])
+    Array.from(files).forEach(f => {
+      const reader = new FileReader()
+      reader.onload = () => {
+        const doc: Document = {
+          id: crypto.randomUUID(),
+          name: f.name,
+          size: f.size,
+          type: f.type,
+          uploadedAt: new Date().toISOString(),
+          content: reader.result as string,
+        }
+        setDocuments((prev: Document[]) => [...prev, doc])
+      }
+      reader.readAsDataURL(f)
+    })
   }
 
   const onDrop = (e: DragEvent) => {

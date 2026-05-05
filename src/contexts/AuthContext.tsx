@@ -143,7 +143,15 @@ function seedDemoData(userId: string) {
     { id: crypto.randomUUID(), title: 'Consultation RGPD', date: fmt(addDays(14)), time: '11:00', type: 'telephone', notes: 'Premier point sur le plan de conformité.', clientId: userId },
   ]
 
+  const todos = [
+    { id: crypto.randomUUID(), title: 'Envoyer les statuts mis à jour', done: false, priority: 'urgente', dueDate: fmt(addDays(2)), clientId: userId, createdAt: today.toISOString() },
+    { id: crypto.randomUUID(), title: 'Préparer le cap table pour la data room', done: false, priority: 'urgente', dueDate: fmt(addDays(5)), clientId: userId, createdAt: today.toISOString() },
+    { id: crypto.randomUUID(), title: 'Valider les clauses de liquidité préférentielle', done: false, priority: 'normale', dueDate: fmt(addDays(10)), clientId: userId, createdAt: today.toISOString() },
+    { id: crypto.randomUUID(), title: 'Transmettre les 3 dernières liasses fiscales', done: true, priority: 'normale', clientId: userId, createdAt: today.toISOString() },
+  ]
+
   localStorage.setItem(`avocat_dossiers_${userId}`, JSON.stringify(dossiers))
   localStorage.setItem(`avocat_documents_${userId}`, JSON.stringify([]))
   localStorage.setItem(`avocat_rdv_${userId}`, JSON.stringify(rdvs))
+  localStorage.setItem(`avocat_todos_${userId}`, JSON.stringify(todos))
 }

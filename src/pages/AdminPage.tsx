@@ -3,6 +3,7 @@ import { Link, useNavigate } from 'react-router-dom'
 import { useAuth, User } from '../contexts/AuthContext'
 import { Document } from './DashboardPage'
 import CalendarView, { Appointment } from '../components/CalendarView'
+import TodoList, { Todo } from '../components/TodoList'
 import {
   LayoutDashboard, Users, FileUp, LogOut, ChevronRight,
   Download, Trash2, CheckCircle2, Clock, Circle, Search,
@@ -105,6 +106,14 @@ function saveRdvForClient(clientId: string, rdvs: Appointment[]) {
 
 function getRdvsForClient(clientId: string): Appointment[] {
   return JSON.parse(localStorage.getItem(`avocat_rdv_${clientId}`) || '[]')
+}
+
+function getTodosForClient(clientId: string): Todo[] {
+  return JSON.parse(localStorage.getItem(`avocat_todos_${clientId}`) || '[]')
+}
+
+function saveTodosForClient(clientId: string, todos: Todo[]) {
+  localStorage.setItem(`avocat_todos_${clientId}`, JSON.stringify(todos))
 }
 
 // ─── Vue d'ensemble ───────────────────────────────────────────────────────────
@@ -487,127 +496,215 @@ function AllDocuments({ clients, onRefresh }: { clients: ClientData[]; onRefresh
 function AgendaAdmin({ clients, onRefresh }: { clients: ClientData[]; onRefresh: () => void }) {
   const allRdvs = useMemo(() => getAllRdvs(), [clients])
   const [selectedDate, setSelectedDate] = useState<string | null>(null)
-  const [showForm, setShowForm] = useState(false)
-  const [form, setForm] = useState({
+  const [activeSection, setActiveSection] = useState<'rdv' | 'todo'>('rdv')
+
+  // RDV form
+  const [showRdvForm, setShowRdvForm] = useState(false)
+  const [rdvForm, setRdvForm] = useState({
     clientId: clients[0]?.user.id ?? '',
-    title: '',
-    date: selectedDate ?? new Date().toISOString().split('T')[0],
-    time: '10:00',
-    type: 'visio' as Appointment['type'],
-    notes: '',
+    title: '', date: new Date().toISOString().split('T')[0],
+    time: '10:00', type: 'visio' as Appointment['type'], notes: '',
   })
 
-  const handleCreate = () => {
-    if (!form.title || !form.date || !form.clientId) return
-    const existing = getRdvsForClient(form.clientId)
-    const newRdv: Appointment = { ...form, id: crypto.randomUUID() }
-    saveRdvForClient(form.clientId, [...existing, newRdv])
-    setShowForm(false)
-    setForm(f => ({ ...f, title: '', notes: '' }))
+  // Todo form
+  const [showTodoForm, setShowTodoForm] = useState(false)
+  const [todoForm, setTodoForm] = useState({
+    clientId: clients[0]?.user.id ?? '',
+    title: '', priority: 'normale' as Todo['priority'], dueDate: '',
+  })
+
+  // All todos
+  const allTodos = useMemo(() =>
+    clients.flatMap(c => getTodosForClient(c.user.id).map(t => ({ ...t, clientName: c.user.name }))),
+    [clients]
+  )
+
+  const handleCreateRdv = () => {
+    if (!rdvForm.title || !rdvForm.date || !rdvForm.clientId) return
+    const newRdv: Appointment = { ...rdvForm, id: crypto.randomUUID() }
+    saveRdvForClient(rdvForm.clientId, [...getRdvsForClient(rdvForm.clientId), newRdv])
+    setShowRdvForm(false)
+    setRdvForm(f => ({ ...f, title: '', notes: '' }))
     onRefresh()
   }
 
-  const handleDelete = (rdv: Appointment & { clientName: string }) => {
-    const existing = getRdvsForClient(rdv.clientId)
-    saveRdvForClient(rdv.clientId, existing.filter(r => r.id !== rdv.id))
+  const handleDeleteRdv = (rdv: Appointment & { clientName: string }) => {
+    saveRdvForClient(rdv.clientId, getRdvsForClient(rdv.clientId).filter(r => r.id !== rdv.id))
+    onRefresh()
+  }
+
+  const handleCreateTodo = () => {
+    if (!todoForm.title || !todoForm.clientId) return
+    const newTodo: Todo = {
+      id: crypto.randomUUID(), title: todoForm.title,
+      done: false, priority: todoForm.priority,
+      dueDate: todoForm.dueDate || undefined,
+      clientId: todoForm.clientId, createdAt: new Date().toISOString(),
+    }
+    saveTodosForClient(todoForm.clientId, [...getTodosForClient(todoForm.clientId), newTodo])
+    setShowTodoForm(false)
+    setTodoForm(f => ({ ...f, title: '', dueDate: '' }))
+    onRefresh()
+  }
+
+  const handleDeleteTodo = (todo: Todo & { clientName: string }) => {
+    saveTodosForClient(todo.clientId, getTodosForClient(todo.clientId).filter(t => t.id !== todo.id))
+    onRefresh()
+  }
+
+  const handleToggleTodo = (todo: Todo & { clientName: string }) => {
+    const existing = getTodosForClient(todo.clientId)
+    saveTodosForClient(todo.clientId, existing.map(t => t.id === todo.id ? { ...t, done: !t.done } : t))
     onRefresh()
   }
 
   return (
     <div className="flex flex-col gap-6">
-      <div className="flex items-center justify-between gap-4">
-        <div>
-          <p className="text-xs font-medium tracking-[0.2em] uppercase text-navy/40 mb-2">Agenda</p>
-          <h2 className="font-serif text-2xl text-navy">{allRdvs.length} rendez-vous planifiés</h2>
-        </div>
-        <button
-          onClick={() => { setShowForm(v => !v); if (selectedDate) setForm(f => ({ ...f, date: selectedDate })) }}
-          className="flex items-center gap-2 bg-navy text-offwhite text-xs font-medium px-4 py-2.5 hover:bg-navy/90 transition-colors"
-        >
-          <Plus size={13} strokeWidth={1.5} /> Nouveau RDV
-        </button>
+      <div>
+        <p className="text-xs font-medium tracking-[0.2em] uppercase text-navy/40 mb-2">Agenda</p>
+        <h2 className="font-serif text-2xl text-navy">Planning & Tâches</h2>
       </div>
 
-      {/* Form */}
-      {showForm && (
-        <div className="border border-navy/15 p-6 flex flex-col gap-4">
-          <div className="flex items-center justify-between">
-            <p className="text-sm font-medium text-navy">Créer un rendez-vous</p>
-            <button onClick={() => setShowForm(false)} className="text-navy/30 hover:text-navy transition-colors">
-              <X size={14} strokeWidth={1.5} />
+      {/* Section tabs */}
+      <div className="flex gap-1 border-b border-navy/10 pb-0">
+        {(['rdv', 'todo'] as const).map(s => (
+          <button key={s} onClick={() => setActiveSection(s)}
+            className={`text-sm font-medium px-4 py-2 border-b-2 transition-colors ${activeSection === s ? 'border-navy text-navy' : 'border-transparent text-navy/40 hover:text-navy'}`}>
+            {s === 'rdv' ? `Rendez-vous (${allRdvs.length})` : `To-Do (${allTodos.filter(t => !t.done).length} en cours)`}
+          </button>
+        ))}
+      </div>
+
+      {/* ── RDV section ── */}
+      {activeSection === 'rdv' && (
+        <>
+          <div className="flex justify-end">
+            <button onClick={() => setShowRdvForm(v => !v)}
+              className="flex items-center gap-2 bg-navy text-offwhite text-xs font-medium px-4 py-2.5 hover:bg-navy/90 transition-colors">
+              <Plus size={13} strokeWidth={1.5} /> Nouveau RDV
             </button>
           </div>
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <div className="flex flex-col gap-1.5 sm:col-span-2">
-              <label className="text-xs font-medium text-navy/40 uppercase tracking-wide">Client</label>
-              <select
-                value={form.clientId}
-                onChange={e => setForm(f => ({ ...f, clientId: e.target.value }))}
-                className="border-b border-navy/15 bg-transparent py-2 text-sm text-navy focus:outline-none focus:border-navy transition-colors"
-              >
-                {clients.map(c => <option key={c.user.id} value={c.user.id}>{c.user.name}{c.user.company ? ` — ${c.user.company}` : ''}</option>)}
-              </select>
+
+          {showRdvForm && (
+            <div className="border border-navy/15 p-6 flex flex-col gap-4">
+              <div className="flex items-center justify-between">
+                <p className="text-sm font-medium text-navy">Créer un rendez-vous</p>
+                <button onClick={() => setShowRdvForm(false)} className="text-navy/30 hover:text-navy transition-colors"><X size={14} strokeWidth={1.5} /></button>
+              </div>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div className="flex flex-col gap-1.5 sm:col-span-2">
+                  <label className="text-xs font-medium text-navy/40 uppercase tracking-wide">Client</label>
+                  <select value={rdvForm.clientId} onChange={e => setRdvForm(f => ({ ...f, clientId: e.target.value }))} className="border-b border-navy/15 bg-transparent py-2 text-sm text-navy focus:outline-none focus:border-navy transition-colors">
+                    {clients.map(c => <option key={c.user.id} value={c.user.id}>{c.user.name}{c.user.company ? ` — ${c.user.company}` : ''}</option>)}
+                  </select>
+                </div>
+                <div className="flex flex-col gap-1.5 sm:col-span-2">
+                  <label className="text-xs font-medium text-navy/40 uppercase tracking-wide">Titre</label>
+                  <input type="text" value={rdvForm.title} onChange={e => setRdvForm(f => ({ ...f, title: e.target.value }))} placeholder="Ex: Point d'avancement Série A" className="border-b border-navy/15 bg-transparent py-2 text-sm text-navy placeholder:text-navy/25 focus:outline-none focus:border-navy" />
+                </div>
+                <div className="flex flex-col gap-1.5">
+                  <label className="text-xs font-medium text-navy/40 uppercase tracking-wide">Date</label>
+                  <input type="date" value={rdvForm.date} onChange={e => setRdvForm(f => ({ ...f, date: e.target.value }))} className="border-b border-navy/15 bg-transparent py-2 text-sm text-navy focus:outline-none focus:border-navy" />
+                </div>
+                <div className="flex flex-col gap-1.5">
+                  <label className="text-xs font-medium text-navy/40 uppercase tracking-wide">Heure</label>
+                  <input type="time" value={rdvForm.time} onChange={e => setRdvForm(f => ({ ...f, time: e.target.value }))} className="border-b border-navy/15 bg-transparent py-2 text-sm text-navy focus:outline-none focus:border-navy" />
+                </div>
+                <div className="flex flex-col gap-1.5">
+                  <label className="text-xs font-medium text-navy/40 uppercase tracking-wide">Type</label>
+                  <select value={rdvForm.type} onChange={e => setRdvForm(f => ({ ...f, type: e.target.value as Appointment['type'] }))} className="border-b border-navy/15 bg-transparent py-2 text-sm text-navy focus:outline-none focus:border-navy">
+                    <option value="visio">Visioconférence</option>
+                    <option value="presentiel">Présentiel</option>
+                    <option value="telephone">Téléphone</option>
+                  </select>
+                </div>
+                <div className="flex flex-col gap-1.5">
+                  <label className="text-xs font-medium text-navy/40 uppercase tracking-wide">Notes</label>
+                  <input type="text" value={rdvForm.notes} onChange={e => setRdvForm(f => ({ ...f, notes: e.target.value }))} placeholder="Optionnel" className="border-b border-navy/15 bg-transparent py-2 text-sm text-navy placeholder:text-navy/25 focus:outline-none focus:border-navy" />
+                </div>
+              </div>
+              <button onClick={handleCreateRdv} className="self-start bg-navy text-offwhite text-xs font-medium px-5 py-2.5 hover:bg-navy/90 transition-colors">Créer le rendez-vous</button>
             </div>
-            <div className="flex flex-col gap-1.5 sm:col-span-2">
-              <label className="text-xs font-medium text-navy/40 uppercase tracking-wide">Titre</label>
-              <input type="text" value={form.title} onChange={e => setForm(f => ({ ...f, title: e.target.value }))} placeholder="Ex: Point d'avancement Série A" className="border-b border-navy/15 bg-transparent py-2 text-sm text-navy placeholder:text-navy/25 focus:outline-none focus:border-navy transition-colors" />
-            </div>
-            <div className="flex flex-col gap-1.5">
-              <label className="text-xs font-medium text-navy/40 uppercase tracking-wide">Date</label>
-              <input type="date" value={form.date} onChange={e => setForm(f => ({ ...f, date: e.target.value }))} className="border-b border-navy/15 bg-transparent py-2 text-sm text-navy focus:outline-none focus:border-navy transition-colors" />
-            </div>
-            <div className="flex flex-col gap-1.5">
-              <label className="text-xs font-medium text-navy/40 uppercase tracking-wide">Heure</label>
-              <input type="time" value={form.time} onChange={e => setForm(f => ({ ...f, time: e.target.value }))} className="border-b border-navy/15 bg-transparent py-2 text-sm text-navy focus:outline-none focus:border-navy transition-colors" />
-            </div>
-            <div className="flex flex-col gap-1.5">
-              <label className="text-xs font-medium text-navy/40 uppercase tracking-wide">Type</label>
-              <select value={form.type} onChange={e => setForm(f => ({ ...f, type: e.target.value as Appointment['type'] }))} className="border-b border-navy/15 bg-transparent py-2 text-sm text-navy focus:outline-none focus:border-navy transition-colors">
-                <option value="visio">Visioconférence</option>
-                <option value="presentiel">Présentiel</option>
-                <option value="telephone">Téléphone</option>
-              </select>
-            </div>
-            <div className="flex flex-col gap-1.5">
-              <label className="text-xs font-medium text-navy/40 uppercase tracking-wide">Notes</label>
-              <input type="text" value={form.notes} onChange={e => setForm(f => ({ ...f, notes: e.target.value }))} placeholder="Optionnel" className="border-b border-navy/15 bg-transparent py-2 text-sm text-navy placeholder:text-navy/25 focus:outline-none focus:border-navy transition-colors" />
-            </div>
+          )}
+
+          <CalendarView appointments={allRdvs} selectedDate={selectedDate} onSelectDate={date => { setSelectedDate(date); setRdvForm(f => ({ ...f, date })) }} />
+
+          <div>
+            <p className="text-xs font-medium text-navy/40 uppercase tracking-wide mb-3">Tous les rendez-vous</p>
+            {allRdvs.length === 0 ? (
+              <div className="border border-navy/10 px-6 py-8 text-center text-sm text-navy/30">Aucun rendez-vous planifié.</div>
+            ) : (
+              <div className="flex flex-col gap-px bg-navy/10">
+                {[...allRdvs].sort((a, b) => a.date.localeCompare(b.date)).map(rdv => (
+                  <div key={rdv.id} className="bg-offwhite px-6 py-4 flex items-center gap-4">
+                    <div className="flex-none text-center w-10">
+                      <p className="text-xs font-bold text-navy">{new Date(rdv.date + 'T12:00:00').toLocaleDateString('fr-FR', { day: 'numeric' })}</p>
+                      <p className="text-[10px] text-navy/40 uppercase">{new Date(rdv.date + 'T12:00:00').toLocaleDateString('fr-FR', { month: 'short' })}</p>
+                    </div>
+                    <div className="w-px h-8 bg-navy/10 flex-none" />
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-medium text-navy truncate">{rdv.title}</p>
+                      <p className="text-xs text-navy/40 mt-0.5">{rdv.clientName} · {rdv.time} · {rdv.type === 'visio' ? 'Visio' : rdv.type === 'presentiel' ? 'Présentiel' : 'Tél.'}</p>
+                    </div>
+                    <button onClick={() => handleDeleteRdv(rdv)} className="flex-none text-navy/20 hover:text-red-500 transition-colors p-1"><Trash2 size={13} strokeWidth={1.5} /></button>
+                  </div>
+                ))}
+              </div>
+            )}
           </div>
-          <button onClick={handleCreate} className="self-start bg-navy text-offwhite text-xs font-medium px-5 py-2.5 hover:bg-navy/90 transition-colors">
-            Créer le rendez-vous
-          </button>
-        </div>
+        </>
       )}
 
-      {/* Calendar */}
-      <CalendarView appointments={allRdvs} selectedDate={selectedDate} onSelectDate={date => { setSelectedDate(date); setForm(f => ({ ...f, date })) }} />
-
-      {/* Upcoming list */}
-      <div>
-        <p className="text-xs font-medium text-navy/40 uppercase tracking-wide mb-3">Tous les rendez-vous</p>
-        {allRdvs.length === 0 ? (
-          <div className="border border-navy/10 px-6 py-8 text-center text-sm text-navy/30">Aucun rendez-vous planifié.</div>
-        ) : (
-          <div className="flex flex-col gap-px bg-navy/10">
-            {[...allRdvs].sort((a, b) => a.date.localeCompare(b.date)).map(rdv => (
-              <div key={rdv.id} className="bg-offwhite px-6 py-4 flex items-center gap-4">
-                <div className="flex-none text-center w-10">
-                  <p className="text-xs font-bold text-navy">{new Date(rdv.date + 'T12:00:00').toLocaleDateString('fr-FR', { day: 'numeric' })}</p>
-                  <p className="text-[10px] text-navy/40 uppercase">{new Date(rdv.date + 'T12:00:00').toLocaleDateString('fr-FR', { month: 'short' })}</p>
-                </div>
-                <div className="w-px h-8 bg-navy/10 flex-none" />
-                <div className="flex-1 min-w-0">
-                  <p className="text-sm font-medium text-navy truncate">{rdv.title}</p>
-                  <p className="text-xs text-navy/40 mt-0.5">{rdv.clientName} · {rdv.time} · {rdv.type === 'visio' ? 'Visio' : rdv.type === 'presentiel' ? 'Présentiel' : 'Tél.'}</p>
-                </div>
-                <button onClick={() => handleDelete(rdv)} className="flex-none text-navy/20 hover:text-red-500 transition-colors p-1">
-                  <Trash2 size={13} strokeWidth={1.5} />
-                </button>
-              </div>
-            ))}
+      {/* ── Todo section ── */}
+      {activeSection === 'todo' && (
+        <>
+          <div className="flex justify-end">
+            <button onClick={() => setShowTodoForm(v => !v)}
+              className="flex items-center gap-2 bg-navy text-offwhite text-xs font-medium px-4 py-2.5 hover:bg-navy/90 transition-colors">
+              <Plus size={13} strokeWidth={1.5} /> Nouvelle tâche
+            </button>
           </div>
-        )}
-      </div>
+
+          {showTodoForm && (
+            <div className="border border-navy/15 p-6 flex flex-col gap-4">
+              <div className="flex items-center justify-between">
+                <p className="text-sm font-medium text-navy">Assigner une tâche</p>
+                <button onClick={() => setShowTodoForm(false)} className="text-navy/30 hover:text-navy transition-colors"><X size={14} strokeWidth={1.5} /></button>
+              </div>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div className="flex flex-col gap-1.5 sm:col-span-2">
+                  <label className="text-xs font-medium text-navy/40 uppercase tracking-wide">Client</label>
+                  <select value={todoForm.clientId} onChange={e => setTodoForm(f => ({ ...f, clientId: e.target.value }))} className="border-b border-navy/15 bg-transparent py-2 text-sm text-navy focus:outline-none focus:border-navy">
+                    {clients.map(c => <option key={c.user.id} value={c.user.id}>{c.user.name}{c.user.company ? ` — ${c.user.company}` : ''}</option>)}
+                  </select>
+                </div>
+                <div className="flex flex-col gap-1.5 sm:col-span-2">
+                  <label className="text-xs font-medium text-navy/40 uppercase tracking-wide">Tâche</label>
+                  <input type="text" value={todoForm.title} onChange={e => setTodoForm(f => ({ ...f, title: e.target.value }))} placeholder="Ex: Envoyer les statuts mis à jour" className="border-b border-navy/15 bg-transparent py-2 text-sm text-navy placeholder:text-navy/25 focus:outline-none focus:border-navy" />
+                </div>
+                <div className="flex flex-col gap-1.5">
+                  <label className="text-xs font-medium text-navy/40 uppercase tracking-wide">Priorité</label>
+                  <select value={todoForm.priority} onChange={e => setTodoForm(f => ({ ...f, priority: e.target.value as Todo['priority'] }))} className="border-b border-navy/15 bg-transparent py-2 text-sm text-navy focus:outline-none focus:border-navy">
+                    <option value="normale">Normale</option>
+                    <option value="urgente">Urgente</option>
+                  </select>
+                </div>
+                <div className="flex flex-col gap-1.5">
+                  <label className="text-xs font-medium text-navy/40 uppercase tracking-wide">Échéance <span className="normal-case text-navy/30">(optionnel)</span></label>
+                  <input type="date" value={todoForm.dueDate} onChange={e => setTodoForm(f => ({ ...f, dueDate: e.target.value }))} className="border-b border-navy/15 bg-transparent py-2 text-sm text-navy focus:outline-none focus:border-navy" />
+                </div>
+              </div>
+              <button onClick={handleCreateTodo} className="self-start bg-navy text-offwhite text-xs font-medium px-5 py-2.5 hover:bg-navy/90 transition-colors">Assigner la tâche</button>
+            </div>
+          )}
+
+          <TodoList
+            todos={allTodos}
+            onToggle={id => { const t = allTodos.find(x => x.id === id); if (t) handleToggleTodo(t) }}
+            onDelete={id => { const t = allTodos.find(x => x.id === id); if (t) handleDeleteTodo(t) }}
+          />
+        </>
+      )}
     </div>
   )
 }

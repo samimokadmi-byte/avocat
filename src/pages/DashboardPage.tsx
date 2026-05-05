@@ -7,6 +7,7 @@ import {
   FileText, Trash2, Menu, X, Shield, CalendarDays
 } from 'lucide-react'
 import CalendarView, { Appointment } from '../components/CalendarView'
+import TodoList, { Todo } from '../components/TodoList'
 
 // ─── Types ───────────────────────────────────────────────────────────────────
 
@@ -337,56 +338,69 @@ function Documents({ documents, setDocuments }: { documents: Document[]; setDocu
   )
 }
 
-// ─── Rendez-vous ─────────────────────────────────────────────────────────────
+// ─── Rendez-vous + Todos ──────────────────────────────────────────────────────
 
-function Rendezvous({ rdvs }: { rdvs: Appointment[] }) {
+function Rendezvous({ rdvs, todos, setTodos }: {
+  rdvs: Appointment[]
+  todos: Todo[]
+  setTodos: (t: Todo[] | ((prev: Todo[]) => Todo[])) => void
+}) {
   const [selectedDate, setSelectedDate] = useState<string | null>(null)
   const upcoming = [...rdvs]
     .filter(r => r.date >= new Date().toISOString().split('T')[0])
     .sort((a, b) => a.date.localeCompare(b.date))
 
+  const toggleTodo = (id: string) =>
+    setTodos((prev: Todo[]) => prev.map(t => t.id === id ? { ...t, done: !t.done } : t))
+
   return (
-    <div className="flex flex-col gap-6">
+    <div className="flex flex-col gap-10">
+      {/* Calendar */}
       <div>
         <p className="text-xs font-medium tracking-[0.2em] uppercase text-navy/40 mb-2">Agenda</p>
-        <h2 className="font-serif text-2xl text-navy">Mes Rendez-vous</h2>
+        <h2 className="font-serif text-2xl text-navy mb-6">Mes Rendez-vous</h2>
+
+        <CalendarView appointments={rdvs} selectedDate={selectedDate} onSelectDate={setSelectedDate} />
+
+        {upcoming.length > 0 && (
+          <div className="mt-6">
+            <p className="text-xs font-medium text-navy/40 uppercase tracking-wide mb-3">Prochains rendez-vous</p>
+            <div className="flex flex-col gap-px bg-navy/10">
+              {upcoming.slice(0, 4).map(r => (
+                <div key={r.id} className="bg-offwhite px-6 py-4 flex items-center gap-4">
+                  <div className="flex-none text-center w-10">
+                    <p className="text-xs font-bold text-navy leading-none">
+                      {new Date(r.date + 'T12:00:00').toLocaleDateString('fr-FR', { day: 'numeric' })}
+                    </p>
+                    <p className="text-[10px] text-navy/40 uppercase">
+                      {new Date(r.date + 'T12:00:00').toLocaleDateString('fr-FR', { month: 'short' })}
+                    </p>
+                  </div>
+                  <div className="w-px h-8 bg-navy/10 flex-none" />
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-medium text-navy truncate">{r.title}</p>
+                    <p className="text-xs text-navy/40 mt-0.5">{r.time} · {r.type === 'visio' ? 'Visioconférence' : r.type === 'presentiel' ? 'Présentiel' : 'Téléphone'}</p>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        <div className="mt-4 border border-navy/10 px-6 py-4 text-sm text-navy/50">
+          Pour modifier un rendez-vous, contactez le cabinet à{' '}
+          <a href="mailto:contact@samimokadmi-avocat.fr" className="text-navy underline">contact@samimokadmi-avocat.fr</a>
+        </div>
       </div>
 
-      <CalendarView
-        appointments={rdvs}
-        selectedDate={selectedDate}
-        onSelectDate={setSelectedDate}
-        readOnly={false}
-      />
-
-      {upcoming.length > 0 && (
-        <div>
-          <p className="text-xs font-medium text-navy/40 uppercase tracking-wide mb-3">Prochains rendez-vous</p>
-          <div className="flex flex-col gap-px bg-navy/10">
-            {upcoming.slice(0, 4).map(r => (
-              <div key={r.id} className="bg-offwhite px-6 py-4 flex items-center gap-4">
-                <div className="flex-none text-center w-10">
-                  <p className="text-xs font-bold text-navy leading-none">
-                    {new Date(r.date + 'T12:00:00').toLocaleDateString('fr-FR', { day: 'numeric' })}
-                  </p>
-                  <p className="text-[10px] text-navy/40 uppercase">
-                    {new Date(r.date + 'T12:00:00').toLocaleDateString('fr-FR', { month: 'short' })}
-                  </p>
-                </div>
-                <div className="w-px h-8 bg-navy/10 flex-none" />
-                <div className="flex-1 min-w-0">
-                  <p className="text-sm font-medium text-navy truncate">{r.title}</p>
-                  <p className="text-xs text-navy/40 mt-0.5">{r.time} · {r.type === 'visio' ? 'Visioconférence' : r.type === 'presentiel' ? 'Présentiel' : 'Téléphone'}</p>
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-      )}
-
-      <div className="border border-navy/10 px-6 py-4 text-sm text-navy/50">
-        Pour modifier ou annuler un rendez-vous, contactez le cabinet à{' '}
-        <a href="mailto:contact@samimokadmi-avocat.fr" className="text-navy underline">contact@samimokadmi-avocat.fr</a>
+      {/* To-do list */}
+      <div className="border-t border-navy/10 pt-10">
+        <p className="text-xs font-medium tracking-[0.2em] uppercase text-navy/40 mb-2">Tâches</p>
+        <h2 className="font-serif text-2xl text-navy mb-6">Ma To-Do List</h2>
+        <TodoList todos={todos} onToggle={toggleTodo} readOnly={false} />
+        {todos.length === 0 && (
+          <p className="text-sm text-navy/30 text-center py-6">Aucune tâche assignée par le cabinet.</p>
+        )}
       </div>
     </div>
   )
@@ -434,6 +448,7 @@ export default function DashboardPage() {
   const [dossiers] = useLocalState<Dossier[]>(`avocat_dossiers_${user?.id}`, [])
   const [documents, setDocuments] = useLocalState<Document[]>(`avocat_documents_${user?.id}`, [])
   const [rdvs] = useLocalState<Appointment[]>(`avocat_rdv_${user?.id}`, [])
+  const [todos, setTodos] = useLocalState<Todo[]>(`avocat_todos_${user?.id}`, [])
 
   const handleLogout = () => { logout(); navigate('/') }
 
@@ -517,7 +532,7 @@ export default function DashboardPage() {
           {tab === 'apercu' && <Apercu dossiers={dossiers} documents={documents} userName={user?.name ?? ''} />}
           {tab === 'dossiers' && <Dossiers dossiers={dossiers} />}
           {tab === 'documents' && <Documents documents={documents} setDocuments={setDocuments} />}
-          {tab === 'rendezvous' && <Rendezvous rdvs={rdvs} />}
+          {tab === 'rendezvous' && <Rendezvous rdvs={rdvs} todos={todos} setTodos={setTodos} />}
           {tab === 'messagerie' && <Messagerie />}
         </main>
       </div>

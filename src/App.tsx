@@ -4,6 +4,7 @@ import System from './components/System'
 import Expertises from './components/Expertises'
 import Method from './components/Method'
 import Honoraires from './components/Honoraires'
+import SuiviNumerique from './components/SuiviNumerique'
 import Results from './components/Results'
 import CasEtudes from './components/CasEtudes'
 import Filter from './components/Filter'
@@ -22,6 +23,7 @@ export default function App() {
         <Expertises />
         <Method />
         <Honoraires />
+        <SuiviNumerique />
         <Results />
         <CasEtudes />
         <Filter />

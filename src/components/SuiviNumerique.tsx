@@ -1,4 +1,5 @@
 import { Shield, Clock, Video, ArrowRight, Lock } from 'lucide-react'
+import { Link } from 'react-router-dom'
 
 const cards = [
   {
@@ -64,13 +65,13 @@ export default function SuiviNumerique() {
             Connexion sécurisée · Chiffrement SSL 256 bits · Données hébergées en France
           </p>
         </div>
-        <a
-          href="#booking"
+        <Link
+          to="/login"
           className="inline-flex items-center gap-3 bg-navy text-offwhite text-sm font-medium px-6 py-3 hover:bg-navy/90 transition-colors duration-200 whitespace-nowrap"
         >
           Accéder à l'espace client
           <ArrowRight size={14} strokeWidth={1.5} />
-        </a>
+        </Link>
       </div>
     </section>
   )

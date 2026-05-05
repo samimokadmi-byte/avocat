@@ -1,4 +1,6 @@
 import { useState, useEffect } from 'react'
+import { Link } from 'react-router-dom'
+import { useAuth } from '../contexts/AuthContext'
 
 const links = [
   { label: 'Expertises', href: '#expertises' },
@@ -9,6 +11,7 @@ const links = [
 ]
 
 export default function Nav() {
+  const { user } = useAuth()
   const [scrolled, setScrolled] = useState(false)
   const [open, setOpen] = useState(false)
 
@@ -25,7 +28,7 @@ export default function Nav() {
       }`}
     >
       <div className="max-w-content mx-auto px-6 h-16 flex items-center justify-between">
-        <a href="#" className="flex flex-col">
+        <a href="/" className="flex flex-col">
           <span className="font-serif text-lg tracking-tight font-semibold text-navy leading-tight">Sami Mokadmi</span>
           <span className="text-xs text-navy/40 tracking-wide">Avocat — Droit des Affaires &amp; Tech</span>
         </a>
@@ -42,10 +45,16 @@ export default function Nav() {
           ))}
           <a
             href="#booking"
-            className="text-sm font-medium border border-navy px-4 py-1.5 text-navy hover:bg-navy hover:text-offwhite transition-colors duration-200"
+            className="text-sm font-medium text-navy/60 hover:text-navy transition-colors duration-200"
           >
             Contact
           </a>
+          <Link
+            to={user ? '/dashboard' : '/login'}
+            className="text-sm font-medium border border-navy px-4 py-1.5 text-navy hover:bg-navy hover:text-offwhite transition-colors duration-200"
+          >
+            {user ? 'Mon espace' : 'Espace client'}
+          </Link>
         </nav>
 
         <button
@@ -53,21 +62,9 @@ export default function Nav() {
           className="md:hidden w-8 h-8 flex flex-col justify-center gap-[5px]"
           aria-label="Menu"
         >
-          <span
-            className={`block h-px bg-navy transition-all duration-200 ${
-              open ? 'rotate-45 translate-y-[6px]' : ''
-            }`}
-          />
-          <span
-            className={`block h-px bg-navy transition-opacity duration-200 ${
-              open ? 'opacity-0' : ''
-            }`}
-          />
-          <span
-            className={`block h-px bg-navy transition-all duration-200 ${
-              open ? '-rotate-45 -translate-y-[6px]' : ''
-            }`}
-          />
+          <span className={`block h-px bg-navy transition-all duration-200 ${open ? 'rotate-45 translate-y-[6px]' : ''}`} />
+          <span className={`block h-px bg-navy transition-opacity duration-200 ${open ? 'opacity-0' : ''}`} />
+          <span className={`block h-px bg-navy transition-all duration-200 ${open ? '-rotate-45 -translate-y-[6px]' : ''}`} />
         </button>
       </div>
 
@@ -83,13 +80,16 @@ export default function Nav() {
               {l.label}
             </a>
           ))}
-          <a
-            href="#booking"
+          <a href="#booking" onClick={() => setOpen(false)} className="text-sm font-medium text-navy/60 hover:text-navy transition-colors">
+            Contact
+          </a>
+          <Link
+            to={user ? '/dashboard' : '/login'}
             onClick={() => setOpen(false)}
             className="text-sm font-medium border border-navy px-4 py-2 text-center text-navy hover:bg-navy hover:text-offwhite transition-colors"
           >
-            Contact
-          </a>
+            {user ? 'Mon espace' : 'Espace client'}
+          </Link>
         </div>
       )}
     </header>

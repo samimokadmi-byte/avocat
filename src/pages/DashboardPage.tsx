@@ -4,11 +4,12 @@ import { useAuth } from '../contexts/AuthContext'
 import {
   LayoutDashboard, FolderOpen, FileUp, MessageSquare, LogOut,
   CheckCircle2, Clock, Circle, ChevronRight, Upload, File,
-  FileText, Trash2, Menu, X, Shield, CalendarDays, Plus, Pencil, Bell
+  FileText, Trash2, Menu, X, Shield, CalendarDays, Plus, Pencil, Bell, Receipt
 } from 'lucide-react'
 import CalendarView, { Appointment } from '../components/CalendarView'
 import TodoList, { Todo } from '../components/TodoList'
 import { useReminders } from '../hooks/useReminders'
+import BillingModule, { Invoice, computeAmounts, fmtAmount } from '../components/BillingModule'
 
 // ─── Types ───────────────────────────────────────────────────────────────────
 
@@ -131,7 +132,7 @@ function Apercu({ dossiers, documents, userName }: { dossiers: Dossier[]; docume
 
 // ─── Dossiers ─────────────────────────────────────────────────────────────────
 
-function Dossiers({ dossiers, rdvs, todos }: { dossiers: Dossier[]; rdvs: Appointment[]; todos: Todo[] }) {
+function Dossiers({ dossiers, rdvs, todos, invoices }: { dossiers: Dossier[]; rdvs: Appointment[]; todos: Todo[]; invoices: Invoice[] }) {
   const [selected, setSelected] = useState<Dossier | null>(null)
 
   if (selected) {
@@ -139,6 +140,7 @@ function Dossiers({ dossiers, rdvs, todos }: { dossiers: Dossier[]; rdvs: Appoin
       .filter(r => r.dossierId === selected.id)
       .sort((a, b) => a.date.localeCompare(b.date))
     const linkedTodos = todos.filter(t => t.dossierId === selected.id)
+    const linkedInvoices = invoices.filter(i => i.dossierId === selected.id)
 
     return (
       <div className="flex flex-col gap-6">
@@ -233,6 +235,32 @@ function Dossiers({ dossiers, rdvs, todos }: { dossiers: Dossier[]; rdvs: Appoin
             </div>
           </div>
         )}
+
+        {linkedInvoices.length > 0 && (
+          <div>
+            <p className="text-xs font-medium text-navy/40 uppercase tracking-wide mb-3">Factures liées</p>
+            <div className="flex flex-col gap-px bg-navy/10">
+              {linkedInvoices.map(inv => {
+                const { net } = computeAmounts(inv)
+                const statusCls = { brouillon: 'text-gray-500', envoyee: 'text-blue-600', payee: 'text-green-600', en_retard: 'text-red-600' }[inv.status]
+                const statusLabel = { brouillon: 'Brouillon', envoyee: 'Envoyée', payee: 'Payée', en_retard: 'En retard' }[inv.status]
+                return (
+                  <div key={inv.id} className="bg-offwhite px-5 py-3 flex items-center gap-3">
+                    <Receipt size={13} strokeWidth={1.25} className="text-navy/30 flex-none" />
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-medium text-navy font-mono truncate">{inv.number}</p>
+                      <p className="text-xs text-navy/40 mt-0.5">
+                        {new Date(inv.dateEmission + 'T12:00:00').toLocaleDateString('fr-FR', { day: 'numeric', month: 'short', year: 'numeric' })}
+                        {' · '}<span className={statusCls}>{statusLabel}</span>
+                      </p>
+                    </div>
+                    <p className="text-sm font-semibold text-navy flex-none">{fmtAmount(net, inv.currency)}</p>
+                  </div>
+                )
+              })}
+            </div>
+          </div>
+        )}
       </div>
     )
   }
@@ -248,6 +276,7 @@ function Dossiers({ dossiers, rdvs, todos }: { dossiers: Dossier[]; rdvs: Appoin
         {dossiers.map(dossier => {
           const rdvCount = rdvs.filter(r => r.dossierId === dossier.id).length
           const todoCount = todos.filter(t => t.dossierId === dossier.id && !t.done).length
+          const invCount = invoices.filter(i => i.dossierId === dossier.id).length
           return (
             <button
               key={dossier.id}
@@ -272,6 +301,9 @@ function Dossiers({ dossiers, rdvs, todos }: { dossiers: Dossier[]; rdvs: Appoin
                     )}
                     {todoCount > 0 && (
                       <span className="text-xs text-amber-600">{todoCount} tâche{todoCount > 1 ? 's' : ''}</span>
+                    )}
+                    {invCount > 0 && (
+                      <span className="text-xs text-emerald-600">{invCount} facture{invCount > 1 ? 's' : ''}</span>
                     )}
                   </div>
                 </div>
@@ -682,6 +714,7 @@ const navItems = [
   { id: 'dossiers', label: 'Dossiers', icon: FolderOpen },
   { id: 'documents', label: 'Documents', icon: FileUp },
   { id: 'rendezvous', label: 'Agenda', icon: CalendarDays },
+  { id: 'facturation', label: 'Facturation', icon: Receipt },
   { id: 'messagerie', label: 'Messagerie', icon: MessageSquare },
 ]
 
@@ -695,6 +728,7 @@ export default function DashboardPage() {
   const [documents, setDocuments] = useLocalState<Document[]>(`avocat_documents_${user?.id}`, [])
   const [rdvs, setRdvs] = useLocalState<Appointment[]>(`avocat_rdv_${user?.id}`, [])
   const [todos, setTodos] = useLocalState<Todo[]>(`avocat_todos_${user?.id}`, [])
+  const [invoices, setInvoices] = useLocalState<Invoice[]>(`avocat_invoices_${user?.id}`, [])
 
   const { alerts, dismiss } = useReminders(rdvs, todos)
 
@@ -799,9 +833,21 @@ export default function DashboardPage() {
         {/* Main content */}
         <main className="flex-1 px-6 md:px-12 py-10 max-w-3xl">
           {tab === 'apercu' && <Apercu dossiers={dossiers} documents={documents} userName={user?.name ?? ''} />}
-          {tab === 'dossiers' && <Dossiers dossiers={dossiers} rdvs={rdvs} todos={todos} />}
+          {tab === 'dossiers' && <Dossiers dossiers={dossiers} rdvs={rdvs} todos={todos} invoices={invoices} />}
           {tab === 'documents' && <Documents documents={documents} setDocuments={setDocuments} />}
           {tab === 'rendezvous' && <Rendezvous rdvs={rdvs} setRdvs={setRdvs} todos={todos} setTodos={setTodos} userId={user?.id ?? ''} dossiers={dossiers} />}
+          {tab === 'facturation' && (
+            <BillingModule
+              invoices={invoices}
+              setInvoices={setInvoices}
+              rdvs={rdvs}
+              todos={todos}
+              dossiers={dossiers}
+              userId={user?.id ?? ''}
+              userName={user?.name ?? ''}
+              userCompany={user?.company}
+            />
+          )}
           {tab === 'messagerie' && <Messagerie />}
         </main>
       </div>

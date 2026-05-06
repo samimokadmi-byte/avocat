@@ -8,8 +8,9 @@ import {
   LayoutDashboard, Users, FileUp, LogOut, ChevronRight,
   Download, Trash2, CheckCircle2, Clock, Circle, Search,
   FolderOpen, ArrowLeft, FileText, File as FileIcon, AlertCircle,
-  CalendarDays, Plus, X
+  CalendarDays, Plus, X, Receipt
 } from 'lucide-react'
+import { Invoice, computeAmounts, fmtAmount, CURRENCIES } from '../components/BillingModule'
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -116,6 +117,14 @@ function saveTodosForClient(clientId: string, todos: Todo[]) {
   localStorage.setItem(`avocat_todos_${clientId}`, JSON.stringify(todos))
 }
 
+function getInvoicesForClient(clientId: string): Invoice[] {
+  return JSON.parse(localStorage.getItem(`avocat_invoices_${clientId}`) || '[]')
+}
+
+function saveInvoicesForClient(clientId: string, invoices: Invoice[]) {
+  localStorage.setItem(`avocat_invoices_${clientId}`, JSON.stringify(invoices))
+}
+
 // ─── Vue d'ensemble ───────────────────────────────────────────────────────────
 
 function Overview({ clients }: { clients: ClientData[] }) {
@@ -183,6 +192,7 @@ function ClientDetail({
   const [dossiers, setDossiersState] = useState<Dossier[]>(data.dossiers)
   const [documents, setDocumentsState] = useState<Document[]>(data.documents)
   const [selectedDossier, setSelectedDossier] = useState<Dossier | null>(null)
+  const [clientInvoices, setClientInvoicesState] = useState<Invoice[]>(() => getInvoicesForClient(data.user.id))
 
   const updateEtape = (dossierId: string, etapeIdx: number, newStatut: Etape['statut']) => {
     const updated = dossiers.map(d => {
@@ -337,6 +347,74 @@ function ClientDetail({
           </div>
         )}
       </div>
+
+      {/* Factures */}
+      <div>
+        <p className="text-xs font-medium text-navy/40 uppercase tracking-wide mb-3">
+          Factures ({clientInvoices.length})
+        </p>
+        {clientInvoices.length === 0 ? (
+          <div className="border border-navy/10 px-6 py-8 text-center text-sm text-navy/30">Aucune facture pour ce client.</div>
+        ) : (
+          <div className="flex flex-col gap-px bg-navy/10">
+            {[...clientInvoices].sort((a, b) => b.dateEmission.localeCompare(a.dateEmission)).map(inv => {
+              const { net } = computeAmounts(inv)
+              const { label, cls } = INV_STATUS_MAP[inv.status]
+              return (
+                <div key={inv.id} className="bg-offwhite px-6 py-4 flex items-center gap-4">
+                  <Receipt size={14} strokeWidth={1.25} className="text-navy/30 flex-none" />
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-2 flex-wrap mb-0.5">
+                      <p className="text-sm font-semibold text-navy font-mono">{inv.number}</p>
+                      <span className={`text-xs font-medium px-2 py-0.5 border ${cls}`}>{label}</span>
+                    </div>
+                    <p className="text-xs text-navy/40">
+                      {new Date(inv.dateEmission + 'T12:00:00').toLocaleDateString('fr-FR', { day: 'numeric', month: 'short', year: 'numeric' })}
+                      {' — '}
+                      {new Date(inv.dateEcheance + 'T12:00:00').toLocaleDateString('fr-FR', { day: 'numeric', month: 'short', year: 'numeric' })}
+                    </p>
+                  </div>
+                  <div className="text-right mr-2 flex-none">
+                    <p className="text-sm font-semibold text-navy">{fmtAmount(net, inv.currency)}</p>
+                    <p className="text-[10px] text-navy/40">net à payer</p>
+                  </div>
+                  {/* Quick status buttons */}
+                  <div className="flex gap-1 flex-none">
+                    {(['brouillon', 'envoyee', 'payee', 'en_retard'] as const).map(s => (
+                      <button
+                        key={s}
+                        onClick={() => {
+                          const updated = clientInvoices.map(i => i.id === inv.id ? { ...i, status: s } : i)
+                          saveInvoicesForClient(data.user.id, updated)
+                          setClientInvoicesState(updated)
+                          onRefresh()
+                        }}
+                        title={INV_STATUS_MAP[s].label}
+                        className={`text-[10px] font-medium px-2 py-1 border transition-colors ${
+                          inv.status === s ? 'bg-navy text-offwhite border-navy' : 'text-navy/30 border-navy/10 hover:border-navy/30'
+                        }`}
+                      >
+                        {s === 'brouillon' ? '✎' : s === 'envoyee' ? '✉' : s === 'payee' ? '✓' : '!'}
+                      </button>
+                    ))}
+                  </div>
+                  <button
+                    onClick={() => {
+                      const updated = clientInvoices.filter(i => i.id !== inv.id)
+                      saveInvoicesForClient(data.user.id, updated)
+                      setClientInvoicesState(updated)
+                      onRefresh()
+                    }}
+                    className="text-navy/20 hover:text-red-500 transition-colors p-1 flex-none"
+                  >
+                    <Trash2 size={13} strokeWidth={1.5} />
+                  </button>
+                </div>
+              )
+            })}
+          </div>
+        )}
+      </div>
     </div>
   )
 }
@@ -485,6 +563,164 @@ function AllDocuments({ clients, onRefresh }: { clients: ClientData[]; onRefresh
               </div>
             </div>
           ))}
+        </div>
+      )}
+    </div>
+  )
+}
+
+// ─── Facturation Admin ────────────────────────────────────────────────────────
+
+const INV_STATUS_MAP = {
+  brouillon: { label: 'Brouillon',  cls: 'bg-gray-50 text-gray-600 border-gray-200' },
+  envoyee:   { label: 'Envoyée',    cls: 'bg-blue-50 text-blue-700 border-blue-200' },
+  payee:     { label: 'Payée',      cls: 'bg-green-50 text-green-700 border-green-200' },
+  en_retard: { label: 'En retard',  cls: 'bg-red-50 text-red-700 border-red-200' },
+} as const
+
+function AllInvoicesAdmin({ clients, onRefresh }: { clients: ClientData[]; onRefresh: () => void }) {
+  const [search, setSearch] = useState('')
+  const [filterStatus, setFilterStatus] = useState<Invoice['status'] | 'all'>('all')
+
+  const allInvoices = useMemo(() =>
+    clients.flatMap(c =>
+      getInvoicesForClient(c.user.id).map(inv => ({ ...inv, clientName: c.user.name, clientCompany: c.user.company }))
+    ), [clients]
+  )
+
+  const filtered = useMemo(() =>
+    allInvoices.filter(inv => {
+      const matchSearch = search === '' ||
+        inv.number.toLowerCase().includes(search.toLowerCase()) ||
+        inv.clientName.toLowerCase().includes(search.toLowerCase()) ||
+        (inv.clientCompany ?? '').toLowerCase().includes(search.toLowerCase())
+      const matchStatus = filterStatus === 'all' || inv.status === filterStatus
+      return matchSearch && matchStatus
+    }).sort((a, b) => b.dateEmission.localeCompare(a.dateEmission)),
+    [allInvoices, search, filterStatus]
+  )
+
+  const totalNet = filtered.reduce((s, inv) => s + computeAmounts(inv).net, 0)
+  const paidNet  = filtered.filter(i => i.status === 'payee').reduce((s, inv) => s + computeAmounts(inv).net, 0)
+
+  const updateStatus = (inv: typeof allInvoices[number], status: Invoice['status']) => {
+    const existing = getInvoicesForClient(inv.clientId)
+    saveInvoicesForClient(inv.clientId, existing.map(i => i.id === inv.id ? { ...i, status } : i))
+    onRefresh()
+  }
+
+  const deleteInvoice = (inv: typeof allInvoices[number]) => {
+    saveInvoicesForClient(inv.clientId, getInvoicesForClient(inv.clientId).filter(i => i.id !== inv.id))
+    onRefresh()
+  }
+
+  return (
+    <div className="flex flex-col gap-6">
+      <div>
+        <p className="text-xs font-medium tracking-[0.2em] uppercase text-navy/40 mb-2">Facturation</p>
+        <h2 className="font-serif text-2xl text-navy">Notes d'honoraires</h2>
+      </div>
+
+      {/* Stats */}
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-px bg-navy/10">
+        {[
+          { label: 'Total factures',  value: String(allInvoices.length) },
+          { label: 'En attente',      value: String(allInvoices.filter(i => i.status === 'envoyee' || i.status === 'en_retard').length) },
+          { label: 'Payées',          value: String(allInvoices.filter(i => i.status === 'payee').length) },
+          { label: 'Chiffre encaissé', value: paidNet > 0 ? fmtAmount(paidNet, 'TND') : '—' },
+        ].map(({ label, value }) => (
+          <div key={label} className="bg-offwhite p-6">
+            <p className="text-xs text-navy/40 uppercase tracking-wide mb-2">{label}</p>
+            <p className="font-serif text-xl font-bold text-navy">{value}</p>
+          </div>
+        ))}
+      </div>
+
+      {/* Filters */}
+      <div className="flex flex-col sm:flex-row gap-3">
+        <div className="relative flex-1">
+          <Search size={14} strokeWidth={1.5} className="absolute left-3 top-1/2 -translate-y-1/2 text-navy/30" />
+          <input
+            type="text"
+            value={search}
+            onChange={e => setSearch(e.target.value)}
+            placeholder="Rechercher par n°, client ou société…"
+            className="w-full border border-navy/15 bg-transparent pl-9 pr-4 py-2.5 text-sm text-navy placeholder:text-navy/25 focus:outline-none focus:border-navy transition-colors"
+          />
+        </div>
+        <div className="flex gap-1 flex-wrap">
+          {(['all', 'brouillon', 'envoyee', 'payee', 'en_retard'] as const).map(s => (
+            <button
+              key={s}
+              onClick={() => setFilterStatus(s)}
+              className={`text-xs font-medium px-3 py-1.5 border transition-colors ${
+                filterStatus === s ? 'bg-navy text-offwhite border-navy' : 'text-navy/40 border-navy/15 hover:border-navy/30'
+              }`}
+            >
+              {s === 'all' ? 'Toutes' : INV_STATUS_MAP[s].label}
+            </button>
+          ))}
+        </div>
+      </div>
+
+      {filtered.length > 0 && (
+        <p className="text-xs text-navy/40">
+          {filtered.length} facture{filtered.length > 1 ? 's' : ''} · Total net : <span className="font-medium text-navy">{fmtAmount(totalNet, 'TND')}</span>
+        </p>
+      )}
+
+      {filtered.length === 0 ? (
+        <div className="border border-navy/10 px-6 py-12 text-center text-sm text-navy/30">Aucune facture trouvée.</div>
+      ) : (
+        <div className="flex flex-col gap-px bg-navy/10">
+          {filtered.map(inv => {
+            const { net } = computeAmounts(inv)
+            const { label, cls } = INV_STATUS_MAP[inv.status]
+            const sym = CURRENCIES[inv.currency]?.symbol ?? inv.currency
+            return (
+              <div key={inv.id} className="bg-offwhite px-6 py-4 flex items-center gap-4">
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center gap-2 flex-wrap mb-0.5">
+                    <p className="text-sm font-semibold text-navy font-mono">{inv.number}</p>
+                    <span className={`text-xs font-medium px-2 py-0.5 border ${cls}`}>{label}</span>
+                    <span className="text-[10px] text-navy/30 border border-navy/10 px-1.5 py-0.5">{sym}</span>
+                  </div>
+                  <p className="text-xs text-navy/40">
+                    <span className="font-medium text-navy/60">{inv.clientName}</span>
+                    {inv.clientCompany ? ` · ${inv.clientCompany}` : ''} ·{' '}
+                    {new Date(inv.dateEmission + 'T12:00:00').toLocaleDateString('fr-FR', { day: 'numeric', month: 'short', year: 'numeric' })}
+                    {' — échéance '}
+                    {new Date(inv.dateEcheance + 'T12:00:00').toLocaleDateString('fr-FR', { day: 'numeric', month: 'short', year: 'numeric' })}
+                  </p>
+                </div>
+                <div className="flex-none text-right mr-2">
+                  <p className="text-sm font-semibold text-navy">{fmtAmount(net, inv.currency)}</p>
+                  <p className="text-[10px] text-navy/40">net à payer</p>
+                </div>
+                {/* Quick status change */}
+                <div className="flex gap-1 flex-none">
+                  {(['brouillon', 'envoyee', 'payee', 'en_retard'] as const).map(s => (
+                    <button
+                      key={s}
+                      onClick={() => updateStatus(inv, s)}
+                      title={INV_STATUS_MAP[s].label}
+                      className={`text-[10px] font-medium px-2 py-1 border transition-colors ${
+                        inv.status === s ? 'bg-navy text-offwhite border-navy' : 'text-navy/30 border-navy/10 hover:border-navy/30'
+                      }`}
+                    >
+                      {s === 'brouillon' ? '✎' : s === 'envoyee' ? '✉' : s === 'payee' ? '✓' : '!'}
+                    </button>
+                  ))}
+                </div>
+                <button
+                  onClick={() => deleteInvoice(inv)}
+                  className="text-navy/20 hover:text-red-500 transition-colors p-1 flex-none"
+                >
+                  <Trash2 size={13} strokeWidth={1.5} />
+                </button>
+              </div>
+            )
+          })}
         </div>
       )}
     </div>
@@ -716,6 +952,7 @@ const navItems = [
   { id: 'clients', label: 'Clients', icon: Users },
   { id: 'documents', label: 'Documents', icon: FileUp },
   { id: 'agenda', label: 'Agenda', icon: CalendarDays },
+  { id: 'facturation', label: 'Facturation', icon: Receipt },
 ]
 
 export default function AdminPage() {
@@ -830,6 +1067,7 @@ export default function AdminPage() {
           )}
           {tab === 'documents' && <AllDocuments clients={clients} onRefresh={refresh} />}
           {tab === 'agenda' && <AgendaAdmin clients={clients} onRefresh={refresh} />}
+          {tab === 'facturation' && <AllInvoicesAdmin clients={clients} onRefresh={refresh} />}
         </main>
       </div>
     </div>

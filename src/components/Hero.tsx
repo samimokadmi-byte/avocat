@@ -1,4 +1,5 @@
 import { ArrowRight, Zap } from 'lucide-react'
+import { scrollTo } from '../utils/scrollTo'
 
 const stats = [
   { value: '24',   label: "ans d'expérience" },
@@ -34,20 +35,20 @@ export default function Hero() {
           </p>
 
           <div className="flex flex-col sm:flex-row gap-4 items-start">
-            <a
-              href="#booking"
+            <button
+              onClick={() => scrollTo('booking')}
               className="inline-flex items-center gap-3 bg-gold text-dark-bg text-sm font-medium px-7 py-4 hover:bg-gold/90 transition-colors duration-200"
             >
               Prendre rendez-vous
               <ArrowRight size={16} strokeWidth={1.5} />
-            </a>
-            <a
-              href="#systeme"
+            </button>
+            <button
+              onClick={() => scrollTo('systeme')}
               className="inline-flex items-center gap-2 text-sm font-medium text-light/40 hover:text-gold py-4 transition-colors duration-200"
             >
               Découvrir l'architecture
               <ArrowRight size={14} strokeWidth={1.5} />
-            </a>
+            </button>
           </div>
         </div>
 

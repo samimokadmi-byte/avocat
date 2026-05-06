@@ -1,13 +1,14 @@
 import { useState, useEffect } from 'react'
 import { Link } from 'react-router-dom'
 import { Menu, X, Zap } from 'lucide-react'
+import { scrollTo } from '../utils/scrollTo'
 
 const links = [
-  { href: '#systeme',    label: 'Expertise' },
-  { href: '#methode',    label: 'Méthode' },
-  { href: '#resultats',  label: 'Résultats' },
-  { href: '#blog',       label: 'Blog' },
-  { href: '#faq',        label: 'FAQ' },
+  { id: 'systeme',    label: 'Expertise' },
+  { id: 'methode',    label: 'Méthode' },
+  { id: 'resultats',  label: 'Résultats' },
+  { id: 'blog',       label: 'Blog' },
+  { id: 'faq',        label: 'FAQ' },
 ]
 
 export default function Nav() {
@@ -35,10 +36,10 @@ export default function Nav() {
         {/* Desktop */}
         <nav className="hidden md:flex items-center gap-8">
           {links.map(l => (
-            <a key={l.href} href={l.href}
+            <button key={l.id} onClick={() => scrollTo(l.id)}
               className="text-xs font-medium tracking-wide uppercase text-light/40 hover:text-gold transition-colors duration-200">
               {l.label}
-            </a>
+            </button>
           ))}
         </nav>
 
@@ -46,10 +47,10 @@ export default function Nav() {
           <Link to="/login" className="text-xs font-medium text-light/30 hover:text-light/60 transition-colors">
             Espace client
           </Link>
-          <a href="#booking"
+          <button onClick={() => scrollTo('booking')}
             className="flex items-center gap-1.5 text-xs font-medium bg-gold text-dark-bg px-4 py-2 hover:bg-gold/90 transition-colors">
             <Zap size={10} strokeWidth={2} /> Consultation
-          </a>
+          </button>
         </div>
 
         {/* Mobile hamburger */}
@@ -62,19 +63,19 @@ export default function Nav() {
       {open && (
         <div className="md:hidden bg-dark-bg/98 backdrop-blur-sm border-b border-gold/10 px-6 py-6 flex flex-col gap-4">
           {links.map(l => (
-            <a key={l.href} href={l.href} onClick={() => setOpen(false)}
-              className="text-sm font-medium text-light/50 hover:text-gold transition-colors py-1">
+            <button key={l.id} onClick={() => { scrollTo(l.id); setOpen(false) }}
+              className="text-sm font-medium text-left text-light/50 hover:text-gold transition-colors py-1">
               {l.label}
-            </a>
+            </button>
           ))}
           <div className="h-px bg-gold/10 my-1" />
           <Link to="/login" onClick={() => setOpen(false)} className="text-sm text-light/30 hover:text-light/60 transition-colors">
             Espace client
           </Link>
-          <a href="#booking" onClick={() => setOpen(false)}
+          <button onClick={() => { scrollTo('booking'); setOpen(false) }}
             className="text-sm font-medium bg-gold text-dark-bg px-4 py-2.5 text-center hover:bg-gold/90 transition-colors">
             Prendre rendez-vous
-          </a>
+          </button>
         </div>
       )}
     </header>

@@ -20,7 +20,9 @@ type Step =
   | 'societe_ask'
   | 'litige_ask'
   | 'contrat_ask'
-  | 'prix_ask'
+  | 'fiscal_ask'
+  | 'startup_ask'
+  | 'accompagnement_ask'
   | 'autre_ask'
   | 'cta'
 
@@ -31,9 +33,11 @@ const INIT_MSGS: Msg[] = [{
 
 const MENU_REPLIES = [
   'Créer une société',
-  'Problème juridique',
+  'Consultation juridique',
   'Contrat',
-  'Honoraires',
+  'Consultation fiscale',
+  'Demande startup',
+  'Accompagnement',
   'Autre demande',
 ]
 
@@ -94,11 +98,11 @@ export default function ChatWidget() {
           'societe_ask',
           ['Seul (SUARL)', 'Avec des associés (SARL)', 'Plusieurs associés (SA)']
         )
-      } else if (t.includes('problème') || t.includes('probleme') || t.includes('litige') || t.includes('juridique')) {
+      } else if (t.includes('consultation juridique') || t.includes('litige') || t.includes('juridique')) {
         botReply(
-          'Je comprends que vous faites face à une situation délicate.\n\nQuelques précisions pour mieux vous orienter :\n\n• Quel est le type de litige (commercial, contractuel, social…) ?\n• Y a-t-il une urgence particulière ?',
+          'Vous souhaitez une consultation juridique, c\'est noté.\n\nQuelques précisions pour préparer au mieux votre dossier :\n\n• Quel est le type de question (commercial, contractuel, social…) ?\n• Y a-t-il une urgence particulière ?',
           'litige_ask',
-          ['Litige commercial', 'Litige contractuel', 'Litige social', 'Urgence']
+          ['Litige commercial', 'Litige contractuel', 'Litige social', 'Question urgente']
         )
       } else if (t.includes('contrat')) {
         botReply(
@@ -106,18 +110,27 @@ export default function ChatWidget() {
           'contrat_ask',
           ['Audit de contrat', 'Rédaction de contrat', 'Les deux']
         )
-      } else if (
-        t.includes('honoraire') || t.includes('prix') ||
-        t.includes('tarif') || t.includes('coût') || t.includes('cout')
-      ) {
+      } else if (t.includes('fiscal') || t.includes('fiscale') || t.includes('holding') || t.includes('impôt') || t.includes('impot')) {
         botReply(
-          'Les honoraires dépendent de votre situation et de la complexité du dossier.\n\nJe peux vous proposer une estimation après quelques informations.\n\nQuel est l\'objet de votre demande ?',
-          'prix_ask',
-          ['Création de société', 'Consultation juridique', 'Rédaction de contrat', 'Accompagnement global']
+          'Vous souhaitez une consultation fiscale, c\'est bien noté.\n\nPour mieux cerner votre besoin :\n\n• S\'agit-il d\'une optimisation fiscale (holding, exit…) ?\n• Ou d\'une question de conformité / déclaration ?',
+          'fiscal_ask',
+          ['Optimisation fiscale', 'Structuration holding', 'Exit fiscal', 'Conformité / déclaration']
+        )
+      } else if (t.includes('startup') || t.includes('levée') || t.includes('levee') || t.includes('bspce') || t.includes('seed') || t.includes('fondateur')) {
+        botReply(
+          'Vous avez une demande liée à une startup, c\'est noté.\n\nPour vous orienter précisément :\n\n• Êtes-vous en phase de création, d\'amorçage ou de levée de fonds ?\n• Avez-vous déjà des associés ou des investisseurs ?',
+          'startup_ask',
+          ['Phase de création', 'Amorçage / Seed', 'Levée de fonds', 'BSPCE / cap table']
+        )
+      } else if (t.includes('accompagnement') || t.includes('suivi') || t.includes('mission')) {
+        botReply(
+          'Vous recherchez un accompagnement global, c\'est bien noté.\n\nPour définir la formule la plus adaptée :\n\n• Sur quelle durée souhaitez-vous un suivi ?\n• Quel est le périmètre : juridique, fiscal, ou les deux ?',
+          'accompagnement_ask',
+          ['Accompagnement juridique', 'Accompagnement fiscal', 'Mission complète Droit + Fiscal + IA']
         )
       } else {
         botReply(
-          'Je prends note de votre demande.\n\nPour mieux vous orienter, pourriez-vous préciser :\n\n• De quelle nature est votre question juridique ?\n• Y a-t-il une urgence ?',
+          'Je prends note de votre demande.\n\nPour mieux vous orienter, pourriez-vous préciser :\n\n• De quelle nature est votre question ?\n• Y a-t-il une urgence ?',
           'autre_ask',
           ['Oui, c\'est urgent', 'Pas d\'urgence particulière']
         )

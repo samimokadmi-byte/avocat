@@ -1,4 +1,5 @@
 import { createContext, useContext, useState, useEffect, ReactNode } from 'react'
+import { hashPassword, verifyPassword } from '../utils/crypto'
 
 export interface User {
   id: string
@@ -15,62 +16,78 @@ interface AuthContextType {
   logout: () => void
 }
 
+interface StoredAccount {
+  passwordHash: string
+  user: User
+}
+
 const AuthContext = createContext<AuthContextType | null>(null)
 
 const ADMIN_EMAIL = 'admin@cabinet.fr'
 const ADMIN_PASSWORD = 'Admin2024!'
 
-function ensureAdmin() {
-  const accounts: Record<string, { password: string; user: User }> = JSON.parse(
-    localStorage.getItem('avocat_accounts') || '{}'
-  )
-  if (!accounts[ADMIN_EMAIL]) {
-    const admin: User = {
-      id: 'admin-001',
-      name: 'Maître Mokadmi Sami',
-      email: ADMIN_EMAIL,
-      role: 'admin',
+/**
+ * Ensures the admin account exists in localStorage with a hashed password.
+ * Migrates legacy plaintext passwords on first run.
+ */
+async function ensureAdmin() {
+  const raw = localStorage.getItem('avocat_accounts') || '{}'
+  const accounts: Record<string, StoredAccount | { password: string; user: User }> = JSON.parse(raw)
+
+  // Migrate any legacy plaintext accounts to hashed
+  let migrated = false
+  for (const key of Object.keys(accounts)) {
+    const entry = accounts[key] as any
+    if ('password' in entry && !('passwordHash' in entry)) {
+      entry.passwordHash = await hashPassword(entry.password)
+      delete entry.password
+      migrated = true
     }
-    accounts[ADMIN_EMAIL] = { password: ADMIN_PASSWORD, user: admin }
-    localStorage.setItem('avocat_accounts', JSON.stringify(accounts))
   }
+
+  if (!accounts[ADMIN_EMAIL]) {
+    const admin: User = { id: 'admin-001', name: 'Maître Mokadmi Sami', email: ADMIN_EMAIL, role: 'admin' }
+    accounts[ADMIN_EMAIL] = { passwordHash: await hashPassword(ADMIN_PASSWORD), user: admin }
+    migrated = true
+  }
+
+  if (migrated) localStorage.setItem('avocat_accounts', JSON.stringify(accounts))
 }
 
 export function AuthProvider({ children }: { children: ReactNode }) {
-  const [user, setUser] = useState<User | null>(() => {
-    try {
-      const stored = localStorage.getItem('avocat_user')
-      return stored ? JSON.parse(stored) : null
-    } catch { return null }
-  })
+  /**
+   * Session is stored in memory only — NOT in localStorage or sessionStorage.
+   * This prevents XSS-based session theft: a malicious script injected into
+   * the page cannot read React state from another closure.
+   */
+  const [user, setUser] = useState<User | null>(null)
 
   useEffect(() => { ensureAdmin() }, [])
 
-  useEffect(() => {
-    if (user) localStorage.setItem('avocat_user', JSON.stringify(user))
-    else localStorage.removeItem('avocat_user')
-  }, [user])
-
   const login = async (email: string, password: string) => {
     if (!email || !password) return { ok: false, error: 'Champs requis.' }
-    const accounts: Record<string, { password: string; user: User }> = JSON.parse(
+    const accounts: Record<string, StoredAccount> = JSON.parse(
       localStorage.getItem('avocat_accounts') || '{}'
     )
     const account = accounts[email.toLowerCase()]
     if (!account) return { ok: false, error: 'Aucun compte trouvé pour cet email.' }
-    if (account.password !== password) return { ok: false, error: 'Mot de passe incorrect.' }
+
+    const valid = await verifyPassword(password, account.passwordHash)
+    if (!valid) return { ok: false, error: 'Mot de passe incorrect.' }
+
     setUser(account.user)
     return { ok: true }
   }
 
   const signup = async (name: string, email: string, password: string, company?: string) => {
     if (!name || !email || !password) return { ok: false, error: 'Champs requis.' }
-    const accounts: Record<string, { password: string; user: User }> = JSON.parse(
+    const accounts: Record<string, StoredAccount> = JSON.parse(
       localStorage.getItem('avocat_accounts') || '{}'
     )
     if (accounts[email.toLowerCase()]) return { ok: false, error: 'Un compte existe déjà pour cet email.' }
+
     const newUser: User = { id: crypto.randomUUID(), name, email: email.toLowerCase(), company, role: 'client' }
-    accounts[email.toLowerCase()] = { password, user: newUser }
+    accounts[email.toLowerCase()] = { passwordHash: await hashPassword(password), user: newUser }
     localStorage.setItem('avocat_accounts', JSON.stringify(accounts))
     seedDemoData(newUser.id)
     setUser(newUser)
@@ -137,9 +154,10 @@ function seedDemoData(userId: string) {
       ],
     },
   ]
+
   const rdvs = [
-    { id: crypto.randomUUID(), title: 'Point d\'avancement — Série A', date: fmt(addDays(3)), time: '10:00', type: 'visio', notes: 'Revue du term sheet avec l\'investisseur lead.', clientId: userId },
-    { id: crypto.randomUUID(), title: 'Signature pacte d\'associés', date: fmt(addDays(7)), time: '14:30', type: 'presentiel', notes: 'Réunion au cabinet. Prévoir les documents constitutifs.', clientId: userId },
+    { id: crypto.randomUUID(), title: "Point d'avancement — Série A", date: fmt(addDays(3)), time: '10:00', type: 'visio', notes: "Revue du term sheet avec l'investisseur lead.", clientId: userId },
+    { id: crypto.randomUUID(), title: "Signature pacte d'associés", date: fmt(addDays(7)), time: '14:30', type: 'presentiel', notes: 'Réunion au cabinet. Prévoir les documents constitutifs.', clientId: userId },
     { id: crypto.randomUUID(), title: 'Consultation — Protection des données', date: fmt(addDays(14)), time: '11:00', type: 'telephone', notes: 'Premier point sur le plan de conformité.', clientId: userId },
   ]
 

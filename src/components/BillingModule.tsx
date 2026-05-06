@@ -1,4 +1,5 @@
-import { useState } from 'react'
+import { useState, useEffect, useId } from 'react'
+import { useFocusTrap } from '../hooks/useFocusTrap'
 import { Appointment } from './CalendarView'
 import { Todo } from './TodoList'
 import {
@@ -451,6 +452,24 @@ function SendModal({ invoice, dossiers, userName, userEmail: initEmail, onClose 
   const fmtD = (s: string) => new Date(s + 'T12:00:00').toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric' })
   const [toEmail, setToEmail] = useState(initEmail ?? '')
   const [copied, setCopied] = useState(false)
+  const titleId = useId()
+
+  // Focus trap — keyboard navigation stays inside the modal (WCAG 2.1.2)
+  const dialogRef = useFocusTrap(true)
+
+  // Cleanup: clear the copied timer if the modal unmounts before it fires
+  useEffect(() => {
+    if (!copied) return
+    const t = setTimeout(() => setCopied(false), 2000)
+    return () => clearTimeout(t)
+  }, [copied])
+
+  // Close on Escape key
+  useEffect(() => {
+    const handler = (e: KeyboardEvent) => { if (e.key === 'Escape') onClose() }
+    document.addEventListener('keydown', handler)
+    return () => document.removeEventListener('keydown', handler)
+  }, [onClose])
 
   const subject = `Note d'honoraires N° ${invoice.number} — Maître Mokadmi Sami`
   const msgLines = [
@@ -481,18 +500,30 @@ function SendModal({ invoice, dossiers, userName, userEmail: initEmail, onClose 
   const mailtoUrl = `mailto:${toEmail}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`
 
   const copy = () => {
-    navigator.clipboard.writeText(body).then(() => { setCopied(true); setTimeout(() => setCopied(false), 2000) })
+    navigator.clipboard.writeText(body).then(() => setCopied(true))
   }
 
   return (
-    <div className="fixed inset-0 z-50 bg-gold/30 flex items-center justify-center p-4" onClick={onClose}>
-      <div className="bg-dark-surface border border-gold/10 w-full max-w-lg flex flex-col max-h-[88vh]" onClick={e => e.stopPropagation()}>
+    <div
+      className="fixed inset-0 z-50 bg-black/60 flex items-center justify-center p-4"
+      onClick={onClose}
+      aria-hidden="true"
+    >
+      {/* role="dialog" + aria-modal prevents screen readers from reading background content */}
+      <div
+        ref={dialogRef}
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby={titleId}
+        className="bg-dark-surface border border-gold/10 w-full max-w-lg flex flex-col max-h-[88vh]"
+        onClick={e => e.stopPropagation()}
+      >
         <div className="flex items-center justify-between px-6 py-4 border-b border-gold/10 flex-none">
           <div>
             <p className="text-xs font-medium tracking-[0.2em] uppercase text-light/40 mb-0.5">Envoi par email</p>
-            <p className="text-sm font-semibold text-light">Facture {invoice.number}</p>
+            <p id={titleId} className="text-sm font-semibold text-light">Facture {invoice.number}</p>
           </div>
-          <button onClick={onClose} className="text-light/30 hover:text-light transition-colors"><X size={16} strokeWidth={1.5} /></button>
+          <button onClick={onClose} aria-label="Fermer la modale" className="text-light/30 hover:text-light transition-colors"><X size={16} strokeWidth={1.5} /></button>
         </div>
         <div className="px-6 py-4 border-b border-gold/10 flex-none">
           <label className="text-xs font-medium text-light/40 uppercase tracking-wide block mb-1.5">Destinataire</label>

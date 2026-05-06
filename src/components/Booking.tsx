@@ -6,7 +6,7 @@ const expertise = [
   "Pactes d'associés & gouvernance",
   'BSPCE, BSA, stock-options',
   'Acquisitions & cessions',
-  'Conformité RGPD & IA Act',
+  'Protection des données & IA Act',
 ]
 
 export default function Booking() {
@@ -42,15 +42,15 @@ export default function Booking() {
               </span>
               <span className="flex items-center gap-2">
                 <MapPin size={12} strokeWidth={1.5} />
-                Paris &amp; remote (France, Europe)
+                Bloc B Espace Tunis Monplaisir 1073 Tunis
               </span>
               <span className="flex items-center gap-2">
                 <Mail size={12} strokeWidth={1.5} />
-                contact@samimokadmi-avocat.fr
+                office@mokadmi.lawyer
               </span>
               <span className="flex items-center gap-2">
                 <Phone size={12} strokeWidth={1.5} />
-                +33 (0)1 XX XX XX XX
+                +216 29784651
               </span>
             </div>
           </div>
@@ -119,8 +119,8 @@ export default function Booking() {
         </div>
 
         <div className="mt-section-sm border-t border-white/10 pt-8 flex flex-col md:flex-row items-start md:items-center justify-between gap-4 text-xs text-white/20">
-          <p>© 2024 Sami Mokadmi — Avocat. Tous droits réservés.</p>
-          <p>Barreau de Paris · RPVA · Membre du CNB</p>
+          <p>© 2025 Maître Mokadmi Sami — Avocat. Tous droits réservés.</p>
+          <p>Barreau de Tunis · office@mokadmi.lawyer</p>
         </div>
       </div>
     </section>

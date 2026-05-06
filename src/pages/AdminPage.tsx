@@ -985,7 +985,7 @@ export default function AdminPage() {
       {/* Header */}
       <header className="border-b border-navy/10 bg-navy flex items-center justify-between px-6 h-14 sticky top-0 z-40">
         <Link to="/" className="flex flex-col">
-          <span className="font-serif text-base font-semibold text-white leading-tight">Sami Mokadmi</span>
+          <span className="font-serif text-base font-semibold text-white leading-tight">Maître Mokadmi Sami</span>
           <span className="text-[10px] text-white/40 tracking-wide uppercase">Administration</span>
         </Link>
         <div className="flex items-center gap-4">

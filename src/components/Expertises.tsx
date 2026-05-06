@@ -12,8 +12,8 @@ const secteurs = [
     icon: ShieldCheck,
     titre: 'Protection des Données & IA',
     description:
-      "RGPD, IA Act européen, contrats de traitement de données, privacy by design. Nous sécurisons votre conformité sans freiner votre roadmap produit.",
-    tags: ['RGPD', 'IA Act', 'DPA', 'Privacy'],
+      "IA Act européen, contrats de traitement de données, privacy by design. Nous sécurisons votre conformité sans freiner votre roadmap produit.",
+    tags: ['IA Act', 'DPA', 'Privacy', 'Protection des données'],
   },
   {
     icon: TrendingUp,

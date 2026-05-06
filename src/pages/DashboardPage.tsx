@@ -698,8 +698,8 @@ function Messagerie() {
         <p className="text-sm font-medium text-navy">Messagerie en cours d'activation</p>
         <p className="text-xs text-navy/40 max-w-xs leading-relaxed">
           Pour toute question urgente, contactez le cabinet directement à{' '}
-          <a href="mailto:contact@samimokadmi-avocat.fr" className="text-navy underline">
-            contact@samimokadmi-avocat.fr
+          <a href="mailto:office@mokadmi.lawyer" className="text-navy underline">
+            office@mokadmi.lawyer
           </a>
         </p>
       </div>
@@ -741,7 +741,7 @@ export default function DashboardPage() {
       {/* Top bar */}
       <header className="border-b border-navy/10 bg-offwhite flex items-center justify-between px-6 h-14 sticky top-0 z-40">
         <Link to="/" className="flex flex-col">
-          <span className="font-serif text-base font-semibold text-navy leading-tight">Sami Mokadmi</span>
+          <span className="font-serif text-base font-semibold text-navy leading-tight">Maître Mokadmi Sami</span>
           <span className="text-[10px] text-navy/40 tracking-wide">Espace Client</span>
         </Link>
         <div className="flex items-center gap-4">

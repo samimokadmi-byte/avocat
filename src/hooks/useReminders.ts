@@ -63,7 +63,7 @@ export function useReminders(rdvs: Appointment[], todos: Todo[]) {
       let perm = Notification.permission
       if (perm === 'default') perm = await Notification.requestPermission()
       if (perm !== 'granted') return
-      toFire.forEach(a => new Notification('Cabinet Mokadmi', { body: a.message, tag: a.id }))
+      toFire.forEach(a => new Notification('Maître Mokadmi Sami', { body: a.message, tag: a.id }))
       const next = [...alreadyFired, ...toFire.map(a => a.id)]
       sessionStorage.setItem('avocat_notified', JSON.stringify(next))
     }

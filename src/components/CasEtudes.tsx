@@ -5,7 +5,7 @@ const cas = [
       "Une startup de 12 personnes arrivait en closing de série A avec un cap table désorganisé : trois pactes contradictoires, des BSPCE mal structurés et un investisseur lead qui menaçait de se retirer.",
     solution:
       "Audit complet en 5 jours ouvrés, restructuration du cap table, fusion des pactes en un document unique, re-négociation des clauses de liquidité avec le lead. Closing finalisé 3 semaines après notre intervention.",
-    impact: '4,2 M€ levés · Closing en 3 semaines',
+    impact: 'Closing en 3 semaines · Cap table restructuré',
   },
   {
     secteur: 'Acquisition · PME Tech',

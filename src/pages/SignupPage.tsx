@@ -29,7 +29,7 @@ export default function SignupPage() {
     <div className="min-h-screen bg-offwhite flex flex-col">
       <header className="border-b border-navy/10 px-6 h-16 flex items-center">
         <Link to="/" className="flex flex-col">
-          <span className="font-serif text-lg font-semibold text-navy leading-tight">Sami Mokadmi</span>
+          <span className="font-serif text-lg font-semibold text-navy leading-tight">Maître Mokadmi Sami</span>
           <span className="text-xs text-navy/40 tracking-wide">Avocat — Droit des Affaires &amp; Tech</span>
         </Link>
       </header>

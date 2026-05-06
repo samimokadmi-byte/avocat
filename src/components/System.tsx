@@ -9,7 +9,7 @@ const pillars = [
   {
     icon: Shield,
     title: 'Conformité Tech',
-    body: 'RGPD, propriété intellectuelle des logiciels, contrats SaaS et licences. Sécurisation juridique de votre stack produit et de vos données stratégiques.',
+    body: 'Propriété intellectuelle des logiciels, contrats SaaS et licences. Sécurisation juridique de votre stack produit et de vos données stratégiques.',
   },
   {
     icon: Scale,

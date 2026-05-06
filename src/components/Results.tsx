@@ -1,8 +1,8 @@
 const stats = [
   {
-    value: '15M€',
-    label: 'sécurisés en levées de fonds',
-    note: 'Séries A et B accompagnées depuis 2019',
+    value: '24',
+    label: "ans d'expérience",
+    note: 'Droit des affaires, Tech et fiscal depuis 2000',
   },
   {
     value: '22%',

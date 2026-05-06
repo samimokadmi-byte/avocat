@@ -452,7 +452,7 @@ function SendModal({ invoice, dossiers, userName, userEmail: initEmail, onClose 
   const [toEmail, setToEmail] = useState(initEmail ?? '')
   const [copied, setCopied] = useState(false)
 
-  const subject = `Note d'honoraires N° ${invoice.number} — Cabinet Mokadmi`
+  const subject = `Note d'honoraires N° ${invoice.number} — Maître Mokadmi Sami`
   const msgLines = [
     `Madame, Monsieur ${userName},`,
     ``,
@@ -474,8 +474,8 @@ function SendModal({ invoice, dossiers, userName, userEmail: initEmail, onClose 
     ...(invoice.notes ? [``, `Notes : ${invoice.notes}`] : []),
     ``,
     `Cordialement,`,
-    `Cabinet Sami Mokadmi · Avocat — Droit des Affaires & Tech`,
-    `contact@samimokadmi-avocat.fr`,
+    `Maître Mokadmi Sami · Avocat — Droit des Affaires & Tech`,
+    `Bloc B Espace Tunis Monplaisir 1073 Tunis · office@mokadmi.lawyer · +216 29784651`,
   ]
   const body = msgLines.join('\n')
   const mailtoUrl = `mailto:${toEmail}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`
@@ -583,7 +583,7 @@ function InvoiceDetail({ invoice, dossiers, userName, userCompany, userEmail, on
         {/* Header */}
         <div className="flex items-start justify-between gap-6">
           <div>
-            <p className="font-serif text-xl font-semibold text-navy">Sami Mokadmi</p>
+            <p className="font-serif text-xl font-semibold text-navy">Maître Mokadmi Sami</p>
             <p className="text-xs text-navy/50 mt-0.5">Avocat — Droit des Affaires & Tech</p>
           </div>
           <div className="text-right">
@@ -661,7 +661,7 @@ function InvoiceDetail({ invoice, dossiers, userName, userCompany, userEmail, on
         )}
 
         <div className="h-px bg-navy/10" />
-        <p className="text-xs text-navy/30 text-center">Cabinet Sami Mokadmi · Avocat au Barreau · contact@samimokadmi-avocat.fr</p>
+        <p className="text-xs text-navy/30 text-center">Maître Mokadmi Sami · Avocat · Bloc B Espace Tunis Monplaisir 1073 Tunis · office@mokadmi.lawyer · +216 29784651</p>
       </div>
     </div>
     </>

@@ -2,7 +2,6 @@ import { ArrowRight } from 'lucide-react'
 
 const stats = [
   { value: '24', label: "ans d'expérience" },
-  { value: '15M€', label: 'levées sécurisées' },
   { value: '97%', label: 'dossiers closés' },
 ]
 

@@ -29,7 +29,7 @@ export default function Nav() {
     >
       <div className="max-w-content mx-auto px-6 h-16 flex items-center justify-between">
         <a href="/" className="flex flex-col">
-          <span className="font-serif text-lg tracking-tight font-semibold text-navy leading-tight">Sami Mokadmi</span>
+          <span className="font-serif text-lg tracking-tight font-semibold text-navy leading-tight">Maître Mokadmi Sami</span>
           <span className="text-xs text-navy/40 tracking-wide">Avocat — Droit des Affaires &amp; Tech</span>
         </a>
 

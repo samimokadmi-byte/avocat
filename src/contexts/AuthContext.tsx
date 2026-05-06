@@ -27,7 +27,7 @@ function ensureAdmin() {
   if (!accounts[ADMIN_EMAIL]) {
     const admin: User = {
       id: 'admin-001',
-      name: 'Sami Mokadmi',
+      name: 'Maître Mokadmi Sami',
       email: ADMIN_EMAIL,
       role: 'admin',
     }
@@ -100,7 +100,7 @@ function seedDemoData(userId: string) {
       statut: 'en_cours',
       dateOuverture: '2024-01-15',
       prochainEcheance: '2024-04-01',
-      description: 'Structuration juridique et accompagnement closing Série A — 4,2 M€.',
+      description: 'Structuration juridique et accompagnement closing Série A.',
       etapes: [
         { label: 'Audit capitalistique', statut: 'done', date: '15 jan. 2024' },
         { label: 'Structuration', statut: 'done', date: '01 fév. 2024' },
@@ -124,7 +124,7 @@ function seedDemoData(userId: string) {
     },
     {
       id: crypto.randomUUID(),
-      titre: 'Conformité RGPD',
+      titre: 'Protection des données',
       statut: 'attente',
       dateOuverture: '2024-02-20',
       prochainEcheance: '2024-05-01',
@@ -140,7 +140,7 @@ function seedDemoData(userId: string) {
   const rdvs = [
     { id: crypto.randomUUID(), title: 'Point d\'avancement — Série A', date: fmt(addDays(3)), time: '10:00', type: 'visio', notes: 'Revue du term sheet avec l\'investisseur lead.', clientId: userId },
     { id: crypto.randomUUID(), title: 'Signature pacte d\'associés', date: fmt(addDays(7)), time: '14:30', type: 'presentiel', notes: 'Réunion au cabinet. Prévoir les documents constitutifs.', clientId: userId },
-    { id: crypto.randomUUID(), title: 'Consultation RGPD', date: fmt(addDays(14)), time: '11:00', type: 'telephone', notes: 'Premier point sur le plan de conformité.', clientId: userId },
+    { id: crypto.randomUUID(), title: 'Consultation — Protection des données', date: fmt(addDays(14)), time: '11:00', type: 'telephone', notes: 'Premier point sur le plan de conformité.', clientId: userId },
   ]
 
   const todos = [

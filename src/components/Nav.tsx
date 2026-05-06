@@ -58,7 +58,7 @@ export default function Nav() {
         <div className="hidden md:flex items-center gap-4">
           <Link
             to="/login"
-            className="text-xs font-medium text-light/30 hover:text-light/60 transition-colors"
+            className="text-[13px] font-semibold text-light/30 hover:text-light/60 transition-colors"
           >
             Espace client
           </Link>

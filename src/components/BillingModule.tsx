@@ -3,7 +3,8 @@ import { Appointment } from './CalendarView'
 import { Todo } from './TodoList'
 import {
   Plus, X, Pencil, Trash2, ChevronRight, ChevronDown, ChevronUp,
-  Receipt, ArrowLeft, Printer, FolderOpen, CalendarDays, CheckSquare
+  Receipt, ArrowLeft, Printer, FolderOpen, CalendarDays, CheckSquare,
+  Mail, Copy, Send
 } from 'lucide-react'
 
 // ─── Types ────────────────────────────────────────────────────────────────────
@@ -436,25 +437,132 @@ function InvoiceForm({ invoice, rdvs, todos, dossiers, userId, onSave, onCancel 
   )
 }
 
+// ─── SendModal ────────────────────────────────────────────────────────────────
+
+function SendModal({ invoice, dossiers, userName, userEmail: initEmail, onClose }: {
+  invoice: Invoice
+  dossiers: SimpleDossier[]
+  userName: string
+  userEmail?: string
+  onClose: () => void
+}) {
+  const { ht, tva, ttc, retenue, timbre, net } = computeAmounts(invoice)
+  const dossierName = invoice.dossierId ? dossiers.find(d => d.id === invoice.dossierId)?.titre : undefined
+  const fmtD = (s: string) => new Date(s + 'T12:00:00').toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric' })
+  const [toEmail, setToEmail] = useState(initEmail ?? '')
+  const [copied, setCopied] = useState(false)
+
+  const subject = `Note d'honoraires N° ${invoice.number} — Cabinet Mokadmi`
+  const msgLines = [
+    `Madame, Monsieur ${userName},`,
+    ``,
+    `Veuillez trouver ci-dessous votre note d'honoraires.`,
+    ``,
+    `Référence    : ${invoice.number}`,
+    `Émission     : ${fmtD(invoice.dateEmission)}`,
+    `Échéance     : ${fmtD(invoice.dateEcheance)}`,
+    ...(dossierName ? [`Dossier      : ${dossierName}`] : []),
+    ``,
+    `——— Détail fiscal ———`,
+    `Montant HT   : ${fmtAmount(ht, invoice.currency)}`,
+    ...(invoice.tvaRate > 0 ? [`TVA (${invoice.tvaRate} %)  : + ${fmtAmount(tva, invoice.currency)}`] : []),
+    `Montant TTC  : ${fmtAmount(ttc, invoice.currency)}`,
+    ...(invoice.retenueRate > 0 ? [`Retenue (${invoice.retenueRate} %): − ${fmtAmount(retenue, invoice.currency)}`] : []),
+    ...(invoice.timbreFiscal > 0 ? [`Timbre fiscal : + ${fmtAmount(timbre, invoice.currency)}`] : []),
+    ``,
+    `NET À PAYER  : ${fmtAmount(net, invoice.currency)}`,
+    ...(invoice.notes ? [``, `Notes : ${invoice.notes}`] : []),
+    ``,
+    `Cordialement,`,
+    `Cabinet Sami Mokadmi · Avocat — Droit des Affaires & Tech`,
+    `contact@samimokadmi-avocat.fr`,
+  ]
+  const body = msgLines.join('\n')
+  const mailtoUrl = `mailto:${toEmail}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`
+
+  const copy = () => {
+    navigator.clipboard.writeText(body).then(() => { setCopied(true); setTimeout(() => setCopied(false), 2000) })
+  }
+
+  return (
+    <div className="fixed inset-0 z-50 bg-navy/30 flex items-center justify-center p-4" onClick={onClose}>
+      <div className="bg-offwhite border border-navy/10 w-full max-w-lg flex flex-col max-h-[88vh]" onClick={e => e.stopPropagation()}>
+        <div className="flex items-center justify-between px-6 py-4 border-b border-navy/10 flex-none">
+          <div>
+            <p className="text-xs font-medium tracking-[0.2em] uppercase text-navy/40 mb-0.5">Envoi par email</p>
+            <p className="text-sm font-semibold text-navy">Facture {invoice.number}</p>
+          </div>
+          <button onClick={onClose} className="text-navy/30 hover:text-navy transition-colors"><X size={16} strokeWidth={1.5} /></button>
+        </div>
+        <div className="px-6 py-4 border-b border-navy/10 flex-none">
+          <label className="text-xs font-medium text-navy/40 uppercase tracking-wide block mb-1.5">Destinataire</label>
+          <input
+            type="email"
+            value={toEmail}
+            onChange={e => setToEmail(e.target.value)}
+            placeholder="email@client.com"
+            className="w-full border-b border-navy/15 bg-transparent py-2 text-sm text-navy placeholder:text-navy/25 focus:outline-none focus:border-navy transition-colors"
+          />
+        </div>
+        <div className="px-6 py-3 border-b border-navy/10 flex-none">
+          <p className="text-[10px] text-navy/40 uppercase tracking-wide mb-0.5">Objet</p>
+          <p className="text-sm text-navy">{subject}</p>
+        </div>
+        <div className="px-6 py-4 flex-1 overflow-y-auto min-h-0">
+          <p className="text-[10px] font-medium text-navy/40 uppercase tracking-wide mb-2">Message</p>
+          <pre className="text-xs text-navy/70 leading-relaxed whitespace-pre-wrap font-sans bg-navy/[0.02] border border-navy/10 p-4">{body}</pre>
+        </div>
+        <div className="px-6 py-4 border-t border-navy/10 flex gap-3 flex-wrap flex-none">
+          <a href={mailtoUrl} className="flex items-center gap-2 bg-navy text-offwhite text-xs font-medium px-5 py-2.5 hover:bg-navy/90 transition-colors">
+            <Mail size={12} strokeWidth={1.5} /> Ouvrir dans la messagerie
+          </a>
+          <button onClick={copy} className="flex items-center gap-2 text-xs font-medium text-navy/50 border border-navy/15 px-4 py-2.5 hover:text-navy hover:border-navy/30 transition-colors">
+            <Copy size={12} strokeWidth={1.5} /> {copied ? '✓ Copié !' : 'Copier le message'}
+          </button>
+        </div>
+      </div>
+    </div>
+  )
+}
+
 // ─── InvoiceDetail ────────────────────────────────────────────────────────────
 
-function InvoiceDetail({ invoice, dossiers, userName, userCompany, onBack, onEdit }: {
+function InvoiceDetail({ invoice, dossiers, userName, userCompany, userEmail, onBack, onEdit }: {
   invoice: Invoice
   dossiers: SimpleDossier[]
   userName: string
   userCompany?: string
+  userEmail?: string
   onBack: () => void
   onEdit: () => void
 }) {
+  const [showSend, setShowSend] = useState(false)
   const { ht, tva, ttc, retenue, timbre, net } = computeAmounts(invoice)
   const { label, cls } = STATUS_MAP[invoice.status]
   const dossierName = invoice.dossierId ? dossiers.find(d => d.id === invoice.dossierId)?.titre : undefined
   const sym  = CURRENCIES[invoice.currency]?.symbol ?? invoice.currency
   const fmtD = (s: string) => new Date(s + 'T12:00:00').toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric' })
 
+  const handlePrint = () => {
+    const style = document.createElement('style')
+    style.id = '__inv_print__'
+    style.innerHTML = `@media print {
+      header, aside, nav, [data-print-hide] { display: none !important; }
+      main { max-width: 100% !important; padding: 0 !important; margin: 0 !important; }
+      * { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+    }`
+    document.head.appendChild(style)
+    window.print()
+    setTimeout(() => document.getElementById('__inv_print__')?.remove(), 800)
+  }
+
   return (
+    <>
+      {showSend && (
+        <SendModal invoice={invoice} dossiers={dossiers} userName={userName} userEmail={userEmail} onClose={() => setShowSend(false)} />
+      )}
     <div className="flex flex-col gap-6">
-      <div className="flex items-center justify-between gap-4 print:hidden">
+      <div className="flex items-center justify-between gap-4 print:hidden" data-print-hide>
         <button onClick={onBack} className="flex items-center gap-2 text-xs text-navy/40 hover:text-navy transition-colors">
           <ArrowLeft size={13} strokeWidth={1.5} /> Retour
         </button>
@@ -462,7 +570,10 @@ function InvoiceDetail({ invoice, dossiers, userName, userCompany, onBack, onEdi
           <button onClick={onEdit} className="flex items-center gap-1.5 text-xs font-medium text-navy/50 border border-navy/15 px-3 py-1.5 hover:text-navy hover:border-navy/30 transition-colors">
             <Pencil size={11} strokeWidth={1.5} /> Modifier
           </button>
-          <button onClick={() => window.print()} className="flex items-center gap-1.5 text-xs font-medium text-navy/50 border border-navy/15 px-3 py-1.5 hover:text-navy hover:border-navy/30 transition-colors">
+          <button onClick={() => setShowSend(true)} className="flex items-center gap-1.5 text-xs font-medium text-navy/50 border border-navy/15 px-3 py-1.5 hover:text-navy hover:border-navy/30 transition-colors">
+            <Send size={11} strokeWidth={1.5} /> Envoyer
+          </button>
+          <button onClick={handlePrint} className="flex items-center gap-1.5 text-xs font-medium text-navy/50 border border-navy/15 px-3 py-1.5 hover:text-navy hover:border-navy/30 transition-colors">
             <Printer size={11} strokeWidth={1.5} /> Imprimer
           </button>
         </div>
@@ -553,6 +664,7 @@ function InvoiceDetail({ invoice, dossiers, userName, userCompany, onBack, onEdi
         <p className="text-xs text-navy/30 text-center">Cabinet Sami Mokadmi · Avocat au Barreau · contact@samimokadmi-avocat.fr</p>
       </div>
     </div>
+    </>
   )
 }
 
@@ -567,11 +679,13 @@ interface Props {
   userId: string
   userName: string
   userCompany?: string
+  userEmail?: string
 }
 
-export default function BillingModule({ invoices, setInvoices, rdvs, todos, dossiers, userId, userName, userCompany }: Props) {
-  const [view,     setView]     = useState<'list' | 'form' | 'detail'>('list')
-  const [selected, setSelected] = useState<Invoice | null>(null)
+export default function BillingModule({ invoices, setInvoices, rdvs, todos, dossiers, userId, userName, userCompany, userEmail }: Props) {
+  const [view,      setView]      = useState<'list' | 'form' | 'detail'>('list')
+  const [selected,  setSelected]  = useState<Invoice | null>(null)
+  const [sendInv,   setSendInv]   = useState<Invoice | null>(null)
 
   const openNew  = () => { setSelected(null);  setView('form') }
   const openEdit = (i: Invoice) => { setSelected(i); setView('form') }
@@ -587,12 +701,16 @@ export default function BillingModule({ invoices, setInvoices, rdvs, todos, doss
     return <InvoiceForm invoice={selected} rdvs={rdvs} todos={todos} dossiers={dossiers} userId={userId} onSave={handleSave} onCancel={() => setView('list')} />
 
   if (view === 'detail' && selected)
-    return <InvoiceDetail invoice={selected} dossiers={dossiers} userName={userName} userCompany={userCompany} onBack={() => setView('list')} onEdit={() => setView('form')} />
+    return <InvoiceDetail invoice={selected} dossiers={dossiers} userName={userName} userCompany={userCompany} userEmail={userEmail} onBack={() => setView('list')} onEdit={() => setView('form')} />
 
   // ── List ──
   const sorted = [...invoices].sort((a, b) => b.dateEmission.localeCompare(a.dateEmission))
 
   return (
+    <>
+    {sendInv && (
+      <SendModal invoice={sendInv} dossiers={dossiers} userName={userName} userEmail={userEmail} onClose={() => setSendInv(null)} />
+    )}
     <div className="flex flex-col gap-6">
       <div className="flex items-end justify-between gap-4">
         <div>
@@ -658,9 +776,11 @@ export default function BillingModule({ invoices, setInvoices, rdvs, todos, doss
                   <p className="text-[10px] text-navy/40">net à payer</p>
                 </div>
                 <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                  <button onClick={() => openView(inv)} className="text-navy/30 hover:text-navy p-1.5 transition-colors"><ChevronRight size={13} strokeWidth={1.5} /></button>
-                  <button onClick={() => openEdit(inv)} className="text-navy/30 hover:text-navy p-1.5 transition-colors"><Pencil size={13} strokeWidth={1.5} /></button>
-                  <button onClick={() => del(inv.id)}   className="text-navy/20 hover:text-red-500 p-1.5 transition-colors"><Trash2 size={13} strokeWidth={1.5} /></button>
+                  <button onClick={() => openView(inv)} title="Voir"      className="text-navy/30 hover:text-navy p-1.5 transition-colors"><ChevronRight size={13} strokeWidth={1.5} /></button>
+                  <button onClick={() => setSendInv(inv)} title="Envoyer" className="text-navy/30 hover:text-navy p-1.5 transition-colors"><Send size={13} strokeWidth={1.5} /></button>
+                  <button onClick={() => { setSelected(inv); setView('detail'); setTimeout(() => { const s = document.createElement('style'); s.id = '__inv_print__'; s.innerHTML = '@media print { header, aside, nav, [data-print-hide] { display: none !important; } main { max-width: 100% !important; padding: 0 !important; margin: 0 !important; } }'; document.head.appendChild(s); window.print(); setTimeout(() => document.getElementById('__inv_print__')?.remove(), 800) }, 50) }} title="Imprimer" className="text-navy/30 hover:text-navy p-1.5 transition-colors"><Printer size={13} strokeWidth={1.5} /></button>
+                  <button onClick={() => openEdit(inv)} title="Modifier"  className="text-navy/30 hover:text-navy p-1.5 transition-colors"><Pencil size={13} strokeWidth={1.5} /></button>
+                  <button onClick={() => del(inv.id)}   title="Supprimer" className="text-navy/20 hover:text-red-500 p-1.5 transition-colors"><Trash2 size={13} strokeWidth={1.5} /></button>
                 </div>
               </div>
             )
@@ -668,5 +788,6 @@ export default function BillingModule({ invoices, setInvoices, rdvs, todos, doss
         </div>
       )}
     </div>
+    </>
   )
 }

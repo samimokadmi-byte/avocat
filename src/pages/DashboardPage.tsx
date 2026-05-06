@@ -846,6 +846,7 @@ export default function DashboardPage() {
               userId={user?.id ?? ''}
               userName={user?.name ?? ''}
               userCompany={user?.company}
+              userEmail={user?.email}
             />
           )}
           {tab === 'messagerie' && <Messagerie />}

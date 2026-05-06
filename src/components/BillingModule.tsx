@@ -159,15 +159,34 @@ function InvoiceForm({ invoice, rdvs, todos, dossiers, userId, onSave, onCancel 
   }))
 
   const [lines, setLines] = useState<InvoiceLine[]>(
-    () => invoice?.lines ?? [{ id: crypto.randomUUID(), description: '', quantity: 1, unitPrice: 0 }]
+    () => invoice?.lines ?? [{ id: crypto.randomUUID(), description: 'Honoraires', quantity: 1, unitPrice: 0 }]
   )
-  const [showRdv,  setShowRdv]  = useState(false)
-  const [showTodo, setShowTodo] = useState(false)
+  const [showDetail, setShowDetail] = useState(false)
+  const [showRdv,    setShowRdv]    = useState(false)
+  const [showTodo,   setShowTodo]   = useState(false)
 
   const onCurrencyChange = (currency: string) => {
     const defs = CURRENCY_DEFAULTS[currency] ?? { tvaRate: 0, retenueRate: 0, timbreFiscal: 0 }
     setForm(f => ({ ...f, currency, ...defs }))
   }
+
+  // ── HT direct input ──────────────────────────────────────────────────────────
+  const ht = lines.reduce((s, l) => s + lineTotal(l), 0)
+
+  const setHtDirect = (val: number) => {
+    // Update first line (main honoraires line) to match the entered HT
+    setLines(prev => {
+      if (prev.length === 0) return [{ id: crypto.randomUUID(), description: 'Honoraires', quantity: 1, unitPrice: val }]
+      const [first, ...rest] = prev
+      return [{ ...first, quantity: 1, unitPrice: val }, ...rest]
+    })
+  }
+
+  const tva     = ht * form.tvaRate / 100
+  const ttc     = ht + tva
+  const retenue = ttc * form.retenueRate / 100
+  const timbre  = form.timbreFiscal
+  const net     = ttc - retenue + timbre
 
   const addLine  = () => setLines(p => [...p, { id: crypto.randomUUID(), description: '', quantity: 1, unitPrice: 0 }])
   const updLine  = (id: string, field: keyof InvoiceLine, v: string | number) =>
@@ -188,15 +207,6 @@ function InvoiceForm({ invoice, rdvs, todos, dossiers, userId, onSave, onCancel 
     else setLines(p => [...p, { id: `todo-${t.id}`, description: `Prestation — ${t.title}`, quantity: 1, unitPrice: 0 }])
   }
 
-  const { ht, tva, ttc, retenue, timbre, net } = (() => {
-    const ht      = lines.reduce((s, l) => s + lineTotal(l), 0)
-    const tva     = ht * form.tvaRate / 100
-    const ttc     = ht + tva
-    const retenue = ttc * form.retenueRate / 100
-    const timbre  = form.timbreFiscal
-    return { ht, tva, ttc, retenue, timbre, net: ttc - retenue + timbre }
-  })()
-
   const save = () => onSave({
     id: invoice?.id ?? crypto.randomUUID(),
     clientId: userId,
@@ -206,6 +216,7 @@ function InvoiceForm({ invoice, rdvs, todos, dossiers, userId, onSave, onCancel 
     createdAt: invoice?.createdAt ?? new Date().toISOString(),
   })
 
+  const sym = CURRENCIES[form.currency]?.symbol ?? form.currency
   const F = 'border-b border-navy/15 bg-transparent py-2 text-sm text-navy focus:outline-none focus:border-navy transition-colors'
   const L = 'text-xs font-medium text-navy/40 uppercase tracking-wide'
 
@@ -217,6 +228,63 @@ function InvoiceForm({ invoice, rdvs, todos, dossiers, userId, onSave, onCancel 
       <div>
         <p className="text-xs font-medium tracking-[0.2em] uppercase text-navy/40 mb-2">Facturation</p>
         <h2 className="font-serif text-2xl text-navy">{invoice ? 'Modifier la facture' : "Nouvelle note d'honoraires"}</h2>
+      </div>
+
+      {/* ── Montant HT + calcul automatique ── */}
+      <div className="border border-navy/10 p-6 flex flex-col gap-6">
+        <div className="flex flex-col gap-2">
+          <label className={L}>Montant HT <span className="normal-case text-navy/30">({sym})</span></label>
+          <div className="flex items-center gap-3">
+            <input
+              type="number"
+              min="0"
+              step="0.001"
+              value={ht === 0 ? '' : ht}
+              onChange={e => setHtDirect(Number(e.target.value) || 0)}
+              placeholder="0"
+              className="w-full text-2xl font-serif font-semibold text-navy border-b-2 border-navy/20 bg-transparent py-2 focus:outline-none focus:border-navy transition-colors placeholder:text-navy/20"
+            />
+            <span className="text-lg text-navy/40 font-medium flex-none">{sym}</span>
+          </div>
+        </div>
+
+        {/* Live breakdown */}
+        {ht > 0 && (
+          <div className="border border-navy/10 bg-navy/[0.02] p-5 flex flex-col gap-2">
+            <div className="flex justify-between items-center text-sm">
+              <span className="text-navy/50">Montant HT</span>
+              <span className="font-medium text-navy">{fmtAmount(ht, form.currency)}</span>
+            </div>
+            {form.tvaRate > 0 && (
+              <div className="flex justify-between items-center text-sm">
+                <span className="text-navy/50">TVA ({form.tvaRate} %)</span>
+                <span className="text-navy/70">+ {fmtAmount(tva, form.currency)}</span>
+              </div>
+            )}
+            <div className="h-px bg-navy/10 my-1" />
+            <div className="flex justify-between items-center text-sm">
+              <span className="font-semibold text-navy">Montant TTC</span>
+              <span className="font-semibold text-navy">{fmtAmount(ttc, form.currency)}</span>
+            </div>
+            {form.retenueRate > 0 && (
+              <div className="flex justify-between items-center text-sm">
+                <span className="text-red-500">Retenue à la source ({form.retenueRate} %)</span>
+                <span className="text-red-600 font-medium">− {fmtAmount(retenue, form.currency)}</span>
+              </div>
+            )}
+            {form.timbreFiscal > 0 && (
+              <div className="flex justify-between items-center text-sm">
+                <span className="text-emerald-600">Timbre fiscal</span>
+                <span className="text-emerald-600 font-medium">+ {fmtAmount(timbre, form.currency)}</span>
+              </div>
+            )}
+            <div className="h-px bg-navy/10 my-1" />
+            <div className="flex justify-between items-center">
+              <span className="text-base font-bold text-navy">Net à payer</span>
+              <span className="text-xl font-bold text-navy font-serif">{fmtAmount(net, form.currency)}</span>
+            </div>
+          </div>
+        )}
       </div>
 
       {/* ── Informations générales ── */}
@@ -275,75 +343,81 @@ function InvoiceForm({ invoice, rdvs, todos, dossiers, userId, onSave, onCancel 
             <input type="number" min="0" max="100" step="0.1" value={form.retenueRate} onChange={e => setForm(f => ({ ...f, retenueRate: Number(e.target.value) }))} className={F} />
           </div>
           <div className="flex flex-col gap-1.5">
-            <label className={L}>Timbre fiscal ({CURRENCIES[form.currency]?.symbol ?? form.currency})</label>
+            <label className={L}>Timbre fiscal ({sym})</label>
             <input type="number" min="0" step="0.001" value={form.timbreFiscal} onChange={e => setForm(f => ({ ...f, timbreFiscal: Number(e.target.value) }))} className={F} />
           </div>
         </div>
         <p className="text-[10px] text-navy/30">La retenue à la source est calculée sur le montant TTC (HT + TVA).</p>
       </div>
 
-      {/* ── Prestations ── */}
-      <div className="border border-navy/10 p-6 flex flex-col gap-4">
-        <p className={L}>Prestations</p>
+      {/* ── Détail des prestations (optionnel) ── */}
+      <div className="border border-navy/10">
+        <button
+          onClick={() => setShowDetail(v => !v)}
+          className="w-full flex items-center justify-between px-6 py-4 text-left hover:bg-navy/[0.02] transition-colors"
+        >
+          <span className={L}>Détail des prestations <span className="normal-case text-navy/30">(optionnel)</span></span>
+          {showDetail ? <ChevronUp size={14} strokeWidth={1.5} className="text-navy/30" /> : <ChevronDown size={14} strokeWidth={1.5} className="text-navy/30" />}
+        </button>
 
-        <div className="flex flex-col gap-px bg-navy/10">
-          <div className="bg-navy/5 grid grid-cols-[1fr_72px_96px_80px_28px] gap-2 px-4 py-2">
-            {['Description', 'Qté/h', `PU (${CURRENCIES[form.currency]?.symbol ?? ''})`, 'Total', ''].map(h => (
-              <p key={h} className="text-[10px] font-medium text-navy/40 uppercase tracking-wide text-right first:text-left">{h}</p>
-            ))}
-          </div>
-          {lines.map(line => (
-            <div key={line.id} className="bg-offwhite grid grid-cols-[1fr_72px_96px_80px_28px] gap-2 px-4 py-2 items-center">
-              <input type="text" value={line.description} onChange={e => updLine(line.id, 'description', e.target.value)} placeholder="Description de la prestation…" className="text-sm text-navy bg-transparent border-b border-transparent focus:border-navy/30 py-1 focus:outline-none transition-colors min-w-0" />
-              <input type="number" min="0" step="0.5"  value={line.quantity}  onChange={e => updLine(line.id, 'quantity', e.target.value)}  className="text-sm text-navy text-right bg-transparent border-b border-transparent focus:border-navy/30 py-1 focus:outline-none transition-colors" />
-              <input type="number" min="0" step="1"    value={line.unitPrice} onChange={e => updLine(line.id, 'unitPrice', e.target.value)} className="text-sm text-navy text-right bg-transparent border-b border-transparent focus:border-navy/30 py-1 focus:outline-none transition-colors" />
-              <p className="text-sm text-navy/60 text-right">{fmtAmount(lineTotal(line), form.currency)}</p>
-              <button onClick={() => delLine(line.id)} className="text-navy/20 hover:text-red-500 transition-colors flex justify-center"><X size={13} strokeWidth={1.5} /></button>
+        {showDetail && (
+          <div className="px-6 pb-6 flex flex-col gap-4">
+            <div className="flex flex-col gap-px bg-navy/10">
+              <div className="bg-navy/5 grid grid-cols-[1fr_72px_96px_80px_28px] gap-2 px-4 py-2">
+                {['Description', 'Qté/h', `PU (${sym})`, 'Total', ''].map(h => (
+                  <p key={h} className="text-[10px] font-medium text-navy/40 uppercase tracking-wide text-right first:text-left">{h}</p>
+                ))}
+              </div>
+              {lines.map(line => (
+                <div key={line.id} className="bg-offwhite grid grid-cols-[1fr_72px_96px_80px_28px] gap-2 px-4 py-2 items-center">
+                  <input type="text" value={line.description} onChange={e => updLine(line.id, 'description', e.target.value)} placeholder="Description…" className="text-sm text-navy bg-transparent border-b border-transparent focus:border-navy/30 py-1 focus:outline-none transition-colors min-w-0" />
+                  <input type="number" min="0" step="0.5"  value={line.quantity}  onChange={e => updLine(line.id, 'quantity', e.target.value)}  className="text-sm text-navy text-right bg-transparent border-b border-transparent focus:border-navy/30 py-1 focus:outline-none transition-colors" />
+                  <input type="number" min="0" step="1"    value={line.unitPrice} onChange={e => updLine(line.id, 'unitPrice', e.target.value)} className="text-sm text-navy text-right bg-transparent border-b border-transparent focus:border-navy/30 py-1 focus:outline-none transition-colors" />
+                  <p className="text-sm text-navy/60 text-right">{fmtAmount(lineTotal(line), form.currency)}</p>
+                  <button onClick={() => delLine(line.id)} className="text-navy/20 hover:text-red-500 transition-colors flex justify-center"><X size={13} strokeWidth={1.5} /></button>
+                </div>
+              ))}
             </div>
-          ))}
-        </div>
 
-        <div className="flex gap-2 flex-wrap">
-          <button onClick={addLine} className="flex items-center gap-1.5 text-xs font-medium text-navy/40 hover:text-navy border border-navy/15 hover:border-navy/30 px-3 py-1.5 transition-colors">
-            <Plus size={11} strokeWidth={1.5} /> Ajouter une ligne
-          </button>
-          <button onClick={() => setShowRdv(v => !v)} className="flex items-center gap-1.5 text-xs font-medium text-navy/40 hover:text-navy border border-navy/15 hover:border-navy/30 px-3 py-1.5 transition-colors">
-            <CalendarDays size={11} strokeWidth={1.5} /> Importer RDV {showRdv ? <ChevronUp size={9} /> : <ChevronDown size={9} />}
-          </button>
-          <button onClick={() => setShowTodo(v => !v)} className="flex items-center gap-1.5 text-xs font-medium text-navy/40 hover:text-navy border border-navy/15 hover:border-navy/30 px-3 py-1.5 transition-colors">
-            <CheckSquare size={11} strokeWidth={1.5} /> Importer tâches {showTodo ? <ChevronUp size={9} /> : <ChevronDown size={9} />}
-          </button>
-        </div>
+            <div className="flex gap-2 flex-wrap">
+              <button onClick={addLine} className="flex items-center gap-1.5 text-xs font-medium text-navy/40 hover:text-navy border border-navy/15 hover:border-navy/30 px-3 py-1.5 transition-colors">
+                <Plus size={11} strokeWidth={1.5} /> Ajouter une ligne
+              </button>
+              <button onClick={() => setShowRdv(v => !v)} className="flex items-center gap-1.5 text-xs font-medium text-navy/40 hover:text-navy border border-navy/15 hover:border-navy/30 px-3 py-1.5 transition-colors">
+                <CalendarDays size={11} strokeWidth={1.5} /> Importer RDV {showRdv ? <ChevronUp size={9} /> : <ChevronDown size={9} />}
+              </button>
+              <button onClick={() => setShowTodo(v => !v)} className="flex items-center gap-1.5 text-xs font-medium text-navy/40 hover:text-navy border border-navy/15 hover:border-navy/30 px-3 py-1.5 transition-colors">
+                <CheckSquare size={11} strokeWidth={1.5} /> Importer tâches {showTodo ? <ChevronUp size={9} /> : <ChevronDown size={9} />}
+              </button>
+            </div>
 
-        {showRdv && (
-          <div className="border border-navy/10 p-4 flex flex-col gap-2">
-            <p className="text-xs font-medium text-navy/40 uppercase tracking-wide mb-1">Rendez-vous à facturer</p>
-            {rdvs.length === 0 ? <p className="text-xs text-navy/30">Aucun rendez-vous disponible.</p>
-              : rdvs.map(r => (
-                <label key={r.id} className="flex items-center gap-2 cursor-pointer">
-                  <input type="checkbox" checked={form.linkedRdvIds.includes(r.id)} onChange={() => toggleRdv(r)} className="accent-navy" />
-                  <span className="text-sm text-navy">{r.title} <span className="text-xs text-navy/40">{r.date} · {r.time}</span></span>
-                </label>
-              ))}
+            {showRdv && (
+              <div className="border border-navy/10 p-4 flex flex-col gap-2">
+                <p className="text-xs font-medium text-navy/40 uppercase tracking-wide mb-1">Rendez-vous à facturer</p>
+                {rdvs.length === 0 ? <p className="text-xs text-navy/30">Aucun rendez-vous disponible.</p>
+                  : rdvs.map(r => (
+                    <label key={r.id} className="flex items-center gap-2 cursor-pointer">
+                      <input type="checkbox" checked={form.linkedRdvIds.includes(r.id)} onChange={() => toggleRdv(r)} className="accent-navy" />
+                      <span className="text-sm text-navy">{r.title} <span className="text-xs text-navy/40">{r.date} · {r.time}</span></span>
+                    </label>
+                  ))}
+              </div>
+            )}
+
+            {showTodo && (
+              <div className="border border-navy/10 p-4 flex flex-col gap-2">
+                <p className="text-xs font-medium text-navy/40 uppercase tracking-wide mb-1">Tâches réalisées à facturer</p>
+                {todos.filter(t => t.done).length === 0 ? <p className="text-xs text-navy/30">Aucune tâche complétée.</p>
+                  : todos.filter(t => t.done).map(t => (
+                    <label key={t.id} className="flex items-center gap-2 cursor-pointer">
+                      <input type="checkbox" checked={form.linkedTodoIds.includes(t.id)} onChange={() => toggleTodo(t)} className="accent-navy" />
+                      <span className="text-sm text-navy">{t.title}</span>
+                    </label>
+                  ))}
+              </div>
+            )}
           </div>
         )}
-
-        {showTodo && (
-          <div className="border border-navy/10 p-4 flex flex-col gap-2">
-            <p className="text-xs font-medium text-navy/40 uppercase tracking-wide mb-1">Tâches réalisées à facturer</p>
-            {todos.filter(t => t.done).length === 0 ? <p className="text-xs text-navy/30">Aucune tâche complétée.</p>
-              : todos.filter(t => t.done).map(t => (
-                <label key={t.id} className="flex items-center gap-2 cursor-pointer">
-                  <input type="checkbox" checked={form.linkedTodoIds.includes(t.id)} onChange={() => toggleTodo(t)} className="accent-navy" />
-                  <span className="text-sm text-navy">{t.title}</span>
-                </label>
-              ))}
-          </div>
-        )}
-
-        <div className="border-t border-navy/10 pt-4">
-          <TotalsBlock {...{ ht, tva, ttc, retenue, timbre, net, tvaRate: form.tvaRate, retenueRate: form.retenueRate, timbreFiscal: form.timbreFiscal, currency: form.currency }} />
-        </div>
       </div>
 
       {/* ── Notes ── */}

@@ -24,17 +24,17 @@ const steps = [
 
 export default function Method() {
   return (
-    <section id="methode" className="px-6 py-section max-w-content mx-auto">
+    <section id="methode" className="px-6 py-12 md:py-section max-w-content mx-auto">
       <p className="text-xs font-medium tracking-[0.2em] uppercase text-gold/60 mb-4">
         Méthode
       </p>
-      <h2 className="font-serif text-heading text-light mb-16 max-w-xl">
+      <h2 className="font-serif text-heading text-light mb-8 md:mb-16 max-w-xl">
         Trois actes. Zéro improvisation.
       </h2>
 
       <div className="flex flex-col">
         {steps.map((step, i) => (
-          <div key={step.number} className="relative flex gap-10 md:gap-16 pb-16 last:pb-0">
+          <div key={step.number} className="relative flex gap-6 md:gap-16 pb-10 md:pb-16 last:pb-0">
             {i < steps.length - 1 && (
               <div className="absolute left-[1.35rem] top-12 bottom-0 w-px bg-gold/15" />
             )}

@@ -7,8 +7,8 @@ export default function BlogSection() {
 
   return (
     <section id="blog" className="bg-dark-surface">
-      <div className="px-6 py-section max-w-content mx-auto">
-        <div className="flex items-end justify-between mb-16 gap-4 flex-wrap">
+      <div className="px-6 py-12 md:py-section max-w-content mx-auto">
+        <div className="flex items-end justify-between mb-8 md:mb-16 gap-4 flex-wrap">
           <div>
             <p className="text-xs font-medium tracking-[0.2em] uppercase text-gold/60 mb-4">Blog</p>
             <h2 className="font-serif text-heading text-light max-w-xl">
@@ -28,7 +28,7 @@ export default function BlogSection() {
             <Link
               key={post.slug}
               to="/blog"
-              className="bg-dark-card p-8 flex flex-col gap-4 group hover:bg-dark-card/80 transition-colors duration-200 block"
+              className="bg-dark-card p-5 md:p-8 flex flex-col gap-4 group hover:bg-dark-card/80 transition-colors duration-200 block"
             >
               <span className="text-xs font-medium text-gold/50 border border-gold/15 px-2 py-0.5 self-start">
                 {post.category}

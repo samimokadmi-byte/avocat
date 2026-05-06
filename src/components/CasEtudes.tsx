@@ -27,20 +27,20 @@ const cas = [
 
 export default function CasEtudes() {
   return (
-    <section id="cas" className="px-6 py-section max-w-content mx-auto">
+    <section id="cas" className="px-6 py-12 md:py-section max-w-content mx-auto">
       <p className="text-xs font-medium tracking-[0.2em] uppercase text-gold/60 mb-4">
         Études de Cas
       </p>
       <h2 className="font-serif text-heading text-light mb-4 max-w-xl">
         Des problématiques réelles. Des solutions mesurables.
       </h2>
-      <p className="text-sm text-light/40 mb-16 max-w-prose-luxury">
+      <p className="text-sm text-light/40 mb-8 md:mb-16 max-w-prose-luxury">
         Les cas présentés respectent le secret professionnel. Les détails identifiants ont été modifiés.
       </p>
 
       <div className="flex flex-col gap-px bg-gold/10">
         {cas.map(({ secteur, problematique, solution, impact }) => (
-          <div key={secteur} className="bg-dark-surface p-10 grid grid-cols-1 md:grid-cols-3 gap-10">
+          <div key={secteur} className="bg-dark-surface p-5 md:p-10 grid grid-cols-1 md:grid-cols-3 gap-6 md:gap-10">
             <div className="flex flex-col justify-between gap-6">
               <div>
                 <p className="text-xs font-medium uppercase tracking-[0.15em] text-gold/50 mb-3">{secteur}</p>

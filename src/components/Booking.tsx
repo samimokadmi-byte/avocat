@@ -13,8 +13,8 @@ const expertise = [
 export default function Booking() {
   return (
     <section id="booking" className="bg-dark-surface">
-      <div className="px-6 py-section max-w-content mx-auto">
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-16 lg:gap-24">
+      <div className="px-6 py-12 md:py-section max-w-content mx-auto">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-10 md:gap-16 lg:gap-24">
 
           <div>
             <p className="text-xs font-medium tracking-[0.2em] uppercase text-gold/60 mb-4">
@@ -58,7 +58,7 @@ export default function Booking() {
           </div>
 
           <div className="flex flex-col justify-center">
-            <div className="border border-gold/15 p-10">
+            <div className="border border-gold/15 p-6 md:p-10">
               <p className="text-sm text-light/40 mb-8 leading-relaxed">
                 Remplissez ce formulaire ou écrivez-nous directement. Nous répondons sous 24h ouvrées.
               </p>

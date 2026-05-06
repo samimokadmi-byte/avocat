@@ -47,21 +47,21 @@ const secteurs = [
 
 export default function Expertises() {
   return (
-    <section id="expertises" className="px-6 py-section max-w-content mx-auto">
+    <section id="expertises" className="px-6 py-12 md:py-section max-w-content mx-auto">
       <p className="text-xs font-medium tracking-[0.2em] uppercase text-gold/60 mb-4">
         Expertises
       </p>
       <h2 className="font-serif text-heading text-light mb-4 max-w-xl">
         Une expertise verticale, jamais généraliste.
       </h2>
-      <p className="text-sm text-light/40 mb-16 max-w-prose-luxury">
+      <p className="text-sm text-light/40 mb-8 md:mb-16 max-w-prose-luxury">
         Chaque domaine est traité avec la précision d'un ingénieur et l'autorité de 24 ans de pratique.
       </p>
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-px bg-gold/10">
         {secteurs.map(({ icon: Icon, titre, description, tags }) => (
           <div key={titre}
-            className="bg-dark-surface p-10 flex flex-col gap-5 group hover:bg-dark-card transition-colors duration-300">
+            className="bg-dark-surface p-6 md:p-10 flex flex-col gap-5 group hover:bg-dark-card transition-colors duration-300">
             <Icon size={20} strokeWidth={1.25}
               className="text-gold/50 group-hover:text-gold transition-colors duration-300" />
             <div>

@@ -11,11 +11,11 @@ export default function Hero() {
   return (
     <section
       id="hero"
-      className="min-h-screen flex flex-col justify-center px-6 pt-24 pb-section max-w-content mx-auto"
+      className="min-h-screen flex flex-col justify-center px-6 pt-20 pb-12 md:pt-24 md:pb-section max-w-content mx-auto"
     >
-      <div className="grid grid-cols-1 md:grid-cols-[1fr_auto] gap-12 md:gap-16 items-center">
+      <div className="grid grid-cols-1 md:grid-cols-[1fr_auto] gap-8 md:gap-16 items-center">
         <div>
-          <div className="inline-flex items-center gap-2 border border-gold/20 bg-gold/5 px-3 py-1.5 mb-8">
+          <div className="inline-flex items-center gap-2 border border-gold/20 bg-gold/5 px-3 py-1.5 mb-6 md:mb-8">
             <Zap size={10} className="text-gold" strokeWidth={2} />
             <span className="text-xs font-medium text-gold/80 tracking-wide">
               L'Architecte Juridique · 24 ans d'excellence
@@ -29,7 +29,7 @@ export default function Hero() {
           <p className="text-subhead text-light/50 max-w-prose-luxury mb-4 font-light leading-relaxed">
             La sagesse de 24 ans d'expérience au service de l'innovation de rupture.
           </p>
-          <p className="text-sm text-light/35 max-w-prose-luxury mb-12 leading-relaxed">
+          <p className="text-sm text-light/35 max-w-prose-luxury mb-8 md:mb-12 leading-relaxed">
             Ingénierie juridique, fiscalité stratégique et intelligence artificielle — pour les fondateurs
             qui pensent en systèmes, pas en documents.
           </p>

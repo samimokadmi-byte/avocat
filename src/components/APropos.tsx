@@ -36,10 +36,10 @@ const valeurs = [
 export default function APropos() {
   return (
     <section id="apropos" className="bg-dark-bg">
-      <div className="px-6 py-section max-w-content mx-auto">
+      <div className="px-6 py-12 md:py-section max-w-content mx-auto">
 
         {/* ── En-tête ────────────────────────────────────────────────── */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-16 mb-section">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-8 md:gap-16 mb-10 md:mb-section">
           <div>
             <p className="text-xs font-medium tracking-[0.2em] uppercase text-gold/60 mb-4">
               À propos
@@ -73,16 +73,16 @@ export default function APropos() {
         </div>
 
         {/* ── Ligne de séparation ────────────────────────────────────── */}
-        <div className="border-t border-gold/10 mb-section" />
+        <div className="border-t border-gold/10 mb-10 md:mb-section" />
 
         {/* ── Parcours chronologique ─────────────────────────────────── */}
         <div className="mb-4">
-          <p className="text-xs font-medium tracking-[0.2em] uppercase text-gold/60 mb-10">
+          <p className="text-xs font-medium tracking-[0.2em] uppercase text-gold/60 mb-6 md:mb-10">
             Parcours
           </p>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-px bg-gold/8">
             {parcours.map(({ icon: Icon, periode, titre, detail }) => (
-              <div key={titre} className="bg-dark-bg p-8 flex flex-col gap-4">
+              <div key={titre} className="bg-dark-bg p-5 md:p-8 flex flex-col gap-4">
                 <div className="flex items-center gap-3">
                   <div className="w-8 h-8 border border-gold/20 flex items-center justify-center flex-none">
                     <Icon size={14} strokeWidth={1.5} className="text-gold/70" />

@@ -64,11 +64,11 @@ function FAQItem({ q, a }: { q: string; a: string }) {
 
 export default function FAQ() {
   return (
-    <section id="faq" className="px-6 py-section max-w-content mx-auto">
+    <section id="faq" className="px-6 py-12 md:py-section max-w-content mx-auto">
       <p className="text-xs font-medium tracking-[0.2em] uppercase text-gold/60 mb-4">
         FAQ
       </p>
-      <h2 className="font-serif text-heading text-light mb-16 max-w-xl">
+      <h2 className="font-serif text-heading text-light mb-8 md:mb-16 max-w-xl">
         Questions fréquentes.
       </h2>
 

@@ -37,7 +37,7 @@ import CasEtudes from './components/CasEtudes'
 import BlogSection from './components/BlogSection'
 import FAQ from './components/FAQ'
 import Booking from './components/Booking'
-import WhatsAppButton from './components/WhatsAppButton'
+import ChatWidget from './components/ChatWidget'
 
 // ── Heavy routes — loaded only when the user navigates to them ───────────────
 // Each lazy() call becomes a separate JS chunk in the build output.
@@ -72,7 +72,7 @@ function LandingPage() {
         <FAQ />
         <Booking />
       </main>
-      <WhatsAppButton />
+      <ChatWidget />
     </div>
   )
 }

@@ -5,8 +5,9 @@
 @layer base {
   html {
     scroll-behavior: smooth;
-    background-color: #FDFCFB;
-    color: #0A192F;
+    scroll-padding-top: 4rem;
+    background-color: #070C18;
+    color: #E8EDF5;
   }
 
   body {
@@ -22,7 +23,7 @@
   }
 
   *:focus-visible {
-    outline: 2px solid #0A192F;
+    outline: 2px solid #C9A96E;
     outline-offset: 3px;
   }
 }

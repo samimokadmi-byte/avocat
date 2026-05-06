@@ -13,7 +13,6 @@ import Method from './components/Method'
 import Results from './components/Results'
 import CasEtudes from './components/CasEtudes'
 import Filter from './components/Filter'
-import Testimonials from './components/Testimonials'
 import BlogSection from './components/BlogSection'
 import FAQ from './components/FAQ'
 import Booking from './components/Booking'
@@ -30,7 +29,6 @@ function LandingPage() {
         <Expertises />
         <CasEtudes />
         <Filter />
-        <Testimonials />
         <BlogSection />
         <FAQ />
         <Booking />

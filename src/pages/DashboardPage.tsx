@@ -64,9 +64,9 @@ function formatSize(bytes: number) {
 
 function StatusBadge({ statut }: { statut: Dossier['statut'] }) {
   const map = {
-    en_cours: { label: 'En cours', className: 'bg-blue-50 text-blue-700 border-blue-200' },
-    complete: { label: 'Clôturé', className: 'bg-green-50 text-green-700 border-green-200' },
-    attente: { label: 'En attente', className: 'bg-amber-50 text-amber-700 border-amber-200' },
+    en_cours: { label: 'En cours', className: 'bg-blue-500/10 text-blue-400 border-blue-500/20' },
+    complete: { label: 'Clôturé', className: 'bg-green-500/10 text-green-400 border-green-500/20' },
+    attente: { label: 'En attente', className: 'bg-gold/50/10 text-amber-400 border-amber-500/20' },
   }
   const { label, className } = map[statut]
   return (
@@ -85,36 +85,36 @@ function Apercu({ dossiers, documents, userName }: { dossiers: Dossier[]; docume
   return (
     <div className="flex flex-col gap-8">
       <div>
-        <p className="text-xs font-medium tracking-[0.2em] uppercase text-navy/40 mb-2">Tableau de bord</p>
-        <h2 className="font-serif text-2xl text-navy">Bonjour, {userName.split(' ')[0]}.</h2>
+        <p className="text-xs font-medium tracking-[0.2em] uppercase text-light/40 mb-2">Tableau de bord</p>
+        <h2 className="font-serif text-2xl text-light">Bonjour, {userName.split(' ')[0]}.</h2>
       </div>
 
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-px bg-navy/10">
-        <div className="bg-offwhite p-6">
-          <p className="text-xs text-navy/40 uppercase tracking-wide mb-2">Dossiers actifs</p>
-          <p className="font-serif text-3xl font-bold text-navy">{actifs}</p>
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-px bg-gold/10">
+        <div className="bg-dark-surface p-6">
+          <p className="text-xs text-light/40 uppercase tracking-wide mb-2">Dossiers actifs</p>
+          <p className="font-serif text-3xl font-bold text-light">{actifs}</p>
         </div>
-        <div className="bg-offwhite p-6">
-          <p className="text-xs text-navy/40 uppercase tracking-wide mb-2">Documents</p>
-          <p className="font-serif text-3xl font-bold text-navy">{documents.length}</p>
+        <div className="bg-dark-surface p-6">
+          <p className="text-xs text-light/40 uppercase tracking-wide mb-2">Documents</p>
+          <p className="font-serif text-3xl font-bold text-light">{documents.length}</p>
         </div>
-        <div className="bg-offwhite p-6">
-          <p className="text-xs text-navy/40 uppercase tracking-wide mb-2">Prochaine échéance</p>
-          <p className="font-serif text-base font-semibold text-navy leading-tight">
+        <div className="bg-dark-surface p-6">
+          <p className="text-xs text-light/40 uppercase tracking-wide mb-2">Prochaine échéance</p>
+          <p className="font-serif text-base font-semibold text-light leading-tight">
             {prochaine ? new Date(prochaine.prochainEcheance!).toLocaleDateString('fr-FR', { day: 'numeric', month: 'long' }) : '—'}
           </p>
-          {prochaine && <p className="text-xs text-navy/40 mt-0.5">{prochaine.titre}</p>}
+          {prochaine && <p className="text-xs text-light/40 mt-0.5">{prochaine.titre}</p>}
         </div>
       </div>
 
       <div>
-        <p className="text-xs font-medium text-navy/40 uppercase tracking-wide mb-4">Dossiers récents</p>
-        <div className="flex flex-col gap-px bg-navy/10">
+        <p className="text-xs font-medium text-light/40 uppercase tracking-wide mb-4">Dossiers récents</p>
+        <div className="flex flex-col gap-px bg-gold/10">
           {dossiers.slice(0, 3).map(d => (
-            <div key={d.id} className="bg-offwhite px-6 py-4 flex items-center justify-between gap-4">
+            <div key={d.id} className="bg-dark-surface px-6 py-4 flex items-center justify-between gap-4">
               <div className="flex items-center gap-3 min-w-0">
-                <FolderOpen size={15} strokeWidth={1.25} className="text-navy/30 flex-none" />
-                <span className="text-sm font-medium text-navy truncate">{d.titre}</span>
+                <FolderOpen size={15} strokeWidth={1.25} className="text-light/30 flex-none" />
+                <span className="text-sm font-medium text-light truncate">{d.titre}</span>
               </div>
               <StatusBadge statut={d.statut} />
             </div>
@@ -122,9 +122,9 @@ function Apercu({ dossiers, documents, userName }: { dossiers: Dossier[]; docume
         </div>
       </div>
 
-      <div className="border border-navy/10 px-6 py-4 flex items-center gap-3">
-        <Shield size={14} strokeWidth={1.25} className="text-navy/30 flex-none" />
-        <p className="text-xs text-navy/40">Connexion sécurisée · Chiffrement SSL 256 bits · Données hébergées en France</p>
+      <div className="border border-gold/10 px-6 py-4 flex items-center gap-3">
+        <Shield size={14} strokeWidth={1.25} className="text-light/30 flex-none" />
+        <p className="text-xs text-light/40">Connexion sécurisée · Chiffrement SSL 256 bits · Données hébergées en France</p>
       </div>
     </div>
   )
@@ -146,42 +146,42 @@ function Dossiers({ dossiers, rdvs, todos, invoices }: { dossiers: Dossier[]; rd
       <div className="flex flex-col gap-6">
         <button
           onClick={() => setSelected(null)}
-          className="flex items-center gap-2 text-xs text-navy/40 hover:text-navy transition-colors"
+          className="flex items-center gap-2 text-xs text-light/40 hover:text-light transition-colors"
         >
           ← Retour aux dossiers
         </button>
 
         <div className="flex items-start justify-between gap-4 flex-wrap">
           <div>
-            <p className="text-xs font-medium tracking-[0.2em] uppercase text-navy/40 mb-1">
+            <p className="text-xs font-medium tracking-[0.2em] uppercase text-light/40 mb-1">
               Dossier · {new Date(selected.dateOuverture).toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric' })}
             </p>
-            <h2 className="font-serif text-2xl text-navy">{selected.titre}</h2>
+            <h2 className="font-serif text-2xl text-light">{selected.titre}</h2>
           </div>
           <StatusBadge statut={selected.statut} />
         </div>
 
-        <p className="text-sm text-navy/60 leading-relaxed max-w-prose">{selected.description}</p>
+        <p className="text-sm text-light/60 leading-relaxed max-w-prose">{selected.description}</p>
 
         <div>
-          <p className="text-xs font-medium text-navy/40 uppercase tracking-wide mb-6">Avancement</p>
+          <p className="text-xs font-medium text-light/40 uppercase tracking-wide mb-6">Avancement</p>
           <div className="flex flex-col gap-0">
             {selected.etapes.map((etape, i) => (
               <div key={i} className="flex gap-5 pb-8 last:pb-0 relative">
                 {i < selected.etapes.length - 1 && (
-                  <div className="absolute left-[10px] top-6 bottom-0 w-px bg-navy/10" />
+                  <div className="absolute left-[10px] top-6 bottom-0 w-px bg-gold/10" />
                 )}
                 <div className="flex-none mt-0.5 z-10">
-                  {etape.statut === 'done' && <CheckCircle2 size={20} strokeWidth={1.5} className="text-navy" />}
+                  {etape.statut === 'done' && <CheckCircle2 size={20} strokeWidth={1.5} className="text-light" />}
                   {etape.statut === 'current' && <Clock size={20} strokeWidth={1.5} className="text-blue-600" />}
-                  {etape.statut === 'pending' && <Circle size={20} strokeWidth={1.5} className="text-navy/20" />}
+                  {etape.statut === 'pending' && <Circle size={20} strokeWidth={1.5} className="text-light/20" />}
                 </div>
                 <div className="flex-1 pt-0.5">
-                  <p className={`text-sm font-medium ${etape.statut === 'pending' ? 'text-navy/30' : 'text-navy'}`}>
+                  <p className={`text-sm font-medium ${etape.statut === 'pending' ? 'text-light/30' : 'text-light'}`}>
                     {etape.label}
                   </p>
                   {etape.date && (
-                    <p className="text-xs text-navy/40 mt-0.5">{etape.date}</p>
+                    <p className="text-xs text-light/40 mt-0.5">{etape.date}</p>
                   )}
                 </div>
               </div>
@@ -190,9 +190,9 @@ function Dossiers({ dossiers, rdvs, todos, invoices }: { dossiers: Dossier[]; rd
         </div>
 
         {selected.prochainEcheance && (
-          <div className="border border-navy/10 px-6 py-4">
-            <p className="text-xs text-navy/40 uppercase tracking-wide mb-1">Prochaine échéance</p>
-            <p className="text-sm font-medium text-navy">
+          <div className="border border-gold/10 px-6 py-4">
+            <p className="text-xs text-light/40 uppercase tracking-wide mb-1">Prochaine échéance</p>
+            <p className="text-sm font-medium text-light">
               {new Date(selected.prochainEcheance).toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })}
             </p>
           </div>
@@ -200,14 +200,14 @@ function Dossiers({ dossiers, rdvs, todos, invoices }: { dossiers: Dossier[]; rd
 
         {linkedRdvs.length > 0 && (
           <div>
-            <p className="text-xs font-medium text-navy/40 uppercase tracking-wide mb-3">Rendez-vous liés</p>
-            <div className="flex flex-col gap-px bg-navy/10">
+            <p className="text-xs font-medium text-light/40 uppercase tracking-wide mb-3">Rendez-vous liés</p>
+            <div className="flex flex-col gap-px bg-gold/10">
               {linkedRdvs.map(r => (
-                <div key={r.id} className="bg-offwhite px-5 py-3 flex items-center gap-3">
-                  <CalendarDays size={13} strokeWidth={1.25} className="text-navy/30 flex-none" />
+                <div key={r.id} className="bg-dark-surface px-5 py-3 flex items-center gap-3">
+                  <CalendarDays size={13} strokeWidth={1.25} className="text-light/30 flex-none" />
                   <div className="flex-1 min-w-0">
-                    <p className="text-sm font-medium text-navy truncate">{r.title}</p>
-                    <p className="text-xs text-navy/40 mt-0.5">
+                    <p className="text-sm font-medium text-light truncate">{r.title}</p>
+                    <p className="text-xs text-light/40 mt-0.5">
                       {new Date(r.date + 'T12:00:00').toLocaleDateString('fr-FR', { weekday: 'short', day: 'numeric', month: 'short' })} · {r.time}
                     </p>
                   </div>
@@ -219,14 +219,14 @@ function Dossiers({ dossiers, rdvs, todos, invoices }: { dossiers: Dossier[]; rd
 
         {linkedTodos.length > 0 && (
           <div>
-            <p className="text-xs font-medium text-navy/40 uppercase tracking-wide mb-3">Tâches liées</p>
-            <div className="flex flex-col gap-px bg-navy/10">
+            <p className="text-xs font-medium text-light/40 uppercase tracking-wide mb-3">Tâches liées</p>
+            <div className="flex flex-col gap-px bg-gold/10">
               {linkedTodos.map(t => (
-                <div key={t.id} className={`bg-offwhite px-5 py-3 flex items-center gap-3 ${t.done ? 'opacity-50' : ''}`}>
+                <div key={t.id} className={`bg-dark-surface px-5 py-3 flex items-center gap-3 ${t.done ? 'opacity-50' : ''}`}>
                   {t.done
-                    ? <CheckCircle2 size={13} strokeWidth={1.5} className="text-navy flex-none" />
-                    : <Circle size={13} strokeWidth={1.5} className="text-navy/30 flex-none" />}
-                  <p className={`text-sm flex-1 min-w-0 truncate ${t.done ? 'line-through text-navy/40' : 'text-navy font-medium'}`}>{t.title}</p>
+                    ? <CheckCircle2 size={13} strokeWidth={1.5} className="text-light flex-none" />
+                    : <Circle size={13} strokeWidth={1.5} className="text-light/30 flex-none" />}
+                  <p className={`text-sm flex-1 min-w-0 truncate ${t.done ? 'line-through text-light/40' : 'text-light font-medium'}`}>{t.title}</p>
                   {t.priority === 'urgente' && !t.done && (
                     <span className="text-[10px] font-semibold text-red-600 flex-none">Urgent</span>
                   )}
@@ -238,23 +238,23 @@ function Dossiers({ dossiers, rdvs, todos, invoices }: { dossiers: Dossier[]; rd
 
         {linkedInvoices.length > 0 && (
           <div>
-            <p className="text-xs font-medium text-navy/40 uppercase tracking-wide mb-3">Factures liées</p>
-            <div className="flex flex-col gap-px bg-navy/10">
+            <p className="text-xs font-medium text-light/40 uppercase tracking-wide mb-3">Factures liées</p>
+            <div className="flex flex-col gap-px bg-gold/10">
               {linkedInvoices.map(inv => {
                 const { net } = computeAmounts(inv)
                 const statusCls = { brouillon: 'text-gray-500', envoyee: 'text-blue-600', payee: 'text-green-600', en_retard: 'text-red-600' }[inv.status]
                 const statusLabel = { brouillon: 'Brouillon', envoyee: 'Envoyée', payee: 'Payée', en_retard: 'En retard' }[inv.status]
                 return (
-                  <div key={inv.id} className="bg-offwhite px-5 py-3 flex items-center gap-3">
-                    <Receipt size={13} strokeWidth={1.25} className="text-navy/30 flex-none" />
+                  <div key={inv.id} className="bg-dark-surface px-5 py-3 flex items-center gap-3">
+                    <Receipt size={13} strokeWidth={1.25} className="text-light/30 flex-none" />
                     <div className="flex-1 min-w-0">
-                      <p className="text-sm font-medium text-navy font-mono truncate">{inv.number}</p>
-                      <p className="text-xs text-navy/40 mt-0.5">
+                      <p className="text-sm font-medium text-light font-mono truncate">{inv.number}</p>
+                      <p className="text-xs text-light/40 mt-0.5">
                         {new Date(inv.dateEmission + 'T12:00:00').toLocaleDateString('fr-FR', { day: 'numeric', month: 'short', year: 'numeric' })}
                         {' · '}<span className={statusCls}>{statusLabel}</span>
                       </p>
                     </div>
-                    <p className="text-sm font-semibold text-navy flex-none">{fmtAmount(net, inv.currency)}</p>
+                    <p className="text-sm font-semibold text-light flex-none">{fmtAmount(net, inv.currency)}</p>
                   </div>
                 )
               })}
@@ -268,11 +268,11 @@ function Dossiers({ dossiers, rdvs, todos, invoices }: { dossiers: Dossier[]; rd
   return (
     <div className="flex flex-col gap-6">
       <div>
-        <p className="text-xs font-medium tracking-[0.2em] uppercase text-navy/40 mb-2">Mes Dossiers</p>
-        <h2 className="font-serif text-2xl text-navy">Suivi de vos missions</h2>
+        <p className="text-xs font-medium tracking-[0.2em] uppercase text-light/40 mb-2">Mes Dossiers</p>
+        <h2 className="font-serif text-2xl text-light">Suivi de vos missions</h2>
       </div>
 
-      <div className="flex flex-col gap-px bg-navy/10">
+      <div className="flex flex-col gap-px bg-gold/10">
         {dossiers.map(dossier => {
           const rdvCount = rdvs.filter(r => r.dossierId === dossier.id).length
           const todoCount = todos.filter(t => t.dossierId === dossier.id && !t.done).length
@@ -281,26 +281,26 @@ function Dossiers({ dossiers, rdvs, todos, invoices }: { dossiers: Dossier[]; rd
             <button
               key={dossier.id}
               onClick={() => setSelected(dossier)}
-              className="bg-offwhite px-8 py-6 flex items-center justify-between gap-4 text-left hover:bg-navy/[0.02] transition-colors group"
+              className="bg-dark-surface px-8 py-6 flex items-center justify-between gap-4 text-left hover:bg-dark-card transition-colors group"
             >
               <div className="flex items-start gap-4 min-w-0">
-                <FolderOpen size={16} strokeWidth={1.25} className="text-navy/30 flex-none mt-0.5" />
+                <FolderOpen size={16} strokeWidth={1.25} className="text-light/30 flex-none mt-0.5" />
                 <div className="min-w-0">
-                  <p className="text-sm font-medium text-navy mb-1">{dossier.titre}</p>
-                  <p className="text-xs text-navy/40 truncate">{dossier.description}</p>
+                  <p className="text-sm font-medium text-light mb-1">{dossier.titre}</p>
+                  <p className="text-xs text-light/40 truncate">{dossier.description}</p>
                   <div className="flex items-center gap-3 mt-2 flex-wrap">
-                    <span className="text-xs text-navy/30">
+                    <span className="text-xs text-light/30">
                       Ouvert le {new Date(dossier.dateOuverture).toLocaleDateString('fr-FR', { day: 'numeric', month: 'short', year: 'numeric' })}
                     </span>
-                    <span className="text-xs text-navy/20">·</span>
-                    <span className="text-xs text-navy/30">
+                    <span className="text-xs text-light/20">·</span>
+                    <span className="text-xs text-light/30">
                       {dossier.etapes.filter(e => e.statut === 'done').length}/{dossier.etapes.length} étapes
                     </span>
                     {rdvCount > 0 && (
                       <span className="text-xs text-blue-500">{rdvCount} RDV</span>
                     )}
                     {todoCount > 0 && (
-                      <span className="text-xs text-amber-600">{todoCount} tâche{todoCount > 1 ? 's' : ''}</span>
+                      <span className="text-xs text-gold/70">{todoCount} tâche{todoCount > 1 ? 's' : ''}</span>
                     )}
                     {invCount > 0 && (
                       <span className="text-xs text-emerald-600">{invCount} facture{invCount > 1 ? 's' : ''}</span>
@@ -310,7 +310,7 @@ function Dossiers({ dossiers, rdvs, todos, invoices }: { dossiers: Dossier[]; rd
               </div>
               <div className="flex items-center gap-3 flex-none">
                 <StatusBadge statut={dossier.statut} />
-                <ChevronRight size={14} strokeWidth={1.5} className="text-navy/20 group-hover:text-navy/50 transition-colors" />
+                <ChevronRight size={14} strokeWidth={1.5} className="text-light/20 group-hover:text-light/50 transition-colors" />
               </div>
             </button>
           )
@@ -360,14 +360,14 @@ function Documents({ documents, setDocuments }: { documents: Document[]; setDocu
 
   const fileIcon = (type: string) => {
     if (type.includes('pdf')) return <FileText size={15} strokeWidth={1.25} className="text-red-400" />
-    return <File size={15} strokeWidth={1.25} className="text-navy/30" />
+    return <File size={15} strokeWidth={1.25} className="text-light/30" />
   }
 
   return (
     <div className="flex flex-col gap-6">
       <div>
-        <p className="text-xs font-medium tracking-[0.2em] uppercase text-navy/40 mb-2">Documents</p>
-        <h2 className="font-serif text-2xl text-navy">Gestion documentaire</h2>
+        <p className="text-xs font-medium tracking-[0.2em] uppercase text-light/40 mb-2">Documents</p>
+        <h2 className="font-serif text-2xl text-light">Gestion documentaire</h2>
       </div>
 
       <div
@@ -376,13 +376,13 @@ function Documents({ documents, setDocuments }: { documents: Document[]; setDocu
         onDragLeave={onDragLeave}
         onClick={() => inputRef.current?.click()}
         className={`border-2 border-dashed px-8 py-12 flex flex-col items-center justify-center gap-3 cursor-pointer transition-colors ${
-          dragging ? 'border-navy bg-navy/5' : 'border-navy/15 hover:border-navy/30 hover:bg-navy/[0.02]'
+          dragging ? 'border-gold bg-dark-card' : 'border-gold/15 hover:border-gold/30 hover:bg-dark-card'
         }`}
       >
-        <Upload size={24} strokeWidth={1.25} className="text-navy/30" />
+        <Upload size={24} strokeWidth={1.25} className="text-light/30" />
         <div className="text-center">
-          <p className="text-sm font-medium text-navy">Déposer vos fichiers ici</p>
-          <p className="text-xs text-navy/40 mt-1">ou cliquez pour parcourir · PDF, Word, Excel acceptés</p>
+          <p className="text-sm font-medium text-light">Déposer vos fichiers ici</p>
+          <p className="text-xs text-light/40 mt-1">ou cliquez pour parcourir · PDF, Word, Excel acceptés</p>
         </div>
         <input
           ref={inputRef}
@@ -395,19 +395,19 @@ function Documents({ documents, setDocuments }: { documents: Document[]; setDocu
       </div>
 
       {documents.length > 0 && (
-        <div className="flex flex-col gap-px bg-navy/10">
+        <div className="flex flex-col gap-px bg-gold/10">
           {documents.map(doc => (
-            <div key={doc.id} className="bg-offwhite px-6 py-4 flex items-center gap-4">
+            <div key={doc.id} className="bg-dark-surface px-6 py-4 flex items-center gap-4">
               <div className="flex-none">{fileIcon(doc.type)}</div>
               <div className="flex-1 min-w-0">
-                <p className="text-sm font-medium text-navy truncate">{doc.name}</p>
-                <p className="text-xs text-navy/40 mt-0.5">
+                <p className="text-sm font-medium text-light truncate">{doc.name}</p>
+                <p className="text-xs text-light/40 mt-0.5">
                   {formatSize(doc.size)} · Déposé le {new Date(doc.uploadedAt).toLocaleDateString('fr-FR', { day: 'numeric', month: 'short', year: 'numeric' })}
                 </p>
               </div>
               <button
                 onClick={() => remove(doc.id)}
-                className="flex-none text-navy/20 hover:text-red-500 transition-colors"
+                className="flex-none text-light/20 hover:text-red-500 transition-colors"
                 aria-label="Supprimer"
               >
                 <Trash2 size={14} strokeWidth={1.5} />
@@ -418,7 +418,7 @@ function Documents({ documents, setDocuments }: { documents: Document[]; setDocu
       )}
 
       {documents.length === 0 && (
-        <p className="text-sm text-navy/30 text-center py-4">Aucun document déposé pour le moment.</p>
+        <p className="text-sm text-light/30 text-center py-4">Aucun document déposé pour le moment.</p>
       )}
     </div>
   )
@@ -514,15 +514,15 @@ function Rendezvous({ rdvs, setRdvs, todos, setTodos, userId, dossiers }: {
   return (
     <div className="flex flex-col gap-6">
       <div>
-        <p className="text-xs font-medium tracking-[0.2em] uppercase text-navy/40 mb-2">Agenda</p>
-        <h2 className="font-serif text-2xl text-navy">Planning & Tâches</h2>
+        <p className="text-xs font-medium tracking-[0.2em] uppercase text-light/40 mb-2">Agenda</p>
+        <h2 className="font-serif text-2xl text-light">Planning & Tâches</h2>
       </div>
 
       {/* Section tabs */}
-      <div className="flex gap-1 border-b border-navy/10">
+      <div className="flex gap-1 border-b border-gold/10">
         {(['rdv', 'todo'] as const).map(s => (
           <button key={s} onClick={() => setSection(s)}
-            className={`text-sm font-medium px-4 py-2 border-b-2 transition-colors ${section === s ? 'border-navy text-navy' : 'border-transparent text-navy/40 hover:text-navy'}`}>
+            className={`text-sm font-medium px-4 py-2 border-b-2 transition-colors ${section === s ? 'border-gold text-light' : 'border-transparent text-light/40 hover:text-light'}`}>
             {s === 'rdv' ? `Rendez-vous (${rdvs.length})` : `Tâches (${todos.filter(t => !t.done).length} en cours)`}
           </button>
         ))}
@@ -533,55 +533,55 @@ function Rendezvous({ rdvs, setRdvs, todos, setTodos, userId, dossiers }: {
         <div className="flex flex-col gap-6">
           <div className="flex justify-end">
             <button onClick={openNewRdv}
-              className="flex items-center gap-2 bg-navy text-offwhite text-xs font-medium px-4 py-2.5 hover:bg-navy/90 transition-colors">
+              className="flex items-center gap-2 bg-gold text-dark-bg text-xs font-medium px-4 py-2.5 hover:bg-gold/90 transition-colors">
               <Plus size={13} strokeWidth={1.5} /> Ajouter un RDV
             </button>
           </div>
 
           {showRdvForm && (
-            <div className="border border-navy/15 p-6 flex flex-col gap-4">
+            <div className="border border-gold/15 p-6 flex flex-col gap-4">
               <div className="flex items-center justify-between">
-                <p className="text-sm font-medium text-navy">{editRdv ? 'Modifier le rendez-vous' : 'Nouveau rendez-vous'}</p>
-                <button onClick={() => setShowRdvForm(false)} className="text-navy/30 hover:text-navy transition-colors"><X size={14} strokeWidth={1.5} /></button>
+                <p className="text-sm font-medium text-light">{editRdv ? 'Modifier le rendez-vous' : 'Nouveau rendez-vous'}</p>
+                <button onClick={() => setShowRdvForm(false)} className="text-light/30 hover:text-light transition-colors"><X size={14} strokeWidth={1.5} /></button>
               </div>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div className="flex flex-col gap-1.5 sm:col-span-2">
-                  <label className="text-xs font-medium text-navy/40 uppercase tracking-wide">Titre</label>
-                  <input type="text" value={rdvForm.title} onChange={e => setRdvForm(f => ({ ...f, title: e.target.value }))} placeholder="Ex: Point sur la levée de fonds" className="border-b border-navy/15 bg-transparent py-2 text-sm text-navy placeholder:text-navy/25 focus:outline-none focus:border-navy transition-colors" />
+                  <label className="text-xs font-medium text-light/40 uppercase tracking-wide">Titre</label>
+                  <input type="text" value={rdvForm.title} onChange={e => setRdvForm(f => ({ ...f, title: e.target.value }))} placeholder="Ex: Point sur la levée de fonds" className="border-b border-gold/15 bg-transparent py-2 text-sm text-light placeholder:text-light/20 focus:outline-none focus:border-gold transition-colors" />
                 </div>
                 <div className="flex flex-col gap-1.5">
-                  <label className="text-xs font-medium text-navy/40 uppercase tracking-wide">Date</label>
-                  <input type="date" value={rdvForm.date} onChange={e => setRdvForm(f => ({ ...f, date: e.target.value }))} className="border-b border-navy/15 bg-transparent py-2 text-sm text-navy focus:outline-none focus:border-navy transition-colors" />
+                  <label className="text-xs font-medium text-light/40 uppercase tracking-wide">Date</label>
+                  <input type="date" value={rdvForm.date} onChange={e => setRdvForm(f => ({ ...f, date: e.target.value }))} className="border-b border-gold/15 bg-transparent py-2 text-sm text-light focus:outline-none focus:border-gold transition-colors" />
                 </div>
                 <div className="flex flex-col gap-1.5">
-                  <label className="text-xs font-medium text-navy/40 uppercase tracking-wide">Heure</label>
-                  <input type="time" value={rdvForm.time} onChange={e => setRdvForm(f => ({ ...f, time: e.target.value }))} className="border-b border-navy/15 bg-transparent py-2 text-sm text-navy focus:outline-none focus:border-navy transition-colors" />
+                  <label className="text-xs font-medium text-light/40 uppercase tracking-wide">Heure</label>
+                  <input type="time" value={rdvForm.time} onChange={e => setRdvForm(f => ({ ...f, time: e.target.value }))} className="border-b border-gold/15 bg-transparent py-2 text-sm text-light focus:outline-none focus:border-gold transition-colors" />
                 </div>
                 <div className="flex flex-col gap-1.5">
-                  <label className="text-xs font-medium text-navy/40 uppercase tracking-wide">Type</label>
-                  <select value={rdvForm.type} onChange={e => setRdvForm(f => ({ ...f, type: e.target.value as Appointment['type'] }))} className="border-b border-navy/15 bg-transparent py-2 text-sm text-navy focus:outline-none focus:border-navy transition-colors">
+                  <label className="text-xs font-medium text-light/40 uppercase tracking-wide">Type</label>
+                  <select value={rdvForm.type} onChange={e => setRdvForm(f => ({ ...f, type: e.target.value as Appointment['type'] }))} className="border-b border-gold/15 bg-transparent py-2 text-sm text-light focus:outline-none focus:border-gold transition-colors">
                     <option value="visio">Visioconférence</option>
                     <option value="presentiel">Présentiel</option>
                     <option value="telephone">Téléphone</option>
                   </select>
                 </div>
                 <div className="flex flex-col gap-1.5">
-                  <label className="text-xs font-medium text-navy/40 uppercase tracking-wide">Dossier <span className="normal-case text-navy/30">(optionnel)</span></label>
-                  <select value={rdvForm.dossierId ?? ''} onChange={e => setRdvForm(f => ({ ...f, dossierId: e.target.value || undefined }))} className="border-b border-navy/15 bg-transparent py-2 text-sm text-navy focus:outline-none focus:border-navy transition-colors">
+                  <label className="text-xs font-medium text-light/40 uppercase tracking-wide">Dossier <span className="normal-case text-light/30">(optionnel)</span></label>
+                  <select value={rdvForm.dossierId ?? ''} onChange={e => setRdvForm(f => ({ ...f, dossierId: e.target.value || undefined }))} className="border-b border-gold/15 bg-transparent py-2 text-sm text-light focus:outline-none focus:border-gold transition-colors">
                     <option value="">— Aucun dossier —</option>
                     {dossiers.map(d => <option key={d.id} value={d.id}>{d.titre}</option>)}
                   </select>
                 </div>
                 <div className="flex flex-col gap-1.5">
-                  <label className="text-xs font-medium text-navy/40 uppercase tracking-wide">Notes <span className="normal-case text-navy/30">(optionnel)</span></label>
-                  <input type="text" value={rdvForm.notes} onChange={e => setRdvForm(f => ({ ...f, notes: e.target.value }))} placeholder="Détails, lieu, lien visio…" className="border-b border-navy/15 bg-transparent py-2 text-sm text-navy placeholder:text-navy/25 focus:outline-none focus:border-navy transition-colors" />
+                  <label className="text-xs font-medium text-light/40 uppercase tracking-wide">Notes <span className="normal-case text-light/30">(optionnel)</span></label>
+                  <input type="text" value={rdvForm.notes} onChange={e => setRdvForm(f => ({ ...f, notes: e.target.value }))} placeholder="Détails, lieu, lien visio…" className="border-b border-gold/15 bg-transparent py-2 text-sm text-light placeholder:text-light/20 focus:outline-none focus:border-gold transition-colors" />
                 </div>
               </div>
               <div className="flex gap-3 mt-1">
-                <button onClick={saveRdv} className="bg-navy text-offwhite text-xs font-medium px-5 py-2.5 hover:bg-navy/90 transition-colors">
+                <button onClick={saveRdv} className="bg-gold text-dark-bg text-xs font-medium px-5 py-2.5 hover:bg-gold/90 transition-colors">
                   {editRdv ? 'Enregistrer' : 'Ajouter'}
                 </button>
-                <button onClick={() => setShowRdvForm(false)} className="text-xs text-navy/40 hover:text-navy transition-colors px-3">Annuler</button>
+                <button onClick={() => setShowRdvForm(false)} className="text-xs text-light/40 hover:text-light transition-colors px-3">Annuler</button>
               </div>
             </div>
           )}
@@ -590,31 +590,31 @@ function Rendezvous({ rdvs, setRdvs, todos, setTodos, userId, dossiers }: {
 
           {upcoming.length > 0 && (
             <div>
-              <p className="text-xs font-medium text-navy/40 uppercase tracking-wide mb-3">Prochains rendez-vous</p>
-              <div className="flex flex-col gap-px bg-navy/10">
+              <p className="text-xs font-medium text-light/40 uppercase tracking-wide mb-3">Prochains rendez-vous</p>
+              <div className="flex flex-col gap-px bg-gold/10">
                 {upcoming.map(r => (
-                  <div key={r.id} className="bg-offwhite px-5 py-4 flex items-center gap-4 group">
+                  <div key={r.id} className="bg-dark-surface px-5 py-4 flex items-center gap-4 group">
                     <div className="flex-none text-center w-10">
-                      <p className="text-xs font-bold text-navy leading-none">{new Date(r.date + 'T12:00:00').toLocaleDateString('fr-FR', { day: 'numeric' })}</p>
-                      <p className="text-[10px] text-navy/40 uppercase">{new Date(r.date + 'T12:00:00').toLocaleDateString('fr-FR', { month: 'short' })}</p>
+                      <p className="text-xs font-bold text-light leading-none">{new Date(r.date + 'T12:00:00').toLocaleDateString('fr-FR', { day: 'numeric' })}</p>
+                      <p className="text-[10px] text-light/40 uppercase">{new Date(r.date + 'T12:00:00').toLocaleDateString('fr-FR', { month: 'short' })}</p>
                     </div>
-                    <div className="w-px h-8 bg-navy/10 flex-none" />
+                    <div className="w-px h-8 bg-gold/10 flex-none" />
                     <div className="flex-1 min-w-0">
-                      <p className="text-sm font-medium text-navy truncate">{r.title}</p>
+                      <p className="text-sm font-medium text-light truncate">{r.title}</p>
                       <div className="flex items-center gap-2 mt-0.5 flex-wrap">
-                        <span className="text-xs text-navy/40">{r.time} · {rdvTypeLabel(r.type)}{r.notes ? ` · ${r.notes}` : ''}</span>
+                        <span className="text-xs text-light/40">{r.time} · {rdvTypeLabel(r.type)}{r.notes ? ` · ${r.notes}` : ''}</span>
                         {r.dossierId && dossierMap[r.dossierId] && (
-                          <span className="flex items-center gap-1 text-[10px] text-navy/40 border border-navy/10 px-1.5 py-0.5">
+                          <span className="flex items-center gap-1 text-[10px] text-light/40 border border-gold/10 px-1.5 py-0.5">
                             <FolderOpen size={9} strokeWidth={1.5} /> {dossierMap[r.dossierId]}
                           </span>
                         )}
                       </div>
                     </div>
                     <div className="flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                      <button onClick={() => openEditRdv(r)} className="text-navy/30 hover:text-navy transition-colors p-1">
+                      <button onClick={() => openEditRdv(r)} className="text-light/30 hover:text-light transition-colors p-1">
                         <Pencil size={13} strokeWidth={1.5} />
                       </button>
-                      <button onClick={() => deleteRdv(r.id)} className="text-navy/20 hover:text-red-500 transition-colors p-1">
+                      <button onClick={() => deleteRdv(r.id)} className="text-light/20 hover:text-red-500 transition-colors p-1">
                         <Trash2 size={13} strokeWidth={1.5} />
                       </button>
                     </div>
@@ -623,7 +623,7 @@ function Rendezvous({ rdvs, setRdvs, todos, setTodos, userId, dossiers }: {
               </div>
             </div>
           )}
-          {rdvs.length === 0 && <p className="text-sm text-navy/30 text-center py-6">Aucun rendez-vous. Ajoutez-en un ci-dessus.</p>}
+          {rdvs.length === 0 && <p className="text-sm text-light/30 text-center py-6">Aucun rendez-vous. Ajoutez-en un ci-dessus.</p>}
         </div>
       )}
 
@@ -632,52 +632,52 @@ function Rendezvous({ rdvs, setRdvs, todos, setTodos, userId, dossiers }: {
         <div className="flex flex-col gap-4">
           <div className="flex justify-end">
             <button onClick={openNewTodo}
-              className="flex items-center gap-2 bg-navy text-offwhite text-xs font-medium px-4 py-2.5 hover:bg-navy/90 transition-colors">
+              className="flex items-center gap-2 bg-gold text-dark-bg text-xs font-medium px-4 py-2.5 hover:bg-gold/90 transition-colors">
               <Plus size={13} strokeWidth={1.5} /> Nouvelle tâche
             </button>
           </div>
 
           {showTodoForm && (
-            <div className="border border-navy/15 p-6 flex flex-col gap-4">
+            <div className="border border-gold/15 p-6 flex flex-col gap-4">
               <div className="flex items-center justify-between">
-                <p className="text-sm font-medium text-navy">{editTodo ? 'Modifier la tâche' : 'Nouvelle tâche'}</p>
-                <button onClick={() => setShowTodoForm(false)} className="text-navy/30 hover:text-navy transition-colors"><X size={14} strokeWidth={1.5} /></button>
+                <p className="text-sm font-medium text-light">{editTodo ? 'Modifier la tâche' : 'Nouvelle tâche'}</p>
+                <button onClick={() => setShowTodoForm(false)} className="text-light/30 hover:text-light transition-colors"><X size={14} strokeWidth={1.5} /></button>
               </div>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div className="flex flex-col gap-1.5 sm:col-span-2">
-                  <label className="text-xs font-medium text-navy/40 uppercase tracking-wide">Tâche</label>
-                  <input type="text" value={todoForm.title} onChange={e => setTodoForm(f => ({ ...f, title: e.target.value }))} placeholder="Ex: Préparer les statuts" className="border-b border-navy/15 bg-transparent py-2 text-sm text-navy placeholder:text-navy/25 focus:outline-none focus:border-navy transition-colors" />
+                  <label className="text-xs font-medium text-light/40 uppercase tracking-wide">Tâche</label>
+                  <input type="text" value={todoForm.title} onChange={e => setTodoForm(f => ({ ...f, title: e.target.value }))} placeholder="Ex: Préparer les statuts" className="border-b border-gold/15 bg-transparent py-2 text-sm text-light placeholder:text-light/20 focus:outline-none focus:border-gold transition-colors" />
                 </div>
                 <div className="flex flex-col gap-1.5">
-                  <label className="text-xs font-medium text-navy/40 uppercase tracking-wide">Priorité</label>
-                  <select value={todoForm.priority} onChange={e => setTodoForm(f => ({ ...f, priority: e.target.value as Todo['priority'] }))} className="border-b border-navy/15 bg-transparent py-2 text-sm text-navy focus:outline-none focus:border-navy transition-colors">
+                  <label className="text-xs font-medium text-light/40 uppercase tracking-wide">Priorité</label>
+                  <select value={todoForm.priority} onChange={e => setTodoForm(f => ({ ...f, priority: e.target.value as Todo['priority'] }))} className="border-b border-gold/15 bg-transparent py-2 text-sm text-light focus:outline-none focus:border-gold transition-colors">
                     <option value="normale">Normale</option>
                     <option value="urgente">Urgente</option>
                   </select>
                 </div>
                 <div className="flex flex-col gap-1.5">
-                  <label className="text-xs font-medium text-navy/40 uppercase tracking-wide">Échéance <span className="normal-case text-navy/30">(optionnel)</span></label>
-                  <input type="date" value={todoForm.dueDate} onChange={e => setTodoForm(f => ({ ...f, dueDate: e.target.value }))} className="border-b border-navy/15 bg-transparent py-2 text-sm text-navy focus:outline-none focus:border-navy transition-colors" />
+                  <label className="text-xs font-medium text-light/40 uppercase tracking-wide">Échéance <span className="normal-case text-light/30">(optionnel)</span></label>
+                  <input type="date" value={todoForm.dueDate} onChange={e => setTodoForm(f => ({ ...f, dueDate: e.target.value }))} className="border-b border-gold/15 bg-transparent py-2 text-sm text-light focus:outline-none focus:border-gold transition-colors" />
                 </div>
                 <div className="flex flex-col gap-1.5 sm:col-span-2">
-                  <label className="text-xs font-medium text-navy/40 uppercase tracking-wide">Dossier <span className="normal-case text-navy/30">(optionnel)</span></label>
-                  <select value={todoForm.dossierId ?? ''} onChange={e => setTodoForm(f => ({ ...f, dossierId: e.target.value || undefined }))} className="border-b border-navy/15 bg-transparent py-2 text-sm text-navy focus:outline-none focus:border-navy transition-colors">
+                  <label className="text-xs font-medium text-light/40 uppercase tracking-wide">Dossier <span className="normal-case text-light/30">(optionnel)</span></label>
+                  <select value={todoForm.dossierId ?? ''} onChange={e => setTodoForm(f => ({ ...f, dossierId: e.target.value || undefined }))} className="border-b border-gold/15 bg-transparent py-2 text-sm text-light focus:outline-none focus:border-gold transition-colors">
                     <option value="">— Aucun dossier —</option>
                     {dossiers.map(d => <option key={d.id} value={d.id}>{d.titre}</option>)}
                   </select>
                 </div>
               </div>
               <div className="flex gap-3 mt-1">
-                <button onClick={saveTodo} className="bg-navy text-offwhite text-xs font-medium px-5 py-2.5 hover:bg-navy/90 transition-colors">
+                <button onClick={saveTodo} className="bg-gold text-dark-bg text-xs font-medium px-5 py-2.5 hover:bg-gold/90 transition-colors">
                   {editTodo ? 'Enregistrer' : 'Ajouter'}
                 </button>
-                <button onClick={() => setShowTodoForm(false)} className="text-xs text-navy/40 hover:text-navy transition-colors px-3">Annuler</button>
+                <button onClick={() => setShowTodoForm(false)} className="text-xs text-light/40 hover:text-light transition-colors px-3">Annuler</button>
               </div>
             </div>
           )}
 
           <TodoList todos={todos} onToggle={toggleTodo} onDelete={deleteTodo} onEdit={openEditTodo} dossierMap={dossierMap} />
-          {todos.length === 0 && <p className="text-sm text-navy/30 text-center py-6">Aucune tâche. Ajoutez-en une ci-dessus.</p>}
+          {todos.length === 0 && <p className="text-sm text-light/30 text-center py-6">Aucune tâche. Ajoutez-en une ci-dessus.</p>}
         </div>
       )}
     </div>
@@ -690,15 +690,15 @@ function Messagerie() {
   return (
     <div className="flex flex-col gap-6">
       <div>
-        <p className="text-xs font-medium tracking-[0.2em] uppercase text-navy/40 mb-2">Messagerie</p>
-        <h2 className="font-serif text-2xl text-navy">Échanges sécurisés</h2>
+        <p className="text-xs font-medium tracking-[0.2em] uppercase text-light/40 mb-2">Messagerie</p>
+        <h2 className="font-serif text-2xl text-light">Échanges sécurisés</h2>
       </div>
-      <div className="border border-navy/10 px-8 py-12 flex flex-col items-center text-center gap-3">
-        <MessageSquare size={28} strokeWidth={1.25} className="text-navy/20" />
-        <p className="text-sm font-medium text-navy">Messagerie en cours d'activation</p>
-        <p className="text-xs text-navy/40 max-w-xs leading-relaxed">
+      <div className="border border-gold/10 px-8 py-12 flex flex-col items-center text-center gap-3">
+        <MessageSquare size={28} strokeWidth={1.25} className="text-light/20" />
+        <p className="text-sm font-medium text-light">Messagerie en cours d'activation</p>
+        <p className="text-xs text-light/40 max-w-xs leading-relaxed">
           Pour toute question urgente, contactez le cabinet directement à{' '}
-          <a href="mailto:office@mokadmi.lawyer" className="text-navy underline">
+          <a href="mailto:office@mokadmi.lawyer" className="text-light underline">
             office@mokadmi.lawyer
           </a>
         </p>
@@ -737,34 +737,34 @@ export default function DashboardPage() {
   const changeTab = (id: string) => { setTab(id); setMobileOpen(false) }
 
   return (
-    <div className="min-h-screen bg-offwhite flex flex-col">
+    <div className="min-h-screen bg-dark-bg flex flex-col">
       {/* Top bar */}
-      <header className="border-b border-navy/10 bg-offwhite flex items-center justify-between px-6 h-14 sticky top-0 z-40">
+      <header className="border-b border-gold/10 bg-dark-surface flex items-center justify-between px-6 h-14 sticky top-0 z-40">
         <Link to="/" className="flex flex-col">
-          <span className="font-serif text-base font-semibold text-navy leading-tight">Maître Mokadmi Sami</span>
-          <span className="text-[10px] text-navy/40 tracking-wide">Espace Client</span>
+          <span className="font-serif text-base font-semibold text-light leading-tight">Maître Mokadmi Sami</span>
+          <span className="text-[10px] text-light/40 tracking-wide">Espace Client</span>
         </Link>
         <div className="flex items-center gap-4">
           {alerts.length > 0 && (
-            <button onClick={() => changeTab('rendezvous')} className="relative text-navy/40 hover:text-navy transition-colors" title="Rappels">
+            <button onClick={() => changeTab('rendezvous')} className="relative text-light/40 hover:text-light transition-colors" title="Rappels">
               <Bell size={16} strokeWidth={1.5} />
               <span className="absolute -top-1 -right-1 w-3.5 h-3.5 bg-red-500 text-white text-[8px] font-bold flex items-center justify-center">{alerts.length}</span>
             </button>
           )}
           <div className="hidden sm:flex flex-col items-end">
-            <span className="text-xs font-medium text-navy">{user?.name}</span>
-            {user?.company && <span className="text-[10px] text-navy/40">{user.company}</span>}
+            <span className="text-xs font-medium text-light">{user?.name}</span>
+            {user?.company && <span className="text-[10px] text-light/40">{user.company}</span>}
           </div>
           <button
             onClick={handleLogout}
-            className="flex items-center gap-1.5 text-xs text-navy/40 hover:text-navy transition-colors"
+            className="flex items-center gap-1.5 text-xs text-light/40 hover:text-light transition-colors"
           >
             <LogOut size={13} strokeWidth={1.5} />
             <span className="hidden sm:inline">Déconnexion</span>
           </button>
           <button
             onClick={() => setMobileOpen(v => !v)}
-            className="md:hidden text-navy/50 hover:text-navy transition-colors"
+            className="md:hidden text-light/50 hover:text-light transition-colors"
           >
             {mobileOpen ? <X size={20} strokeWidth={1.5} /> : <Menu size={20} strokeWidth={1.5} />}
           </button>
@@ -773,12 +773,12 @@ export default function DashboardPage() {
 
       {/* Reminder banner */}
       {alerts.length > 0 && (
-        <div className="border-b border-amber-200 bg-amber-50 px-6 py-2.5 flex flex-col gap-1.5">
+        <div className="border-b border-gold/15 bg-gold/5 px-6 py-2.5 flex flex-col gap-1.5">
           {alerts.map(alert => (
             <div key={alert.id} className="flex items-center gap-3 max-w-3xl">
-              <Bell size={12} strokeWidth={1.5} className={`flex-none ${alert.urgency === 'high' ? 'text-red-500' : 'text-amber-600'}`} />
-              <p className={`text-xs flex-1 ${alert.urgency === 'high' ? 'text-red-700 font-medium' : 'text-amber-700'}`}>{alert.message}</p>
-              <button onClick={() => dismiss(alert.id)} className="text-navy/30 hover:text-navy transition-colors flex-none" aria-label="Fermer">
+              <Bell size={12} strokeWidth={1.5} className={`flex-none ${alert.urgency === 'high' ? 'text-red-500' : 'text-gold/70'}`} />
+              <p className={`text-xs flex-1 ${alert.urgency === 'high' ? 'text-red-700 font-medium' : 'text-gold/80'}`}>{alert.message}</p>
+              <button onClick={() => dismiss(alert.id)} className="text-light/30 hover:text-light transition-colors flex-none" aria-label="Fermer">
                 <X size={11} strokeWidth={1.5} />
               </button>
             </div>
@@ -788,7 +788,7 @@ export default function DashboardPage() {
 
       <div className="flex flex-1">
         {/* Sidebar desktop */}
-        <aside className="hidden md:flex flex-col w-56 border-r border-navy/10 pt-8 pb-6 px-4 sticky top-14 h-[calc(100vh-3.5rem)]">
+        <aside className="hidden md:flex flex-col w-56 border-r border-gold/10 pt-8 pb-6 px-4 sticky top-14 h-[calc(100vh-3.5rem)]">
           <nav className="flex flex-col gap-1 flex-1">
             {navItems.map(({ id, label, icon: Icon }) => (
               <button
@@ -796,8 +796,8 @@ export default function DashboardPage() {
                 onClick={() => changeTab(id)}
                 className={`flex items-center gap-3 px-4 py-2.5 text-sm font-medium transition-colors text-left ${
                   tab === id
-                    ? 'bg-navy text-offwhite'
-                    : 'text-navy/50 hover:text-navy hover:bg-navy/5'
+                    ? 'bg-gold text-dark-bg'
+                    : 'text-light/50 hover:text-light hover:bg-dark-card'
                 }`}
               >
                 <Icon size={15} strokeWidth={1.25} />
@@ -809,21 +809,21 @@ export default function DashboardPage() {
 
         {/* Mobile nav drawer */}
         {mobileOpen && (
-          <div className="md:hidden fixed inset-0 top-14 z-30 bg-offwhite border-t border-navy/10 p-6 flex flex-col gap-2">
+          <div className="md:hidden fixed inset-0 top-14 z-30 bg-dark-surface border-t border-gold/10 p-6 flex flex-col gap-2">
             {navItems.map(({ id, label, icon: Icon }) => (
               <button
                 key={id}
                 onClick={() => changeTab(id)}
                 className={`flex items-center gap-3 px-4 py-3 text-sm font-medium transition-colors text-left ${
-                  tab === id ? 'bg-navy text-offwhite' : 'text-navy/60 hover:text-navy hover:bg-navy/5'
+                  tab === id ? 'bg-gold text-dark-bg' : 'text-light/60 hover:text-light hover:bg-dark-card'
                 }`}
               >
                 <Icon size={15} strokeWidth={1.25} />
                 {label}
               </button>
             ))}
-            <div className="mt-auto pt-6 border-t border-navy/10">
-              <button onClick={handleLogout} className="flex items-center gap-2 text-sm text-navy/40 hover:text-navy transition-colors">
+            <div className="mt-auto pt-6 border-t border-gold/10">
+              <button onClick={handleLogout} className="flex items-center gap-2 text-sm text-light/40 hover:text-light transition-colors">
                 <LogOut size={14} strokeWidth={1.5} /> Déconnexion
               </button>
             </div>

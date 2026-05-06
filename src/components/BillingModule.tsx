@@ -58,10 +58,10 @@ const CURRENCY_DEFAULTS: Record<string, { tvaRate: number; retenueRate: number; 
 }
 
 const STATUS_MAP = {
-  brouillon: { label: 'Brouillon',   cls: 'bg-gray-50 text-gray-600 border-gray-200' },
-  envoyee:   { label: 'Envoyée',     cls: 'bg-blue-50 text-blue-700 border-blue-200' },
-  payee:     { label: 'Payée',       cls: 'bg-green-50 text-green-700 border-green-200' },
-  en_retard: { label: 'En retard',   cls: 'bg-red-50 text-red-700 border-red-200' },
+  brouillon: { label: 'Brouillon',   cls: 'bg-light/5 text-light/40 border-light/15' },
+  envoyee:   { label: 'Envoyée',     cls: 'bg-blue-500/10 text-blue-400 border-blue-500/20' },
+  payee:     { label: 'Payée',       cls: 'bg-green-500/10 text-green-400 border-green-500/20' },
+  en_retard: { label: 'En retard',   cls: 'bg-red-500/10 text-red-400 border-red-500/20' },
 } as const
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
@@ -111,11 +111,11 @@ function TotalsBlock({ ht, tva, ttc, retenue, timbre, net, tvaRate, retenueRate,
 }) {
   const R = ({ label, value, bold, red, plus }: { label: string; value: string; bold?: boolean; red?: boolean; plus?: boolean }) => (
     <div className="flex gap-8 w-64">
-      <p className={`flex-1 text-xs ${red ? 'text-red-500' : 'text-navy/40'}`}>{label}</p>
-      <p className={`text-right text-sm ${bold ? 'font-bold text-navy' : red ? 'text-red-600' : 'text-navy/70'} ${plus ? 'text-emerald-600' : ''}`}>{value}</p>
+      <p className={`flex-1 text-xs ${red ? 'text-red-500' : 'text-light/40'}`}>{label}</p>
+      <p className={`text-right text-sm ${bold ? 'font-bold text-light' : red ? 'text-red-600' : 'text-light/70'} ${plus ? 'text-emerald-600' : ''}`}>{value}</p>
     </div>
   )
-  const Sep = () => <div className="w-64 h-px bg-navy/10" />
+  const Sep = () => <div className="w-64 h-px bg-gold/10" />
   return (
     <div className="flex flex-col items-end gap-1.5">
       <R label="Montant HT"            value={fmtAmount(ht, currency)} />
@@ -126,8 +126,8 @@ function TotalsBlock({ ht, tva, ttc, retenue, timbre, net, tvaRate, retenueRate,
       {timbreFiscal > 0 && <R label="Timbre fiscal" value={'+ ' + fmtAmount(timbre, currency)} plus />}
       <Sep />
       <div className="flex gap-8 w-64">
-        <p className="flex-1 text-sm font-bold text-navy">Net à payer</p>
-        <p className="text-base font-bold text-navy">{fmtAmount(net, currency)}</p>
+        <p className="flex-1 text-sm font-bold text-light">Net à payer</p>
+        <p className="text-base font-bold text-light">{fmtAmount(net, currency)}</p>
       </div>
     </div>
   )
@@ -218,23 +218,23 @@ function InvoiceForm({ invoice, rdvs, todos, dossiers, userId, onSave, onCancel 
   })
 
   const sym = CURRENCIES[form.currency]?.symbol ?? form.currency
-  const F = 'border-b border-navy/15 bg-transparent py-2 text-sm text-navy focus:outline-none focus:border-navy transition-colors'
-  const L = 'text-xs font-medium text-navy/40 uppercase tracking-wide'
+  const F = 'border-b border-gold/15 bg-transparent py-2 text-sm text-light focus:outline-none focus:border-gold transition-colors'
+  const L = 'text-xs font-medium text-light/40 uppercase tracking-wide'
 
   return (
     <div className="flex flex-col gap-6">
-      <button onClick={onCancel} className="flex items-center gap-2 text-xs text-navy/40 hover:text-navy transition-colors print:hidden">
+      <button onClick={onCancel} className="flex items-center gap-2 text-xs text-light/40 hover:text-light transition-colors print:hidden">
         <ArrowLeft size={13} strokeWidth={1.5} /> Retour aux factures
       </button>
       <div>
-        <p className="text-xs font-medium tracking-[0.2em] uppercase text-navy/40 mb-2">Facturation</p>
-        <h2 className="font-serif text-2xl text-navy">{invoice ? 'Modifier la facture' : "Nouvelle note d'honoraires"}</h2>
+        <p className="text-xs font-medium tracking-[0.2em] uppercase text-light/40 mb-2">Facturation</p>
+        <h2 className="font-serif text-2xl text-light">{invoice ? 'Modifier la facture' : "Nouvelle note d'honoraires"}</h2>
       </div>
 
       {/* ── Montant HT + calcul automatique ── */}
-      <div className="border border-navy/10 p-6 flex flex-col gap-6">
+      <div className="border border-gold/10 p-6 flex flex-col gap-6">
         <div className="flex flex-col gap-2">
-          <label className={L}>Montant HT <span className="normal-case text-navy/30">({sym})</span></label>
+          <label className={L}>Montant HT <span className="normal-case text-light/30">({sym})</span></label>
           <div className="flex items-center gap-3">
             <input
               type="number"
@@ -243,29 +243,29 @@ function InvoiceForm({ invoice, rdvs, todos, dossiers, userId, onSave, onCancel 
               value={ht === 0 ? '' : ht}
               onChange={e => setHtDirect(Number(e.target.value) || 0)}
               placeholder="0"
-              className="w-full text-2xl font-serif font-semibold text-navy border-b-2 border-navy/20 bg-transparent py-2 focus:outline-none focus:border-navy transition-colors placeholder:text-navy/20"
+              className="w-full text-2xl font-serif font-semibold text-light border-b-2 border-gold/20 bg-transparent py-2 focus:outline-none focus:border-gold transition-colors placeholder:text-light/20"
             />
-            <span className="text-lg text-navy/40 font-medium flex-none">{sym}</span>
+            <span className="text-lg text-light/40 font-medium flex-none">{sym}</span>
           </div>
         </div>
 
         {/* Live breakdown */}
         {ht > 0 && (
-          <div className="border border-navy/10 bg-navy/[0.02] p-5 flex flex-col gap-2">
+          <div className="border border-gold/10 bg-dark-card p-5 flex flex-col gap-2">
             <div className="flex justify-between items-center text-sm">
-              <span className="text-navy/50">Montant HT</span>
-              <span className="font-medium text-navy">{fmtAmount(ht, form.currency)}</span>
+              <span className="text-light/50">Montant HT</span>
+              <span className="font-medium text-light">{fmtAmount(ht, form.currency)}</span>
             </div>
             {form.tvaRate > 0 && (
               <div className="flex justify-between items-center text-sm">
-                <span className="text-navy/50">TVA ({form.tvaRate} %)</span>
-                <span className="text-navy/70">+ {fmtAmount(tva, form.currency)}</span>
+                <span className="text-light/50">TVA ({form.tvaRate} %)</span>
+                <span className="text-light/70">+ {fmtAmount(tva, form.currency)}</span>
               </div>
             )}
-            <div className="h-px bg-navy/10 my-1" />
+            <div className="h-px bg-gold/10 my-1" />
             <div className="flex justify-between items-center text-sm">
-              <span className="font-semibold text-navy">Montant TTC</span>
-              <span className="font-semibold text-navy">{fmtAmount(ttc, form.currency)}</span>
+              <span className="font-semibold text-light">Montant TTC</span>
+              <span className="font-semibold text-light">{fmtAmount(ttc, form.currency)}</span>
             </div>
             {form.retenueRate > 0 && (
               <div className="flex justify-between items-center text-sm">
@@ -279,17 +279,17 @@ function InvoiceForm({ invoice, rdvs, todos, dossiers, userId, onSave, onCancel 
                 <span className="text-emerald-600 font-medium">+ {fmtAmount(timbre, form.currency)}</span>
               </div>
             )}
-            <div className="h-px bg-navy/10 my-1" />
+            <div className="h-px bg-gold/10 my-1" />
             <div className="flex justify-between items-center">
-              <span className="text-base font-bold text-navy">Net à payer</span>
-              <span className="text-xl font-bold text-navy font-serif">{fmtAmount(net, form.currency)}</span>
+              <span className="text-base font-bold text-light">Net à payer</span>
+              <span className="text-xl font-bold text-light font-serif">{fmtAmount(net, form.currency)}</span>
             </div>
           </div>
         )}
       </div>
 
       {/* ── Informations générales ── */}
-      <div className="border border-navy/10 p-6 flex flex-col gap-4">
+      <div className="border border-gold/10 p-6 flex flex-col gap-4">
         <p className={L}>Informations générales</p>
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <div className="flex flex-col gap-1.5">
@@ -314,7 +314,7 @@ function InvoiceForm({ invoice, rdvs, todos, dossiers, userId, onSave, onCancel 
             <input type="date" value={form.dateEcheance} onChange={e => setForm(f => ({ ...f, dateEcheance: e.target.value }))} className={F} />
           </div>
           <div className="flex flex-col gap-1.5">
-            <label className={L}>Dossier <span className="normal-case text-navy/30">(optionnel)</span></label>
+            <label className={L}>Dossier <span className="normal-case text-light/30">(optionnel)</span></label>
             <select value={form.dossierId} onChange={e => setForm(f => ({ ...f, dossierId: e.target.value }))} className={F}>
               <option value="">— Aucun dossier —</option>
               {dossiers.map(d => <option key={d.id} value={d.id}>{d.titre}</option>)}
@@ -332,7 +332,7 @@ function InvoiceForm({ invoice, rdvs, todos, dossiers, userId, onSave, onCancel 
       </div>
 
       {/* ── Paramètres fiscaux ── */}
-      <div className="border border-navy/10 p-6 flex flex-col gap-4">
+      <div className="border border-gold/10 p-6 flex flex-col gap-4">
         <p className={L}>Paramètres fiscaux</p>
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
           <div className="flex flex-col gap-1.5">
@@ -348,71 +348,71 @@ function InvoiceForm({ invoice, rdvs, todos, dossiers, userId, onSave, onCancel 
             <input type="number" min="0" step="0.001" value={form.timbreFiscal} onChange={e => setForm(f => ({ ...f, timbreFiscal: Number(e.target.value) }))} className={F} />
           </div>
         </div>
-        <p className="text-[10px] text-navy/30">La retenue à la source est calculée sur le montant TTC (HT + TVA).</p>
+        <p className="text-[10px] text-light/30">La retenue à la source est calculée sur le montant TTC (HT + TVA).</p>
       </div>
 
       {/* ── Détail des prestations (optionnel) ── */}
-      <div className="border border-navy/10">
+      <div className="border border-gold/10">
         <button
           onClick={() => setShowDetail(v => !v)}
-          className="w-full flex items-center justify-between px-6 py-4 text-left hover:bg-navy/[0.02] transition-colors"
+          className="w-full flex items-center justify-between px-6 py-4 text-left hover:bg-dark-card transition-colors"
         >
-          <span className={L}>Détail des prestations <span className="normal-case text-navy/30">(optionnel)</span></span>
-          {showDetail ? <ChevronUp size={14} strokeWidth={1.5} className="text-navy/30" /> : <ChevronDown size={14} strokeWidth={1.5} className="text-navy/30" />}
+          <span className={L}>Détail des prestations <span className="normal-case text-light/30">(optionnel)</span></span>
+          {showDetail ? <ChevronUp size={14} strokeWidth={1.5} className="text-light/30" /> : <ChevronDown size={14} strokeWidth={1.5} className="text-light/30" />}
         </button>
 
         {showDetail && (
           <div className="px-6 pb-6 flex flex-col gap-4">
-            <div className="flex flex-col gap-px bg-navy/10">
-              <div className="bg-navy/5 grid grid-cols-[1fr_72px_96px_80px_28px] gap-2 px-4 py-2">
+            <div className="flex flex-col gap-px bg-gold/10">
+              <div className="bg-dark-card grid grid-cols-[1fr_72px_96px_80px_28px] gap-2 px-4 py-2">
                 {['Description', 'Qté/h', `PU (${sym})`, 'Total', ''].map(h => (
-                  <p key={h} className="text-[10px] font-medium text-navy/40 uppercase tracking-wide text-right first:text-left">{h}</p>
+                  <p key={h} className="text-[10px] font-medium text-light/40 uppercase tracking-wide text-right first:text-left">{h}</p>
                 ))}
               </div>
               {lines.map(line => (
-                <div key={line.id} className="bg-offwhite grid grid-cols-[1fr_72px_96px_80px_28px] gap-2 px-4 py-2 items-center">
-                  <input type="text" value={line.description} onChange={e => updLine(line.id, 'description', e.target.value)} placeholder="Description…" className="text-sm text-navy bg-transparent border-b border-transparent focus:border-navy/30 py-1 focus:outline-none transition-colors min-w-0" />
-                  <input type="number" min="0" step="0.5"  value={line.quantity}  onChange={e => updLine(line.id, 'quantity', e.target.value)}  className="text-sm text-navy text-right bg-transparent border-b border-transparent focus:border-navy/30 py-1 focus:outline-none transition-colors" />
-                  <input type="number" min="0" step="1"    value={line.unitPrice} onChange={e => updLine(line.id, 'unitPrice', e.target.value)} className="text-sm text-navy text-right bg-transparent border-b border-transparent focus:border-navy/30 py-1 focus:outline-none transition-colors" />
-                  <p className="text-sm text-navy/60 text-right">{fmtAmount(lineTotal(line), form.currency)}</p>
-                  <button onClick={() => delLine(line.id)} className="text-navy/20 hover:text-red-500 transition-colors flex justify-center"><X size={13} strokeWidth={1.5} /></button>
+                <div key={line.id} className="bg-dark-surface grid grid-cols-[1fr_72px_96px_80px_28px] gap-2 px-4 py-2 items-center">
+                  <input type="text" value={line.description} onChange={e => updLine(line.id, 'description', e.target.value)} placeholder="Description…" className="text-sm text-light bg-transparent border-b border-transparent focus:border-gold/30 py-1 focus:outline-none transition-colors min-w-0" />
+                  <input type="number" min="0" step="0.5"  value={line.quantity}  onChange={e => updLine(line.id, 'quantity', e.target.value)}  className="text-sm text-light text-right bg-transparent border-b border-transparent focus:border-gold/30 py-1 focus:outline-none transition-colors" />
+                  <input type="number" min="0" step="1"    value={line.unitPrice} onChange={e => updLine(line.id, 'unitPrice', e.target.value)} className="text-sm text-light text-right bg-transparent border-b border-transparent focus:border-gold/30 py-1 focus:outline-none transition-colors" />
+                  <p className="text-sm text-light/60 text-right">{fmtAmount(lineTotal(line), form.currency)}</p>
+                  <button onClick={() => delLine(line.id)} className="text-light/20 hover:text-red-500 transition-colors flex justify-center"><X size={13} strokeWidth={1.5} /></button>
                 </div>
               ))}
             </div>
 
             <div className="flex gap-2 flex-wrap">
-              <button onClick={addLine} className="flex items-center gap-1.5 text-xs font-medium text-navy/40 hover:text-navy border border-navy/15 hover:border-navy/30 px-3 py-1.5 transition-colors">
+              <button onClick={addLine} className="flex items-center gap-1.5 text-xs font-medium text-light/40 hover:text-light border border-gold/15 hover:border-gold/30 px-3 py-1.5 transition-colors">
                 <Plus size={11} strokeWidth={1.5} /> Ajouter une ligne
               </button>
-              <button onClick={() => setShowRdv(v => !v)} className="flex items-center gap-1.5 text-xs font-medium text-navy/40 hover:text-navy border border-navy/15 hover:border-navy/30 px-3 py-1.5 transition-colors">
+              <button onClick={() => setShowRdv(v => !v)} className="flex items-center gap-1.5 text-xs font-medium text-light/40 hover:text-light border border-gold/15 hover:border-gold/30 px-3 py-1.5 transition-colors">
                 <CalendarDays size={11} strokeWidth={1.5} /> Importer RDV {showRdv ? <ChevronUp size={9} /> : <ChevronDown size={9} />}
               </button>
-              <button onClick={() => setShowTodo(v => !v)} className="flex items-center gap-1.5 text-xs font-medium text-navy/40 hover:text-navy border border-navy/15 hover:border-navy/30 px-3 py-1.5 transition-colors">
+              <button onClick={() => setShowTodo(v => !v)} className="flex items-center gap-1.5 text-xs font-medium text-light/40 hover:text-light border border-gold/15 hover:border-gold/30 px-3 py-1.5 transition-colors">
                 <CheckSquare size={11} strokeWidth={1.5} /> Importer tâches {showTodo ? <ChevronUp size={9} /> : <ChevronDown size={9} />}
               </button>
             </div>
 
             {showRdv && (
-              <div className="border border-navy/10 p-4 flex flex-col gap-2">
-                <p className="text-xs font-medium text-navy/40 uppercase tracking-wide mb-1">Rendez-vous à facturer</p>
-                {rdvs.length === 0 ? <p className="text-xs text-navy/30">Aucun rendez-vous disponible.</p>
+              <div className="border border-gold/10 p-4 flex flex-col gap-2">
+                <p className="text-xs font-medium text-light/40 uppercase tracking-wide mb-1">Rendez-vous à facturer</p>
+                {rdvs.length === 0 ? <p className="text-xs text-light/30">Aucun rendez-vous disponible.</p>
                   : rdvs.map(r => (
                     <label key={r.id} className="flex items-center gap-2 cursor-pointer">
-                      <input type="checkbox" checked={form.linkedRdvIds.includes(r.id)} onChange={() => toggleRdv(r)} className="accent-navy" />
-                      <span className="text-sm text-navy">{r.title} <span className="text-xs text-navy/40">{r.date} · {r.time}</span></span>
+                      <input type="checkbox" checked={form.linkedRdvIds.includes(r.id)} onChange={() => toggleRdv(r)} className="accent-gold" />
+                      <span className="text-sm text-light">{r.title} <span className="text-xs text-light/40">{r.date} · {r.time}</span></span>
                     </label>
                   ))}
               </div>
             )}
 
             {showTodo && (
-              <div className="border border-navy/10 p-4 flex flex-col gap-2">
-                <p className="text-xs font-medium text-navy/40 uppercase tracking-wide mb-1">Tâches réalisées à facturer</p>
-                {todos.filter(t => t.done).length === 0 ? <p className="text-xs text-navy/30">Aucune tâche complétée.</p>
+              <div className="border border-gold/10 p-4 flex flex-col gap-2">
+                <p className="text-xs font-medium text-light/40 uppercase tracking-wide mb-1">Tâches réalisées à facturer</p>
+                {todos.filter(t => t.done).length === 0 ? <p className="text-xs text-light/30">Aucune tâche complétée.</p>
                   : todos.filter(t => t.done).map(t => (
                     <label key={t.id} className="flex items-center gap-2 cursor-pointer">
-                      <input type="checkbox" checked={form.linkedTodoIds.includes(t.id)} onChange={() => toggleTodo(t)} className="accent-navy" />
-                      <span className="text-sm text-navy">{t.title}</span>
+                      <input type="checkbox" checked={form.linkedTodoIds.includes(t.id)} onChange={() => toggleTodo(t)} className="accent-gold" />
+                      <span className="text-sm text-light">{t.title}</span>
                     </label>
                   ))}
               </div>
@@ -423,15 +423,15 @@ function InvoiceForm({ invoice, rdvs, todos, dossiers, userId, onSave, onCancel 
 
       {/* ── Notes ── */}
       <div className="flex flex-col gap-1.5">
-        <label className="text-xs font-medium text-navy/40 uppercase tracking-wide">Notes <span className="normal-case text-navy/30">(optionnel)</span></label>
-        <textarea value={form.notes} onChange={e => setForm(f => ({ ...f, notes: e.target.value }))} rows={3} placeholder="Conditions de paiement, mentions légales…" className="border-b border-navy/15 bg-transparent py-2 text-sm text-navy placeholder:text-navy/25 focus:outline-none focus:border-navy transition-colors resize-none" />
+        <label className="text-xs font-medium text-light/40 uppercase tracking-wide">Notes <span className="normal-case text-light/30">(optionnel)</span></label>
+        <textarea value={form.notes} onChange={e => setForm(f => ({ ...f, notes: e.target.value }))} rows={3} placeholder="Conditions de paiement, mentions légales…" className="border-b border-gold/15 bg-transparent py-2 text-sm text-light placeholder:text-light/20 focus:outline-none focus:border-gold transition-colors resize-none" />
       </div>
 
       <div className="flex gap-3">
-        <button onClick={save} className="bg-navy text-offwhite text-xs font-medium px-5 py-2.5 hover:bg-navy/90 transition-colors">
+        <button onClick={save} className="bg-gold text-dark-bg text-xs font-medium px-5 py-2.5 hover:bg-gold/90 transition-colors">
           {invoice ? 'Enregistrer' : 'Créer la facture'}
         </button>
-        <button onClick={onCancel} className="text-xs text-navy/40 hover:text-navy transition-colors px-3">Annuler</button>
+        <button onClick={onCancel} className="text-xs text-light/40 hover:text-light transition-colors px-3">Annuler</button>
       </div>
     </div>
   )
@@ -485,38 +485,38 @@ function SendModal({ invoice, dossiers, userName, userEmail: initEmail, onClose 
   }
 
   return (
-    <div className="fixed inset-0 z-50 bg-navy/30 flex items-center justify-center p-4" onClick={onClose}>
-      <div className="bg-offwhite border border-navy/10 w-full max-w-lg flex flex-col max-h-[88vh]" onClick={e => e.stopPropagation()}>
-        <div className="flex items-center justify-between px-6 py-4 border-b border-navy/10 flex-none">
+    <div className="fixed inset-0 z-50 bg-gold/30 flex items-center justify-center p-4" onClick={onClose}>
+      <div className="bg-dark-surface border border-gold/10 w-full max-w-lg flex flex-col max-h-[88vh]" onClick={e => e.stopPropagation()}>
+        <div className="flex items-center justify-between px-6 py-4 border-b border-gold/10 flex-none">
           <div>
-            <p className="text-xs font-medium tracking-[0.2em] uppercase text-navy/40 mb-0.5">Envoi par email</p>
-            <p className="text-sm font-semibold text-navy">Facture {invoice.number}</p>
+            <p className="text-xs font-medium tracking-[0.2em] uppercase text-light/40 mb-0.5">Envoi par email</p>
+            <p className="text-sm font-semibold text-light">Facture {invoice.number}</p>
           </div>
-          <button onClick={onClose} className="text-navy/30 hover:text-navy transition-colors"><X size={16} strokeWidth={1.5} /></button>
+          <button onClick={onClose} className="text-light/30 hover:text-light transition-colors"><X size={16} strokeWidth={1.5} /></button>
         </div>
-        <div className="px-6 py-4 border-b border-navy/10 flex-none">
-          <label className="text-xs font-medium text-navy/40 uppercase tracking-wide block mb-1.5">Destinataire</label>
+        <div className="px-6 py-4 border-b border-gold/10 flex-none">
+          <label className="text-xs font-medium text-light/40 uppercase tracking-wide block mb-1.5">Destinataire</label>
           <input
             type="email"
             value={toEmail}
             onChange={e => setToEmail(e.target.value)}
             placeholder="email@client.com"
-            className="w-full border-b border-navy/15 bg-transparent py-2 text-sm text-navy placeholder:text-navy/25 focus:outline-none focus:border-navy transition-colors"
+            className="w-full border-b border-gold/15 bg-transparent py-2 text-sm text-light placeholder:text-light/20 focus:outline-none focus:border-gold transition-colors"
           />
         </div>
-        <div className="px-6 py-3 border-b border-navy/10 flex-none">
-          <p className="text-[10px] text-navy/40 uppercase tracking-wide mb-0.5">Objet</p>
-          <p className="text-sm text-navy">{subject}</p>
+        <div className="px-6 py-3 border-b border-gold/10 flex-none">
+          <p className="text-[10px] text-light/40 uppercase tracking-wide mb-0.5">Objet</p>
+          <p className="text-sm text-light">{subject}</p>
         </div>
         <div className="px-6 py-4 flex-1 overflow-y-auto min-h-0">
-          <p className="text-[10px] font-medium text-navy/40 uppercase tracking-wide mb-2">Message</p>
-          <pre className="text-xs text-navy/70 leading-relaxed whitespace-pre-wrap font-sans bg-navy/[0.02] border border-navy/10 p-4">{body}</pre>
+          <p className="text-[10px] font-medium text-light/40 uppercase tracking-wide mb-2">Message</p>
+          <pre className="text-xs text-light/70 leading-relaxed whitespace-pre-wrap font-sans bg-dark-card border border-gold/10 p-4">{body}</pre>
         </div>
-        <div className="px-6 py-4 border-t border-navy/10 flex gap-3 flex-wrap flex-none">
-          <a href={mailtoUrl} className="flex items-center gap-2 bg-navy text-offwhite text-xs font-medium px-5 py-2.5 hover:bg-navy/90 transition-colors">
+        <div className="px-6 py-4 border-t border-gold/10 flex gap-3 flex-wrap flex-none">
+          <a href={mailtoUrl} className="flex items-center gap-2 bg-gold text-dark-bg text-xs font-medium px-5 py-2.5 hover:bg-gold/90 transition-colors">
             <Mail size={12} strokeWidth={1.5} /> Ouvrir dans la messagerie
           </a>
-          <button onClick={copy} className="flex items-center gap-2 text-xs font-medium text-navy/50 border border-navy/15 px-4 py-2.5 hover:text-navy hover:border-navy/30 transition-colors">
+          <button onClick={copy} className="flex items-center gap-2 text-xs font-medium text-light/50 border border-gold/15 px-4 py-2.5 hover:text-light hover:border-gold/30 transition-colors">
             <Copy size={12} strokeWidth={1.5} /> {copied ? '✓ Copié !' : 'Copier le message'}
           </button>
         </div>
@@ -563,79 +563,79 @@ function InvoiceDetail({ invoice, dossiers, userName, userCompany, userEmail, on
       )}
     <div className="flex flex-col gap-6">
       <div className="flex items-center justify-between gap-4 print:hidden" data-print-hide>
-        <button onClick={onBack} className="flex items-center gap-2 text-xs text-navy/40 hover:text-navy transition-colors">
+        <button onClick={onBack} className="flex items-center gap-2 text-xs text-light/40 hover:text-light transition-colors">
           <ArrowLeft size={13} strokeWidth={1.5} /> Retour
         </button>
         <div className="flex gap-2">
-          <button onClick={onEdit} className="flex items-center gap-1.5 text-xs font-medium text-navy/50 border border-navy/15 px-3 py-1.5 hover:text-navy hover:border-navy/30 transition-colors">
+          <button onClick={onEdit} className="flex items-center gap-1.5 text-xs font-medium text-light/50 border border-gold/15 px-3 py-1.5 hover:text-light hover:border-gold/30 transition-colors">
             <Pencil size={11} strokeWidth={1.5} /> Modifier
           </button>
-          <button onClick={() => setShowSend(true)} className="flex items-center gap-1.5 text-xs font-medium text-navy/50 border border-navy/15 px-3 py-1.5 hover:text-navy hover:border-navy/30 transition-colors">
+          <button onClick={() => setShowSend(true)} className="flex items-center gap-1.5 text-xs font-medium text-light/50 border border-gold/15 px-3 py-1.5 hover:text-light hover:border-gold/30 transition-colors">
             <Send size={11} strokeWidth={1.5} /> Envoyer
           </button>
-          <button onClick={handlePrint} className="flex items-center gap-1.5 text-xs font-medium text-navy/50 border border-navy/15 px-3 py-1.5 hover:text-navy hover:border-navy/30 transition-colors">
+          <button onClick={handlePrint} className="flex items-center gap-1.5 text-xs font-medium text-light/50 border border-gold/15 px-3 py-1.5 hover:text-light hover:border-gold/30 transition-colors">
             <Printer size={11} strokeWidth={1.5} /> Imprimer
           </button>
         </div>
       </div>
 
-      <div className="border border-navy/10 p-8 flex flex-col gap-8 print:border-none print:p-0">
+      <div className="border border-gold/10 p-8 flex flex-col gap-8 print:border-none print:p-0">
         {/* Header */}
         <div className="flex items-start justify-between gap-6">
           <div>
-            <p className="font-serif text-xl font-semibold text-navy">Maître Mokadmi Sami</p>
-            <p className="text-xs text-navy/50 mt-0.5">Avocat — Droit des Affaires & Tech</p>
+            <p className="font-serif text-xl font-semibold text-light">Maître Mokadmi Sami</p>
+            <p className="text-xs text-light/50 mt-0.5">Avocat — Droit des Affaires & Tech</p>
           </div>
           <div className="text-right">
-            <p className="text-xs font-medium tracking-[0.2em] uppercase text-navy/40 mb-1">Note d'honoraires</p>
-            <p className="font-mono font-semibold text-navy text-lg">{invoice.number}</p>
+            <p className="text-xs font-medium tracking-[0.2em] uppercase text-light/40 mb-1">Note d'honoraires</p>
+            <p className="font-mono font-semibold text-light text-lg">{invoice.number}</p>
             <div className="flex items-center justify-end gap-2 mt-1">
               <span className={`text-xs font-medium px-2 py-0.5 border ${cls}`}>{label}</span>
-              <span className="text-[10px] text-navy/40 border border-navy/10 px-1.5 py-0.5">{sym}</span>
+              <span className="text-[10px] text-light/40 border border-gold/10 px-1.5 py-0.5">{sym}</span>
             </div>
           </div>
         </div>
 
-        <div className="h-px bg-navy/10" />
+        <div className="h-px bg-gold/10" />
 
         {/* Client & Dates */}
         <div className="grid grid-cols-2 gap-8">
           <div>
-            <p className="text-xs font-medium text-navy/40 uppercase tracking-wide mb-2">Facturé à</p>
-            <p className="text-sm font-semibold text-navy">{userName}</p>
-            {userCompany && <p className="text-xs text-navy/50">{userCompany}</p>}
+            <p className="text-xs font-medium text-light/40 uppercase tracking-wide mb-2">Facturé à</p>
+            <p className="text-sm font-semibold text-light">{userName}</p>
+            {userCompany && <p className="text-xs text-light/50">{userCompany}</p>}
             {dossierName && (
-              <p className="flex items-center gap-1 text-xs text-navy/40 mt-1">
+              <p className="flex items-center gap-1 text-xs text-light/40 mt-1">
                 <FolderOpen size={10} strokeWidth={1.5} /> {dossierName}
               </p>
             )}
           </div>
           <div className="flex flex-col gap-1.5 items-end">
             <div className="flex gap-6 w-full justify-end">
-              <p className="text-xs text-navy/40">Date d'émission</p>
-              <p className="text-xs font-medium text-navy">{fmtD(invoice.dateEmission)}</p>
+              <p className="text-xs text-light/40">Date d'émission</p>
+              <p className="text-xs font-medium text-light">{fmtD(invoice.dateEmission)}</p>
             </div>
             <div className="flex gap-6 w-full justify-end">
-              <p className="text-xs text-navy/40">Date d'échéance</p>
-              <p className="text-xs font-medium text-navy">{fmtD(invoice.dateEcheance)}</p>
+              <p className="text-xs text-light/40">Date d'échéance</p>
+              <p className="text-xs font-medium text-light">{fmtD(invoice.dateEcheance)}</p>
             </div>
           </div>
         </div>
 
         {/* Line items */}
         <div>
-          <div className="bg-navy/5 grid grid-cols-[1fr_64px_96px_96px] gap-4 px-4 py-2.5">
+          <div className="bg-dark-card grid grid-cols-[1fr_64px_96px_96px] gap-4 px-4 py-2.5">
             {['Description', 'Qté / h', `PU HT (${sym})`, `Total HT`].map((h, i) => (
-              <p key={h} className={`text-xs font-semibold text-navy ${i > 0 ? 'text-right' : ''}`}>{h}</p>
+              <p key={h} className={`text-xs font-semibold text-light ${i > 0 ? 'text-right' : ''}`}>{h}</p>
             ))}
           </div>
-          <div className="flex flex-col gap-px bg-navy/10">
+          <div className="flex flex-col gap-px bg-gold/10">
             {invoice.lines.map(l => (
-              <div key={l.id} className="bg-offwhite grid grid-cols-[1fr_64px_96px_96px] gap-4 px-4 py-3">
-                <p className="text-sm text-navy">{l.description || '—'}</p>
-                <p className="text-sm text-navy text-right">{l.quantity}</p>
-                <p className="text-sm text-navy text-right">{fmtAmount(l.unitPrice, invoice.currency)}</p>
-                <p className="text-sm font-medium text-navy text-right">{fmtAmount(lineTotal(l), invoice.currency)}</p>
+              <div key={l.id} className="bg-dark-surface grid grid-cols-[1fr_64px_96px_96px] gap-4 px-4 py-3">
+                <p className="text-sm text-light">{l.description || '—'}</p>
+                <p className="text-sm text-light text-right">{l.quantity}</p>
+                <p className="text-sm text-light text-right">{fmtAmount(l.unitPrice, invoice.currency)}</p>
+                <p className="text-sm font-medium text-light text-right">{fmtAmount(lineTotal(l), invoice.currency)}</p>
               </div>
             ))}
           </div>
@@ -652,16 +652,16 @@ function InvoiceDetail({ invoice, dossiers, userName, userCompany, userEmail, on
 
         {invoice.notes && (
           <>
-            <div className="h-px bg-navy/10" />
+            <div className="h-px bg-gold/10" />
             <div>
-              <p className="text-xs font-medium text-navy/40 uppercase tracking-wide mb-2">Notes</p>
-              <p className="text-xs text-navy/60 leading-relaxed whitespace-pre-wrap">{invoice.notes}</p>
+              <p className="text-xs font-medium text-light/40 uppercase tracking-wide mb-2">Notes</p>
+              <p className="text-xs text-light/60 leading-relaxed whitespace-pre-wrap">{invoice.notes}</p>
             </div>
           </>
         )}
 
-        <div className="h-px bg-navy/10" />
-        <p className="text-xs text-navy/30 text-center">Maître Mokadmi Sami · Avocat · Bloc B Espace Tunis Monplaisir 1073 Tunis · office@mokadmi.lawyer · +216 29784651</p>
+        <div className="h-px bg-gold/10" />
+        <p className="text-xs text-light/30 text-center">Maître Mokadmi Sami · Avocat · Bloc B Espace Tunis Monplaisir 1073 Tunis · office@mokadmi.lawyer · +216 29784651</p>
       </div>
     </div>
     </>
@@ -714,73 +714,73 @@ export default function BillingModule({ invoices, setInvoices, rdvs, todos, doss
     <div className="flex flex-col gap-6">
       <div className="flex items-end justify-between gap-4">
         <div>
-          <p className="text-xs font-medium tracking-[0.2em] uppercase text-navy/40 mb-2">Facturation</p>
-          <h2 className="font-serif text-2xl text-navy">Notes d'honoraires</h2>
+          <p className="text-xs font-medium tracking-[0.2em] uppercase text-light/40 mb-2">Facturation</p>
+          <h2 className="font-serif text-2xl text-light">Notes d'honoraires</h2>
         </div>
-        <button onClick={openNew} className="flex items-center gap-2 bg-navy text-offwhite text-xs font-medium px-4 py-2.5 hover:bg-navy/90 transition-colors flex-none">
+        <button onClick={openNew} className="flex items-center gap-2 bg-gold text-dark-bg text-xs font-medium px-4 py-2.5 hover:bg-gold/90 transition-colors flex-none">
           <Plus size={13} strokeWidth={1.5} /> Nouvelle facture
         </button>
       </div>
 
       {invoices.length > 0 && (
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-px bg-navy/10">
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-px bg-gold/10">
           {[
             { label: 'Factures',   value: String(invoices.length) },
             { label: 'En attente', value: String(invoices.filter(i => i.status === 'envoyee' || i.status === 'en_retard').length) },
             { label: 'Payées',     value: String(invoices.filter(i => i.status === 'payee').length) },
             { label: 'En retard',  value: String(invoices.filter(i => i.status === 'en_retard').length) },
           ].map(s => (
-            <div key={s.label} className="bg-offwhite p-5">
-              <p className="text-xs text-navy/40 uppercase tracking-wide mb-1">{s.label}</p>
-              <p className="font-serif text-xl font-semibold text-navy">{s.value}</p>
+            <div key={s.label} className="bg-dark-surface p-5">
+              <p className="text-xs text-light/40 uppercase tracking-wide mb-1">{s.label}</p>
+              <p className="font-serif text-xl font-semibold text-light">{s.value}</p>
             </div>
           ))}
         </div>
       )}
 
       {invoices.length === 0 ? (
-        <div className="border border-dashed border-navy/15 px-8 py-12 flex flex-col items-center text-center gap-3">
-          <Receipt size={28} strokeWidth={1.25} className="text-navy/20" />
-          <p className="text-sm font-medium text-navy">Aucune note d'honoraires</p>
-          <p className="text-xs text-navy/40 max-w-xs leading-relaxed">
+        <div className="border border-dashed border-gold/15 px-8 py-12 flex flex-col items-center text-center gap-3">
+          <Receipt size={28} strokeWidth={1.25} className="text-light/20" />
+          <p className="text-sm font-medium text-light">Aucune note d'honoraires</p>
+          <p className="text-xs text-light/40 max-w-xs leading-relaxed">
             Créez votre première facture. Vous pouvez y associer un dossier, des rendez-vous ou des tâches réalisées.
           </p>
         </div>
       ) : (
-        <div className="flex flex-col gap-px bg-navy/10">
+        <div className="flex flex-col gap-px bg-gold/10">
           {sorted.map(inv => {
             const { net } = computeAmounts(inv)
             const { label, cls } = STATUS_MAP[inv.status]
             const dossierName = inv.dossierId ? dossiers.find(d => d.id === inv.dossierId)?.titre : undefined
             return (
-              <div key={inv.id} className="bg-offwhite px-6 py-4 flex items-center gap-4 group">
+              <div key={inv.id} className="bg-dark-surface px-6 py-4 flex items-center gap-4 group">
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-2 flex-wrap mb-0.5">
-                    <p className="text-sm font-semibold text-navy font-mono">{inv.number}</p>
+                    <p className="text-sm font-semibold text-light font-mono">{inv.number}</p>
                     <span className={`text-xs font-medium px-2 py-0.5 border ${cls}`}>{label}</span>
-                    <span className="text-[10px] text-navy/30 border border-navy/10 px-1.5 py-0.5">{inv.currency}</span>
+                    <span className="text-[10px] text-light/30 border border-gold/10 px-1.5 py-0.5">{inv.currency}</span>
                   </div>
                   <div className="flex items-center gap-2 flex-wrap">
-                    <span className="text-xs text-navy/40">
+                    <span className="text-xs text-light/40">
                       {new Date(inv.dateEmission + 'T12:00:00').toLocaleDateString('fr-FR', { day: 'numeric', month: 'short', year: 'numeric' })}
                     </span>
                     {dossierName && (
-                      <span className="flex items-center gap-1 text-[10px] text-navy/40 border border-navy/10 px-1.5 py-0.5">
+                      <span className="flex items-center gap-1 text-[10px] text-light/40 border border-gold/10 px-1.5 py-0.5">
                         <FolderOpen size={9} strokeWidth={1.5} /> {dossierName}
                       </span>
                     )}
                   </div>
                 </div>
                 <div className="flex-none text-right">
-                  <p className="text-sm font-semibold text-navy">{fmtAmount(net, inv.currency)}</p>
-                  <p className="text-[10px] text-navy/40">net à payer</p>
+                  <p className="text-sm font-semibold text-light">{fmtAmount(net, inv.currency)}</p>
+                  <p className="text-[10px] text-light/40">net à payer</p>
                 </div>
                 <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                  <button onClick={() => openView(inv)} title="Voir"      className="text-navy/30 hover:text-navy p-1.5 transition-colors"><ChevronRight size={13} strokeWidth={1.5} /></button>
-                  <button onClick={() => setSendInv(inv)} title="Envoyer" className="text-navy/30 hover:text-navy p-1.5 transition-colors"><Send size={13} strokeWidth={1.5} /></button>
-                  <button onClick={() => { setSelected(inv); setView('detail'); setTimeout(() => { const s = document.createElement('style'); s.id = '__inv_print__'; s.innerHTML = '@media print { header, aside, nav, [data-print-hide] { display: none !important; } main { max-width: 100% !important; padding: 0 !important; margin: 0 !important; } }'; document.head.appendChild(s); window.print(); setTimeout(() => document.getElementById('__inv_print__')?.remove(), 800) }, 50) }} title="Imprimer" className="text-navy/30 hover:text-navy p-1.5 transition-colors"><Printer size={13} strokeWidth={1.5} /></button>
-                  <button onClick={() => openEdit(inv)} title="Modifier"  className="text-navy/30 hover:text-navy p-1.5 transition-colors"><Pencil size={13} strokeWidth={1.5} /></button>
-                  <button onClick={() => del(inv.id)}   title="Supprimer" className="text-navy/20 hover:text-red-500 p-1.5 transition-colors"><Trash2 size={13} strokeWidth={1.5} /></button>
+                  <button onClick={() => openView(inv)} title="Voir"      className="text-light/30 hover:text-light p-1.5 transition-colors"><ChevronRight size={13} strokeWidth={1.5} /></button>
+                  <button onClick={() => setSendInv(inv)} title="Envoyer" className="text-light/30 hover:text-light p-1.5 transition-colors"><Send size={13} strokeWidth={1.5} /></button>
+                  <button onClick={() => { setSelected(inv); setView('detail'); setTimeout(() => { const s = document.createElement('style'); s.id = '__inv_print__'; s.innerHTML = '@media print { header, aside, nav, [data-print-hide] { display: none !important; } main { max-width: 100% !important; padding: 0 !important; margin: 0 !important; } }'; document.head.appendChild(s); window.print(); setTimeout(() => document.getElementById('__inv_print__')?.remove(), 800) }, 50) }} title="Imprimer" className="text-light/30 hover:text-light p-1.5 transition-colors"><Printer size={13} strokeWidth={1.5} /></button>
+                  <button onClick={() => openEdit(inv)} title="Modifier"  className="text-light/30 hover:text-light p-1.5 transition-colors"><Pencil size={13} strokeWidth={1.5} /></button>
+                  <button onClick={() => del(inv.id)}   title="Supprimer" className="text-light/20 hover:text-red-500 p-1.5 transition-colors"><Trash2 size={13} strokeWidth={1.5} /></button>
                 </div>
               </div>
             )

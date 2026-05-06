@@ -39,7 +39,7 @@ export default function TodoList({ todos, onToggle, onDelete, onEdit, readOnly, 
             key={f}
             onClick={() => setFilter(f)}
             className={`text-xs font-medium px-3 py-1.5 transition-colors border ${
-              filter === f ? 'bg-navy text-offwhite border-navy' : 'text-navy/50 border-navy/15 hover:border-navy/30'
+              filter === f ? 'bg-gold text-dark-bg border-gold' : 'text-light/50 border-gold/15 hover:border-gold/30'
             }`}
           >
             {f === 'en_cours' ? 'En cours' : f === 'toutes' ? 'Toutes' : 'Faites'}
@@ -54,9 +54,9 @@ export default function TodoList({ todos, onToggle, onDelete, onEdit, readOnly, 
 
       {/* List */}
       {filtered.length === 0 ? (
-        <p className="text-sm text-navy/30 py-4 text-center">Aucune tâche.</p>
+        <p className="text-sm text-light/30 py-4 text-center">Aucune tâche.</p>
       ) : (
-        <div className="flex flex-col gap-px bg-navy/10">
+        <div className="flex flex-col gap-px bg-gold/10">
           {filtered
             .sort((a, b) => {
               if (a.done !== b.done) return a.done ? 1 : -1
@@ -67,19 +67,19 @@ export default function TodoList({ todos, onToggle, onDelete, onEdit, readOnly, 
               const overdue = !todo.done && todo.dueDate && todo.dueDate < todayStr
               const dossierName = todo.dossierId && dossierMap ? dossierMap[todo.dossierId] : undefined
               return (
-                <div key={todo.id} className={`bg-offwhite px-5 py-4 flex items-start gap-3 ${todo.done ? 'opacity-50' : ''}`}>
+                <div key={todo.id} className={`bg-dark-surface px-5 py-4 flex items-start gap-3 ${todo.done ? 'opacity-50' : ''}`}>
                   <button
                     onClick={() => onToggle?.(todo.id)}
                     disabled={readOnly}
-                    className="mt-0.5 flex-none text-navy/40 hover:text-navy transition-colors disabled:cursor-default"
+                    className="mt-0.5 flex-none text-light/40 hover:text-light transition-colors disabled:cursor-default"
                   >
                     {todo.done
-                      ? <CheckSquare size={16} strokeWidth={1.5} className="text-navy" />
+                      ? <CheckSquare size={16} strokeWidth={1.5} className="text-light" />
                       : <Square size={16} strokeWidth={1.5} />}
                   </button>
 
                   <div className="flex-1 min-w-0">
-                    <p className={`text-sm font-medium text-navy leading-snug ${todo.done ? 'line-through text-navy/40' : ''}`}>
+                    <p className={`text-sm font-medium text-light leading-snug ${todo.done ? 'line-through text-light/40' : ''}`}>
                       {todo.title}
                     </p>
                     <div className="flex items-center gap-2 mt-1 flex-wrap">
@@ -89,14 +89,14 @@ export default function TodoList({ todos, onToggle, onDelete, onEdit, readOnly, 
                         </span>
                       )}
                       {todo.dueDate && (
-                        <span className={`flex items-center gap-1 text-[10px] font-medium ${overdue ? 'text-red-500' : 'text-navy/40'}`}>
+                        <span className={`flex items-center gap-1 text-[10px] font-medium ${overdue ? 'text-red-500' : 'text-light/40'}`}>
                           <Clock size={10} strokeWidth={1.5} />
                           {overdue ? 'En retard · ' : ''}
                           {new Date(todo.dueDate + 'T12:00:00').toLocaleDateString('fr-FR', { day: 'numeric', month: 'short' })}
                         </span>
                       )}
                       {dossierName && (
-                        <span className="flex items-center gap-1 text-[10px] text-navy/40 border border-navy/10 px-1.5 py-0.5">
+                        <span className="flex items-center gap-1 text-[10px] text-light/40 border border-gold/10 px-1.5 py-0.5">
                           <FolderOpen size={9} strokeWidth={1.5} /> {dossierName}
                         </span>
                       )}
@@ -108,7 +108,7 @@ export default function TodoList({ todos, onToggle, onDelete, onEdit, readOnly, 
                       {onEdit && (
                         <button
                           onClick={() => onEdit(todo)}
-                          className="flex-none text-navy/20 hover:text-navy transition-colors"
+                          className="flex-none text-light/20 hover:text-light transition-colors"
                         >
                           <Pencil size={13} strokeWidth={1.5} />
                         </button>
@@ -116,7 +116,7 @@ export default function TodoList({ todos, onToggle, onDelete, onEdit, readOnly, 
                       {onDelete && (
                         <button
                           onClick={() => onDelete(todo.id)}
-                          className="flex-none text-navy/20 hover:text-red-500 transition-colors"
+                          className="flex-none text-light/20 hover:text-red-500 transition-colors"
                         >
                           <Trash2 size={13} strokeWidth={1.5} />
                         </button>

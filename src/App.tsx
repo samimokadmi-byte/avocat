@@ -28,6 +28,7 @@ class ErrorBoundary extends Component<{ children: ReactNode }, { failed: boolean
 // ── Landing page sections (loaded eagerly — visible on first paint) ──────────
 import Nav from './components/Nav'
 import Hero from './components/Hero'
+import APropos from './components/APropos'
 import System from './components/System'
 import Expertises from './components/Expertises'
 import Method from './components/Method'
@@ -36,6 +37,7 @@ import CasEtudes from './components/CasEtudes'
 import BlogSection from './components/BlogSection'
 import FAQ from './components/FAQ'
 import Booking from './components/Booking'
+import WhatsAppButton from './components/WhatsAppButton'
 
 // ── Heavy routes — loaded only when the user navigates to them ───────────────
 // Each lazy() call becomes a separate JS chunk in the build output.
@@ -60,6 +62,7 @@ function LandingPage() {
       <Nav />
       <main>
         <Hero />
+        <APropos />
         <System />
         <Method />
         <Results />
@@ -69,6 +72,7 @@ function LandingPage() {
         <FAQ />
         <Booking />
       </main>
+      <WhatsAppButton />
     </div>
   )
 }

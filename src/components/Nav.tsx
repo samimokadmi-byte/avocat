@@ -5,6 +5,7 @@ import { scrollTo } from '../utils/scrollTo'
 import Logo from './Logo'
 
 const links = [
+  { id: 'apropos',   label: 'À propos' },
   { id: 'systeme',   label: 'Expertise' },
   { id: 'methode',   label: 'Méthode' },
   { id: 'resultats', label: 'Résultats' },

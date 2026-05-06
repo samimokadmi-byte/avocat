@@ -39,7 +39,7 @@ async function ensureAdmin() {
   for (const key of Object.keys(accounts)) {
     const entry = accounts[key] as any
     if ('password' in entry && !('passwordHash' in entry)) {
-      entry.passwordHash = await hashPassword(entry.password)
+      entry.passwordHash = await hashPassword(entry.password, key)
       delete entry.password
       migrated = true
     }
@@ -47,7 +47,7 @@ async function ensureAdmin() {
 
   if (!accounts[ADMIN_EMAIL]) {
     const admin: User = { id: 'admin-001', name: 'Maître Mokadmi Sami', email: ADMIN_EMAIL, role: 'admin' }
-    accounts[ADMIN_EMAIL] = { passwordHash: await hashPassword(ADMIN_PASSWORD), user: admin }
+    accounts[ADMIN_EMAIL] = { passwordHash: await hashPassword(ADMIN_PASSWORD, ADMIN_EMAIL), user: admin }
     migrated = true
   }
 
@@ -72,7 +72,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const account = accounts[email.toLowerCase()]
     if (!account) return { ok: false, error: 'Aucun compte trouvé pour cet email.' }
 
-    const valid = await verifyPassword(password, account.passwordHash)
+    const valid = await verifyPassword(password, account.passwordHash, email.toLowerCase())
     if (!valid) return { ok: false, error: 'Mot de passe incorrect.' }
 
     setUser(account.user)
@@ -87,7 +87,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     if (accounts[email.toLowerCase()]) return { ok: false, error: 'Un compte existe déjà pour cet email.' }
 
     const newUser: User = { id: crypto.randomUUID(), name, email: email.toLowerCase(), company, role: 'client' }
-    accounts[email.toLowerCase()] = { passwordHash: await hashPassword(password), user: newUser }
+    accounts[email.toLowerCase()] = { passwordHash: await hashPassword(password, email.toLowerCase()), user: newUser }
     localStorage.setItem('avocat_accounts', JSON.stringify(accounts))
     seedDemoData(newUser.id)
     setUser(newUser)

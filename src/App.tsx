@@ -1,7 +1,29 @@
-import { lazy, Suspense } from 'react'
+import { lazy, Suspense, Component, ReactNode } from 'react'
 import { Routes, Route, Navigate } from 'react-router-dom'
 import { useAuth } from './contexts/AuthContext'
 import ScrollToTop from './utils/ScrollToTop'
+
+// ── Error boundary — catches lazy chunk load failures (network errors, etc.) ─
+class ErrorBoundary extends Component<{ children: ReactNode }, { failed: boolean }> {
+  state = { failed: false }
+  static getDerivedStateFromError() { return { failed: true } }
+  render() {
+    if (this.state.failed) {
+      return (
+        <div className="min-h-screen bg-dark-bg flex flex-col items-center justify-center gap-4 px-6 text-center">
+          <p className="text-sm text-light/40">Impossible de charger cette page.</p>
+          <button
+            onClick={() => { this.setState({ failed: false }); window.location.reload() }}
+            className="text-xs font-medium bg-gold text-dark-bg px-5 py-2.5 hover:bg-gold/90 transition-colors"
+          >
+            Réessayer
+          </button>
+        </div>
+      )
+    }
+    return this.props.children
+  }
+}
 
 // ── Landing page sections (loaded eagerly — visible on first paint) ──────────
 import Nav from './components/Nav'
@@ -71,6 +93,7 @@ export default function App() {
     <>
       {/* Resets scroll position on every route change (except in-page anchors) */}
       <ScrollToTop />
+      <ErrorBoundary>
       <Suspense fallback={<PageLoader />}>
         <Routes>
           <Route path="/"        element={<LandingPage />} />
@@ -97,6 +120,7 @@ export default function App() {
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
       </Suspense>
+      </ErrorBoundary>
     </>
   )
 }

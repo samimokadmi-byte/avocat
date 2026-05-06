@@ -504,12 +504,15 @@ function SendModal({ invoice, dossiers, userName, userEmail: initEmail, onClose 
   }
 
   return (
+    /*
+     * The backdrop is NOT aria-hidden — it contains the dialog.
+     * aria-modal="true" on the inner div is what tells AT to ignore background content.
+     * Putting aria-hidden on the backdrop would hide the dialog from screen readers.
+     */
     <div
       className="fixed inset-0 z-50 bg-black/60 flex items-center justify-center p-4"
       onClick={onClose}
-      aria-hidden="true"
     >
-      {/* role="dialog" + aria-modal prevents screen readers from reading background content */}
       <div
         ref={dialogRef}
         role="dialog"
@@ -577,7 +580,8 @@ function InvoiceDetail({ invoice, dossiers, userName, userCompany, userEmail, on
   const handlePrint = () => {
     const style = document.createElement('style')
     style.id = '__inv_print__'
-    style.innerHTML = `@media print {
+    // textContent is correct for non-HTML text; innerHTML triggers the HTML parser unnecessarily
+    style.textContent = `@media print {
       header, aside, nav, [data-print-hide] { display: none !important; }
       main { max-width: 100% !important; padding: 0 !important; margin: 0 !important; }
       * { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
@@ -809,7 +813,7 @@ export default function BillingModule({ invoices, setInvoices, rdvs, todos, doss
                 <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
                   <button onClick={() => openView(inv)} title="Voir"      className="text-light/30 hover:text-light p-1.5 transition-colors"><ChevronRight size={13} strokeWidth={1.5} /></button>
                   <button onClick={() => setSendInv(inv)} title="Envoyer" className="text-light/30 hover:text-light p-1.5 transition-colors"><Send size={13} strokeWidth={1.5} /></button>
-                  <button onClick={() => { setSelected(inv); setView('detail'); setTimeout(() => { const s = document.createElement('style'); s.id = '__inv_print__'; s.innerHTML = '@media print { header, aside, nav, [data-print-hide] { display: none !important; } main { max-width: 100% !important; padding: 0 !important; margin: 0 !important; } }'; document.head.appendChild(s); window.print(); setTimeout(() => document.getElementById('__inv_print__')?.remove(), 800) }, 50) }} title="Imprimer" className="text-light/30 hover:text-light p-1.5 transition-colors"><Printer size={13} strokeWidth={1.5} /></button>
+                  <button onClick={() => { setSelected(inv); setView('detail'); setTimeout(() => { const s = document.createElement('style'); s.id = '__inv_print__'; s.textContent = '@media print { header, aside, nav, [data-print-hide] { display: none !important; } main { max-width: 100% !important; padding: 0 !important; margin: 0 !important; } }'; document.head.appendChild(s); window.print(); setTimeout(() => document.getElementById('__inv_print__')?.remove(), 800) }, 50) }} title="Imprimer" className="text-light/30 hover:text-light p-1.5 transition-colors"><Printer size={13} strokeWidth={1.5} /></button>
                   <button onClick={() => openEdit(inv)} title="Modifier"  className="text-light/30 hover:text-light p-1.5 transition-colors"><Pencil size={13} strokeWidth={1.5} /></button>
                   <button onClick={() => del(inv.id)}   title="Supprimer" className="text-light/20 hover:text-red-500 p-1.5 transition-colors"><Trash2 size={13} strokeWidth={1.5} /></button>
                 </div>

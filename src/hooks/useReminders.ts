@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useState } from 'react'
 import { Appointment } from '../components/CalendarView'
 import { Todo } from '../components/TodoList'
 
@@ -43,19 +43,23 @@ function buildAlerts(rdvs: Appointment[], todos: Todo[]): ReminderAlert[] {
 
 export function useReminders(rdvs: Appointment[], todos: Todo[]) {
   const [dismissed, setDismissed] = useState<Set<string>>(new Set())
-  const firedRef = useRef(false)
 
   const rawAlerts = buildAlerts(rdvs, todos)
   const alerts = rawAlerts.filter(a => !dismissed.has(a.id))
 
   useEffect(() => {
-    if (rawAlerts.length === 0 || firedRef.current) return
+    if (rawAlerts.length === 0) return
 
     let cancelled = false
 
     const notify = async () => {
       if (!('Notification' in window)) return
 
+      /*
+       * sessionStorage is the single source of truth for deduplication.
+       * We removed firedRef because it prevented notifications when new
+       * RDVs/todos were added after the first batch had already fired.
+       */
       const alreadyFired = new Set<string>(
         JSON.parse(sessionStorage.getItem('avocat_notified') ?? '[]')
       )
@@ -68,13 +72,10 @@ export function useReminders(rdvs: Appointment[], todos: Todo[]) {
 
       toFire.forEach(a => new Notification('Maître Mokadmi Sami', { body: a.message, tag: a.id }))
       sessionStorage.setItem('avocat_notified', JSON.stringify([...alreadyFired, ...toFire.map(a => a.id)]))
-      firedRef.current = true
     }
 
     notify()
 
-    // Cleanup: if the component unmounts while requestPermission() is pending,
-    // the `cancelled` flag prevents the notification from firing.
     return () => { cancelled = true }
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [rdvs, todos])

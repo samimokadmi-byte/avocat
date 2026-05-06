@@ -9,7 +9,7 @@ export default function ScrollToTop() {
   const { pathname, hash } = useLocation()
   useEffect(() => {
     // Only reset when navigating to a new route, not an in-page anchor
-    if (!hash) window.scrollTo({ top: 0, left: 0, behavior: 'instant' })
+    if (!hash) window.scrollTo(0, 0)
   }, [pathname, hash])
   return null
 }

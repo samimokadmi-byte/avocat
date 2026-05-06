@@ -1,8 +1,9 @@
-import { ArrowRight } from 'lucide-react'
+import { ArrowRight, Zap } from 'lucide-react'
 
 const stats = [
-  { value: '24', label: "ans d'expérience" },
-  { value: '97%', label: 'dossiers closés' },
+  { value: '24',   label: "ans d'expérience" },
+  { value: '97%',  label: 'dossiers finalisés' },
+  { value: '3-en-1', label: 'Droit · Fiscal · IA' },
 ]
 
 export default function Hero() {
@@ -13,47 +14,54 @@ export default function Hero() {
     >
       <div className="grid grid-cols-1 md:grid-cols-[1fr_auto] gap-12 md:gap-16 items-center">
         <div>
-          <div className="inline-flex items-center gap-2 border border-navy/15 px-3 py-1.5 mb-8">
-            <span className="w-1.5 h-1.5 bg-navy/40 rounded-full flex-none" />
-            <span className="text-xs font-medium text-navy/60 tracking-wide">Barreau de Paris · 24 ans d'expérience</span>
+          <div className="inline-flex items-center gap-2 border border-gold/20 bg-gold/5 px-3 py-1.5 mb-8">
+            <Zap size={10} className="text-gold" strokeWidth={2} />
+            <span className="text-xs font-medium text-gold/80 tracking-wide">
+              L'Architecte Juridique · 24 ans d'excellence
+            </span>
           </div>
 
-          <h1 className="font-serif text-display text-navy max-w-3xl mb-8">
-            24 ans d'ingénierie juridique au service de la Tech
+          <h1 className="font-serif text-display text-light max-w-3xl mb-6">
+            Concevoir la sécurité juridique de demain
           </h1>
 
-          <p className="text-subhead text-navy/60 max-w-prose-luxury mb-12 font-light">
-            Sécuriser vos levées de fonds, structurer vos pactes d'associés et optimiser votre fiscalité — avec la précision d'un ingénieur et l'autorité de 24 ans de pratique.
+          <p className="text-subhead text-light/50 max-w-prose-luxury mb-4 font-light leading-relaxed">
+            La sagesse de 24 ans d'expérience au service de l'innovation de rupture.
+          </p>
+          <p className="text-sm text-light/35 max-w-prose-luxury mb-12 leading-relaxed">
+            Ingénierie juridique, fiscalité stratégique et intelligence artificielle — pour les fondateurs
+            qui pensent en systèmes, pas en documents.
           </p>
 
           <div className="flex flex-col sm:flex-row gap-4 items-start">
             <a
               href="#booking"
-              className="inline-flex items-center gap-3 bg-navy text-offwhite text-sm font-medium px-7 py-4 hover:bg-navy/90 transition-colors duration-200"
+              className="inline-flex items-center gap-3 bg-gold text-dark-bg text-sm font-medium px-7 py-4 hover:bg-gold/90 transition-colors duration-200"
             >
-              Réserver un diagnostic stratégique
+              Prendre rendez-vous
               <ArrowRight size={16} strokeWidth={1.5} />
             </a>
             <a
-              href="#expertises"
-              className="inline-flex items-center text-sm font-medium text-navy/50 hover:text-navy py-4 transition-colors duration-200"
+              href="#systeme"
+              className="inline-flex items-center gap-2 text-sm font-medium text-light/40 hover:text-gold py-4 transition-colors duration-200"
             >
-              Voir les expertises
+              Découvrir l'architecture
+              <ArrowRight size={14} strokeWidth={1.5} />
             </a>
           </div>
         </div>
 
         <div className="flex md:flex-col gap-4 flex-wrap">
           {stats.map(({ value, label }) => (
-            <div key={label} className="border border-navy/10 px-6 py-5 text-center min-w-[120px]">
-              <p className="font-serif text-3xl font-bold text-navy leading-none mb-1">{value}</p>
-              <p className="text-xs text-navy/50 font-medium leading-tight">{label}</p>
+            <div key={label} className="border border-gold/15 bg-dark-surface px-6 py-5 text-center min-w-[120px]">
+              <p className="font-serif text-3xl font-bold text-gold leading-none mb-1">{value}</p>
+              <p className="text-xs text-light/35 font-medium leading-tight">{label}</p>
             </div>
           ))}
         </div>
       </div>
 
-      <div className="mt-section-sm border-t border-navy/10" />
+      <div className="mt-section-sm border-t border-gold/10" />
     </section>
   )
 }

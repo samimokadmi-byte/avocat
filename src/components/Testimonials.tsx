@@ -12,33 +12,33 @@ const quotes = [
     year: '2024',
   },
   {
-    text: "Notre acquisition par un groupe américain aurait été un enfer sans cet accompagnement. La structuration de la cession nous a permis d'économiser 18% sur la fiscalité de sortie.",
-    author: 'Sébastien L.',
-    role: 'Fondateur, Exitée en 2024',
-    year: '2024',
+    text: "Les workflows automatisés livrés avec notre structuration nous ont fait gagner plusieurs semaines sur le closing. On a reçu un système, pas des documents.",
+    author: 'Karim B.',
+    role: 'Fondateur, FinTech Series A',
+    year: '2025',
   },
 ]
 
 export default function Testimonials() {
   return (
     <section id="temoignages" className="px-6 py-section max-w-content mx-auto">
-      <p className="text-xs font-medium tracking-[0.2em] uppercase text-navy/50 mb-4">
+      <p className="text-xs font-medium tracking-[0.2em] uppercase text-gold/60 mb-4">
         Témoignages
       </p>
-      <h2 className="font-serif text-heading text-navy mb-16 max-w-xl">
+      <h2 className="font-serif text-heading text-light mb-16 max-w-xl">
         Ce que disent ceux qui ont franchi le pas.
       </h2>
 
-      <div className="flex flex-col gap-px bg-navy/10">
+      <div className="flex flex-col gap-px bg-gold/10">
         {quotes.map(({ text, author, role, year }) => (
-          <div key={author} className="bg-offwhite py-12 px-1">
-            <p className="font-serif text-5xl text-navy/10 leading-none mb-4 select-none">&ldquo;</p>
-            <blockquote className="font-serif text-lg italic text-navy/80 leading-relaxed max-w-2xl mb-8">
+          <div key={author} className="bg-dark-surface py-12 px-1">
+            <p className="font-serif text-5xl text-gold/10 leading-none mb-4 select-none">&ldquo;</p>
+            <blockquote className="font-serif text-lg italic text-light/65 leading-relaxed max-w-2xl mb-8">
               {text}
             </blockquote>
             <footer>
-              <p className="text-sm font-medium text-navy">{author}</p>
-              <p className="text-xs text-navy/50 mt-0.5">{role} · {year}</p>
+              <p className="text-sm font-medium text-light">{author}</p>
+              <p className="text-xs text-gold/50 mt-0.5">{role} · {year}</p>
             </footer>
           </div>
         ))}

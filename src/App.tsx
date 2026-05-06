@@ -4,37 +4,34 @@ import LoginPage from './pages/LoginPage'
 import SignupPage from './pages/SignupPage'
 import DashboardPage from './pages/DashboardPage'
 import AdminPage from './pages/AdminPage'
+import BlogPage from './pages/BlogPage'
 import Nav from './components/Nav'
 import Hero from './components/Hero'
 import System from './components/System'
 import Expertises from './components/Expertises'
 import Method from './components/Method'
-import Honoraires from './components/Honoraires'
-import SuiviNumerique from './components/SuiviNumerique'
 import Results from './components/Results'
 import CasEtudes from './components/CasEtudes'
 import Filter from './components/Filter'
-import Veille from './components/Veille'
 import Testimonials from './components/Testimonials'
+import BlogSection from './components/BlogSection'
 import FAQ from './components/FAQ'
 import Booking from './components/Booking'
 
 function LandingPage() {
   return (
-    <div className="bg-offwhite text-navy font-sans">
+    <div className="bg-dark-bg text-light font-sans">
       <Nav />
       <main>
         <Hero />
         <System />
-        <Expertises />
         <Method />
-        <Honoraires />
-        <SuiviNumerique />
         <Results />
+        <Expertises />
         <CasEtudes />
         <Filter />
-        <Veille />
         <Testimonials />
+        <BlogSection />
         <FAQ />
         <Booking />
       </main>
@@ -59,6 +56,7 @@ export default function App() {
   return (
     <Routes>
       <Route path="/" element={<LandingPage />} />
+      <Route path="/blog" element={<BlogPage />} />
       <Route path="/login" element={<LoginPage />} />
       <Route path="/signup" element={<SignupPage />} />
       <Route

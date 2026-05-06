@@ -9,6 +9,13 @@ export default {
       colors: {
         offwhite: '#FDFCFB',
         navy: '#0A192F',
+        gold: '#C9A96E',
+        dark: {
+          bg:      '#070C18',
+          surface: '#0C1220',
+          card:    '#111B2E',
+        },
+        light: '#E8EDF5',
       },
       fontFamily: {
         serif: ['"Playfair Display"', 'Georgia', 'serif'],
@@ -38,3 +45,4 @@ export default {
   },
   plugins: [],
 }
+

@@ -48,7 +48,7 @@ export default function Nav() {
             <button
               key={l.id}
               onClick={() => scrollTo(l.id)}
-              className="text-xs font-medium tracking-wide uppercase text-light/40 hover:text-gold transition-colors duration-200"
+              className="text-[13px] font-semibold tracking-wide uppercase text-light/40 hover:text-gold transition-colors duration-200"
             >
               {l.label}
             </button>

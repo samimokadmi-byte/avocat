@@ -29,7 +29,7 @@ export default function Nav() {
       <div className="max-w-content mx-auto px-6 h-16 flex items-center justify-between">
 
         {/* Brand lockup: circular logo + wordmark */}
-        <a href="/" className="flex items-center gap-3">
+        <Link to="/" className="flex items-center gap-3">
           <Logo size={40} />
           <div className="flex flex-col">
             <span className="font-serif text-base tracking-tight font-semibold text-light leading-tight">
@@ -39,7 +39,7 @@ export default function Nav() {
               L'Architecte Juridique
             </span>
           </div>
-        </a>
+        </Link>
 
         {/* Desktop nav links */}
         <nav className="hidden md:flex items-center gap-8">

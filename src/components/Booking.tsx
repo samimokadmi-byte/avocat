@@ -1,5 +1,6 @@
 import { MapPin, Clock, Mail, Phone } from 'lucide-react'
 import { ArrowRight } from 'lucide-react'
+import Logo from './Logo'
 
 const expertise = [
   'Architecture de levée de fonds (Seed à Série B)',
@@ -113,9 +114,13 @@ export default function Booking() {
 
         </div>
 
-        <div className="mt-section-sm border-t border-gold/10 pt-8 flex flex-col md:flex-row items-start md:items-center justify-between gap-4 text-xs text-light/20">
-          <p>© 2025 Maître Mokadmi Sami — Avocat. Tous droits réservés.</p>
-          <p>Barreau de Tunis · office@mokadmi.lawyer</p>
+        <div className="mt-section-sm border-t border-gold/10 pt-12 flex flex-col items-center gap-6">
+          <Logo size={88} />
+          <div className="flex flex-col md:flex-row items-center justify-center gap-4 text-xs text-light/20 text-center">
+            <p>© 2025 Maître Mokadmi Sami — Avocat. Tous droits réservés.</p>
+            <span className="hidden md:inline text-light/10">·</span>
+            <p>Barreau de Tunis · office@mokadmi.lawyer</p>
+          </div>
         </div>
       </div>
     </section>

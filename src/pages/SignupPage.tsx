@@ -2,17 +2,18 @@ import { useState, FormEvent } from 'react'
 import { useNavigate, Link } from 'react-router-dom'
 import { useAuth } from '../contexts/AuthContext'
 import { ArrowRight, Eye, EyeOff } from 'lucide-react'
+import Logo from '../components/Logo'
 
 export default function SignupPage() {
   const { signup } = useAuth()
   const navigate = useNavigate()
-  const [name, setName] = useState('')
-  const [email, setEmail] = useState('')
-  const [company, setCompany] = useState('')
+  const [name, setName]         = useState('')
+  const [email, setEmail]       = useState('')
+  const [company, setCompany]   = useState('')
   const [password, setPassword] = useState('')
-  const [showPassword, setShowPassword] = useState(false)
-  const [error, setError] = useState('')
-  const [loading, setLoading] = useState(false)
+  const [showPwd, setShowPwd]   = useState(false)
+  const [error, setError]       = useState('')
+  const [loading, setLoading]   = useState(false)
 
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault()
@@ -26,53 +27,65 @@ export default function SignupPage() {
   }
 
   return (
-    <div className="min-h-screen bg-dark-bg text-light flex flex-col font-sans">
-      <header className="border-b border-gold/10 px-6 h-16 flex items-center">
-        <Link to="/" className="flex flex-col">
-          <span className="font-serif text-lg font-semibold text-light leading-tight">Maître Mokadmi Sami</span>
-          <span className="text-[10px] text-gold/60 tracking-[0.15em] uppercase">L'Architecte Juridique</span>
+    <div className="min-h-screen bg-ink text-paper flex flex-col font-sans">
+
+      {/* ── Header ───────────────────────────────────────────────── */}
+      <header className="border-b border-paper/10 px-6 h-16 flex items-center">
+        <Link to="/" className="flex items-center gap-3">
+          <Logo size={32} />
+          <div className="flex flex-col">
+            <span className="font-display text-sm font-normal text-paper leading-tight">Maître Mokadmi Sami</span>
+            <span className="font-mono text-[10px] text-accent tracking-[0.12em] uppercase">L'Architecte Juridique</span>
+          </div>
         </Link>
       </header>
 
+      {/* ── Form ─────────────────────────────────────────────────── */}
       <div className="flex-1 flex items-center justify-center px-6 py-16">
         <div className="w-full max-w-md">
-          <p className="text-xs font-medium tracking-[0.2em] uppercase text-gold/60 mb-4">Espace Client</p>
-          <h1 className="font-serif text-3xl text-light mb-2">Créer un accès</h1>
-          <p className="text-sm text-light/40 mb-10">Votre espace est activé après validation par le cabinet.</p>
+
+          <div className="flex items-center gap-3 mb-8">
+            <span className="font-mono text-[11px] uppercase tracking-[0.08em] text-paper/35">Espace Client</span>
+            <span className="w-8 h-px bg-paper/15 flex-none" />
+          </div>
+
+          <h1 className="font-display text-3xl font-normal text-paper mb-2">Créer un accès</h1>
+          <p className="text-sm text-paper/50 mb-10">Votre espace est activé après validation par le cabinet.</p>
 
           <form onSubmit={handleSubmit} className="flex flex-col gap-6">
+
             <div className="flex flex-col gap-1.5">
-              <label className="text-xs font-medium text-light/35 tracking-wide uppercase">Nom complet</label>
+              <label className="font-mono text-[11px] uppercase tracking-[0.08em] text-paper/35">Nom complet</label>
               <input type="text" required value={name} onChange={e => setName(e.target.value)}
                 placeholder="Ahmed Ben Ali"
-                className="border-b border-light/10 bg-transparent py-2.5 text-sm text-light placeholder:text-light/20 focus:outline-none focus:border-gold/50 transition-colors" />
+                className="border-b border-paper/15 bg-transparent py-2.5 text-sm text-paper placeholder:text-paper/20 focus:outline-none focus:border-accent transition-colors" />
             </div>
 
             <div className="flex flex-col gap-1.5">
-              <label className="text-xs font-medium text-light/35 tracking-wide uppercase">Email</label>
+              <label className="font-mono text-[11px] uppercase tracking-[0.08em] text-paper/35">Email</label>
               <input type="email" required value={email} onChange={e => setEmail(e.target.value)}
                 placeholder="ahmed@startup.tn"
-                className="border-b border-light/10 bg-transparent py-2.5 text-sm text-light placeholder:text-light/20 focus:outline-none focus:border-gold/50 transition-colors" />
+                className="border-b border-paper/15 bg-transparent py-2.5 text-sm text-paper placeholder:text-paper/20 focus:outline-none focus:border-accent transition-colors" />
             </div>
 
             <div className="flex flex-col gap-1.5">
-              <label className="text-xs font-medium text-light/35 tracking-wide uppercase">
-                Société <span className="normal-case text-light/20">(optionnel)</span>
+              <label className="font-mono text-[11px] uppercase tracking-[0.08em] text-paper/35">
+                Société <span className="normal-case text-paper/20">(optionnel)</span>
               </label>
               <input type="text" value={company} onChange={e => setCompany(e.target.value)}
                 placeholder="Ma Startup"
-                className="border-b border-light/10 bg-transparent py-2.5 text-sm text-light placeholder:text-light/20 focus:outline-none focus:border-gold/50 transition-colors" />
+                className="border-b border-paper/15 bg-transparent py-2.5 text-sm text-paper placeholder:text-paper/20 focus:outline-none focus:border-accent transition-colors" />
             </div>
 
             <div className="flex flex-col gap-1.5">
-              <label className="text-xs font-medium text-light/35 tracking-wide uppercase">Mot de passe</label>
+              <label className="font-mono text-[11px] uppercase tracking-[0.08em] text-paper/35">Mot de passe</label>
               <div className="relative">
-                <input type={showPassword ? 'text' : 'password'} required value={password}
+                <input type={showPwd ? 'text' : 'password'} required value={password}
                   onChange={e => setPassword(e.target.value)} placeholder="8 caractères minimum"
-                  className="w-full border-b border-light/10 bg-transparent py-2.5 text-sm text-light placeholder:text-light/20 focus:outline-none focus:border-gold/50 transition-colors pr-8" />
-                <button type="button" onClick={() => setShowPassword(v => !v)}
-                  className="absolute right-0 top-2.5 text-light/25 hover:text-light/50 transition-colors">
-                  {showPassword ? <EyeOff size={14} strokeWidth={1.5} /> : <Eye size={14} strokeWidth={1.5} />}
+                  className="w-full border-b border-paper/15 bg-transparent py-2.5 text-sm text-paper placeholder:text-paper/20 focus:outline-none focus:border-accent transition-colors pr-8" />
+                <button type="button" onClick={() => setShowPwd(v => !v)}
+                  className="absolute right-0 top-2.5 text-paper/25 hover:text-paper/60 transition-colors">
+                  {showPwd ? <EyeOff size={14} strokeWidth={1.5} /> : <Eye size={14} strokeWidth={1.5} />}
                 </button>
               </div>
             </div>
@@ -82,15 +95,15 @@ export default function SignupPage() {
             )}
 
             <button type="submit" disabled={loading}
-              className="mt-2 inline-flex items-center justify-center gap-3 bg-gold text-dark-bg text-sm font-medium px-6 py-4 hover:bg-gold/90 transition-colors duration-200 disabled:opacity-50">
+              className="mt-2 inline-flex items-center justify-center gap-3 bg-accent text-paper text-sm font-medium px-6 py-4 rounded-full hover:bg-accent/90 transition-colors duration-200 disabled:opacity-50">
               {loading ? 'Création…' : 'Créer mon espace client'}
               {!loading && <ArrowRight size={14} strokeWidth={1.5} />}
             </button>
           </form>
 
-          <p className="mt-8 text-sm text-light/35 text-center">
+          <p className="mt-8 text-sm text-paper/35 text-center">
             Déjà un compte ?{' '}
-            <Link to="/login" className="text-gold hover:text-gold/80 transition-colors">
+            <Link to="/login" className="text-accent hover:text-accent/80 transition-colors">
               Se connecter
             </Link>
           </p>

@@ -1093,6 +1093,228 @@ function AgendaAdmin({ clients, onRefresh }: { clients: ClientData[]; onRefresh:
   )
 }
 
+// ─── Dossiers Admin ───────────────────────────────────────────────────────────
+
+const DEFAULT_ETAPES_ADMIN = ['Audit initial', 'Structuration', 'Rédaction', 'Validation', 'Clôture']
+
+function DossiersAdmin({ clients, onRefresh }: { clients: ClientData[]; onRefresh: () => void }) {
+  const [showForm, setShowForm]       = useState(false)
+  const [filterClient, setFilterClient] = useState('all')
+  const [filterStatut, setFilterStatut] = useState<'all' | Dossier['statut']>('all')
+  const [form, setForm] = useState({
+    clientId: '',
+    titre: '',
+    description: '',
+    etapes: [...DEFAULT_ETAPES_ADMIN],
+  })
+
+  const allDossiers = useMemo(() =>
+    clients.flatMap(c => c.dossiers.map(d => ({ ...d, client: c.user }))),
+    [clients]
+  )
+
+  const filtered = allDossiers.filter(d => {
+    if (filterClient !== 'all' && d.client.id !== filterClient) return false
+    if (filterStatut !== 'all' && d.statut !== filterStatut) return false
+    return true
+  })
+
+  const handleCreate = () => {
+    if (!form.clientId || !form.titre.trim()) return
+    const client = clients.find(c => c.user.id === form.clientId)
+    if (!client) return
+    const newDossier: Dossier = {
+      id: crypto.randomUUID(),
+      titre: form.titre.trim(),
+      statut: 'attente',
+      dateOuverture: new Date().toISOString().split('T')[0],
+      prochainEcheance: null,
+      description: form.description.trim(),
+      etapes: form.etapes.filter(e => e.trim()).map(label => ({
+        label: label.trim(), statut: 'pending' as const, date: null,
+      })),
+    }
+    const existing: Dossier[] = JSON.parse(localStorage.getItem(`avocat_dossiers_${form.clientId}`) || '[]')
+    localStorage.setItem(`avocat_dossiers_${form.clientId}`, JSON.stringify([...existing, newDossier]))
+    setShowForm(false)
+    setForm({ clientId: '', titre: '', description: '', etapes: [...DEFAULT_ETAPES_ADMIN] })
+    onRefresh()
+  }
+
+  const handleDeleteDossier = (clientId: string, dossierId: string) => {
+    const existing: Dossier[] = JSON.parse(localStorage.getItem(`avocat_dossiers_${clientId}`) || '[]')
+    localStorage.setItem(`avocat_dossiers_${clientId}`, JSON.stringify(existing.filter(d => d.id !== dossierId)))
+    onRefresh()
+  }
+
+  return (
+    <div className="flex flex-col gap-6">
+      {/* Header */}
+      <div className="flex items-center justify-between gap-4 flex-wrap">
+        <h2 className="font-display text-xl font-normal text-paper">Dossiers clients</h2>
+        <button
+          onClick={() => setShowForm(v => !v)}
+          className="inline-flex items-center gap-2 bg-accent text-paper text-xs font-medium px-4 py-2.5 hover:bg-accent/90 transition-colors"
+        >
+          <Plus size={13} strokeWidth={2} />
+          Nouveau dossier
+        </button>
+      </div>
+
+      {/* Formulaire création */}
+      {showForm && (
+        <div className="border border-accent/20 bg-ink-soft p-6 flex flex-col gap-4">
+          <div className="flex items-center justify-between mb-1">
+            <p className="text-sm font-medium text-paper">Créer un dossier</p>
+            <button onClick={() => setShowForm(false)} className="text-paper/30 hover:text-paper transition-colors">
+              <X size={14} strokeWidth={1.5} />
+            </button>
+          </div>
+
+          {/* Client */}
+          <div className="flex flex-col gap-1.5">
+            <label className="font-mono text-[11px] uppercase tracking-[0.08em] text-paper/35">Client *</label>
+            <select
+              value={form.clientId}
+              onChange={e => setForm(f => ({ ...f, clientId: e.target.value }))}
+              className="border border-paper/15 bg-ink text-paper text-sm px-3 py-2.5 focus:outline-none focus:border-accent transition-colors"
+            >
+              <option value="">Sélectionner un client…</option>
+              {clients.map(c => (
+                <option key={c.user.id} value={c.user.id}>
+                  {c.user.name}{c.user.company ? ` — ${c.user.company}` : ''}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          {/* Titre */}
+          <div className="flex flex-col gap-1.5">
+            <label className="font-mono text-[11px] uppercase tracking-[0.08em] text-paper/35">Titre du dossier *</label>
+            <input
+              type="text" placeholder="Ex : Levée de fonds Série A"
+              value={form.titre} onChange={e => setForm(f => ({ ...f, titre: e.target.value }))}
+              className="border border-paper/15 bg-ink text-paper text-sm px-3 py-2.5 placeholder:text-paper/20 focus:outline-none focus:border-accent transition-colors"
+            />
+          </div>
+
+          {/* Description */}
+          <div className="flex flex-col gap-1.5">
+            <label className="font-mono text-[11px] uppercase tracking-[0.08em] text-paper/35">Description</label>
+            <textarea
+              rows={2} placeholder="Contexte ou notes internes…"
+              value={form.description} onChange={e => setForm(f => ({ ...f, description: e.target.value }))}
+              className="border border-paper/15 bg-ink text-paper text-sm px-3 py-2.5 placeholder:text-paper/20 focus:outline-none focus:border-accent transition-colors resize-none"
+            />
+          </div>
+
+          {/* Étapes */}
+          <div className="flex flex-col gap-2">
+            <label className="font-mono text-[11px] uppercase tracking-[0.08em] text-paper/35">Étapes</label>
+            {form.etapes.map((etape, idx) => (
+              <div key={idx} className="flex items-center gap-2">
+                <span className="font-mono text-[10px] text-paper/25 w-4">{idx + 1}.</span>
+                <input
+                  type="text" value={etape}
+                  onChange={ev => setForm(f => {
+                    const etapes = [...f.etapes]
+                    etapes[idx] = ev.target.value
+                    return { ...f, etapes }
+                  })}
+                  className="flex-1 border border-paper/10 bg-ink text-paper text-xs px-2.5 py-1.5 placeholder:text-paper/20 focus:outline-none focus:border-accent/50 transition-colors"
+                />
+              </div>
+            ))}
+          </div>
+
+          <button
+            onClick={handleCreate}
+            disabled={!form.clientId || !form.titre.trim()}
+            className="self-start bg-accent text-paper text-xs font-medium px-5 py-2.5 hover:bg-accent/90 transition-colors disabled:opacity-40"
+          >
+            Créer le dossier
+          </button>
+        </div>
+      )}
+
+      {/* Filtres */}
+      <div className="flex flex-wrap gap-2">
+        <select
+          value={filterClient}
+          onChange={e => setFilterClient(e.target.value)}
+          className="border border-paper/15 bg-ink-soft text-paper text-xs px-3 py-1.5 focus:outline-none focus:border-accent transition-colors"
+        >
+          <option value="all">Tous les clients</option>
+          {clients.map(c => (
+            <option key={c.user.id} value={c.user.id}>{c.user.name}</option>
+          ))}
+        </select>
+        {(['all', 'en_cours', 'attente', 'complete'] as const).map(s => (
+          <button
+            key={s}
+            onClick={() => setFilterStatut(s)}
+            className={`text-xs font-medium px-3 py-1.5 border transition-colors ${filterStatut === s ? 'bg-accent text-paper border-accent' : 'text-paper/40 border-paper/15 hover:border-accent/30'}`}
+          >
+            {s === 'all' ? 'Tous' : s === 'en_cours' ? 'En cours' : s === 'attente' ? 'En attente' : 'Clôturés'}
+          </button>
+        ))}
+      </div>
+
+      {/* Stats */}
+      <p className="text-xs text-paper/40">
+        {filtered.length} dossier{filtered.length > 1 ? 's' : ''}
+        {' · '}
+        <span className="text-paper/60">{allDossiers.filter(d => d.statut === 'en_cours').length} en cours</span>
+      </p>
+
+      {/* Liste */}
+      {filtered.length === 0 ? (
+        <div className="border border-paper/10 px-6 py-12 text-center text-sm text-paper/30">
+          Aucun dossier trouvé.
+        </div>
+      ) : (
+        <div className="flex flex-col gap-px bg-paper/8">
+          {filtered.map(d => (
+            <div key={d.id} className="bg-ink-soft px-5 py-4 flex items-start gap-4">
+              <FolderOpen size={15} strokeWidth={1.25} className="text-accent mt-0.5 flex-none" />
+              <div className="flex-1 min-w-0">
+                <div className="flex items-center gap-2 flex-wrap mb-1">
+                  <p className="text-sm font-medium text-paper">{d.titre}</p>
+                  <StatusBadge statut={d.statut} />
+                </div>
+                <p className="text-xs text-paper/40">
+                  <span className="text-paper/60">{d.client.name}</span>
+                  {d.client.company ? ` · ${d.client.company}` : ''}
+                  {' · Ouvert le '}
+                  {new Date(d.dateOuverture + 'T12:00:00').toLocaleDateString('fr-FR', { day: 'numeric', month: 'short', year: 'numeric' })}
+                </p>
+                {d.description && (
+                  <p className="text-xs text-paper/35 mt-1 line-clamp-1">{d.description}</p>
+                )}
+                <div className="flex gap-1 mt-2 flex-wrap">
+                  {d.etapes.map((e, i) => (
+                    <span key={i} className={`font-mono text-[10px] px-1.5 py-0.5 border ${
+                      e.statut === 'done' ? 'border-green-500/30 text-green-400' :
+                      e.statut === 'current' ? 'border-accent/30 text-accent' :
+                      'border-paper/10 text-paper/25'
+                    }`}>{e.label}</span>
+                  ))}
+                </div>
+              </div>
+              <button
+                onClick={() => handleDeleteDossier(d.client.id, d.id)}
+                className="text-paper/20 hover:text-red-500 transition-colors p-1 flex-none"
+              >
+                <Trash2 size={13} strokeWidth={1.5} />
+              </button>
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  )
+}
+
 // ─── Messagerie Admin ─────────────────────────────────────────────────────────
 
 function MessagerieAdmin({ clients, onRefresh }: { clients: ClientData[]; onRefresh: () => void }) {
@@ -1233,6 +1455,7 @@ function MessagerieAdmin({ clients, onRefresh }: { clients: ClientData[]; onRefr
 const navItems = [
   { id: 'overview',    label: "Vue d'ensemble", icon: LayoutDashboard },
   { id: 'clients',    label: 'Clients',         icon: Users },
+  { id: 'dossiers',   label: 'Dossiers',        icon: FolderOpen },
   { id: 'documents',  label: 'Documents',       icon: FileUp },
   { id: 'agenda',     label: 'Agenda',          icon: CalendarDays },
   { id: 'facturation',label: 'Facturation',     icon: Receipt },
@@ -1337,6 +1560,7 @@ export default function AdminPage() {
           {tab === 'overview'    && <Overview clients={clients} />}
           {tab === 'clients'     && !selectedClient && <ClientsList clients={clients} onSelect={handleSelectClient} onRefresh={refresh} />}
           {tab === 'clients'     && selectedClient  && <ClientDetail data={selectedClient} onBack={() => setSelectedClient(null)} onRefresh={refresh} />}
+          {tab === 'dossiers'    && <DossiersAdmin clients={clients} onRefresh={refresh} />}
           {tab === 'documents'   && <AllDocuments clients={clients} onRefresh={refresh} />}
           {tab === 'agenda'      && <AgendaAdmin clients={clients} onRefresh={refresh} />}
           {tab === 'facturation' && <AllInvoicesAdmin clients={clients} onRefresh={refresh} />}

@@ -6,8 +6,8 @@
   html {
     scroll-behavior: smooth;
     scroll-padding-top: 6rem; /* utility bar 32px + nav 64px */
-    background-color: #FAF8F2;
-    color: #0F172A;
+    background-color: #0F172A;
+    color: #FAF8F2;
   }
 
   body {

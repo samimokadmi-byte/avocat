@@ -26,20 +26,20 @@ export default function Nav() {
   return (
     <>
       {/* ── Utility bar ──────────────────────────────────────────────── */}
-      <div className="fixed top-0 left-0 right-0 z-50 h-8 bg-ink flex items-center">
+      <div className="fixed top-0 left-0 right-0 z-50 h-8 bg-ink-soft border-b border-paper/8 flex items-center">
         <div className="max-w-content mx-auto w-full px-8 flex items-center justify-between">
-          <span className="font-mono text-[11px] uppercase tracking-[0.08em] text-paper/50">
+          <span className="font-mono text-[11px] uppercase tracking-[0.08em] text-paper/35">
             Cabinet Mokadmi Sami — Barreau de Tunis — Fondé en 2006
           </span>
-          <span className="hidden sm:block font-mono text-[11px] uppercase tracking-[0.06em] text-paper/35">
+          <span className="hidden sm:block font-mono text-[11px] uppercase tracking-[0.06em] text-paper/25">
             office@mokadmi.lawyer
           </span>
         </div>
       </div>
 
       {/* ── Main nav ─────────────────────────────────────────────────── */}
-      <header className={`fixed top-8 left-0 right-0 z-50 border-b border-hairline transition-all duration-300 ${
-        scrolled ? 'bg-paper/95 backdrop-blur-sm' : 'bg-paper'
+      <header className={`fixed top-8 left-0 right-0 z-50 border-b border-paper/10 transition-all duration-300 ${
+        scrolled ? 'bg-ink/95 backdrop-blur-sm' : 'bg-ink'
       }`}>
         <div className="max-w-content mx-auto px-8 h-16 flex items-center justify-between">
 
@@ -47,10 +47,10 @@ export default function Nav() {
           <Link to="/" className="flex items-center gap-3">
             <Logo size={34} />
             <div className="flex flex-col">
-              <span className="font-display text-sm font-normal tracking-tight text-ink leading-tight">
+              <span className="font-display text-sm font-normal tracking-tight text-paper leading-tight">
                 Maître Mokadmi Sami
               </span>
-              <span className="font-mono text-[10px] text-text2 tracking-[0.12em] uppercase">
+              <span className="font-mono text-[10px] text-paper/40 tracking-[0.12em] uppercase">
                 L'Architecte Juridique
               </span>
             </div>
@@ -62,7 +62,7 @@ export default function Nav() {
               <button
                 key={l.id}
                 onClick={() => scrollTo(l.id)}
-                className="font-mono text-[11px] uppercase tracking-[0.06em] text-text2 hover:text-ink transition-colors duration-200"
+                className="font-mono text-[11px] uppercase tracking-[0.06em] text-paper/40 hover:text-paper transition-colors duration-200"
               >
                 {l.label}
               </button>
@@ -72,13 +72,13 @@ export default function Nav() {
           <div className="hidden md:flex items-center gap-5">
             <Link
               to="/login"
-              className="font-mono text-[11px] uppercase tracking-[0.06em] text-text2 hover:text-ink transition-colors duration-200"
+              className="font-mono text-[11px] uppercase tracking-[0.06em] text-paper/35 hover:text-paper transition-colors duration-200"
             >
               Espace client
             </Link>
             <button
               onClick={() => scrollTo('booking')}
-              className="font-mono text-[11px] uppercase tracking-[0.06em] bg-ink text-paper rounded-full px-5 py-2.5 hover:-translate-y-0.5 transition-all duration-200"
+              className="font-mono text-[11px] uppercase tracking-[0.06em] bg-accent text-paper rounded-full px-5 py-2.5 hover:-translate-y-0.5 transition-all duration-200"
             >
               Consultation →
             </button>
@@ -88,7 +88,7 @@ export default function Nav() {
           <button
             onClick={() => setOpen(o => !o)}
             aria-label={open ? 'Fermer le menu' : 'Ouvrir le menu'}
-            className="md:hidden text-ink/50 hover:text-ink transition-colors p-1"
+            className="md:hidden text-paper/40 hover:text-paper transition-colors p-1"
           >
             {open ? <X size={20} strokeWidth={1.5} /> : <Menu size={20} strokeWidth={1.5} />}
           </button>
@@ -96,27 +96,27 @@ export default function Nav() {
 
         {/* Mobile menu */}
         {open && (
-          <div className="md:hidden bg-paper border-t border-hairline px-8 py-6 flex flex-col gap-4">
+          <div className="md:hidden bg-ink border-t border-paper/10 px-8 py-6 flex flex-col gap-4">
             {links.map(l => (
               <button
                 key={l.id}
                 onClick={() => { scrollTo(l.id); setOpen(false) }}
-                className="font-mono text-[12px] uppercase tracking-[0.06em] text-left text-text2 hover:text-ink transition-colors py-1"
+                className="font-mono text-[12px] uppercase tracking-[0.06em] text-left text-paper/40 hover:text-paper transition-colors py-1"
               >
                 {l.label}
               </button>
             ))}
-            <div className="h-px bg-hairline my-1" />
+            <div className="h-px bg-paper/10 my-1" />
             <Link
               to="/login"
               onClick={() => setOpen(false)}
-              className="font-mono text-[12px] uppercase tracking-[0.06em] text-text2 hover:text-ink transition-colors"
+              className="font-mono text-[12px] uppercase tracking-[0.06em] text-paper/35 hover:text-paper transition-colors"
             >
               Espace client
             </Link>
             <button
               onClick={() => { scrollTo('booking'); setOpen(false) }}
-              className="font-mono text-[12px] uppercase tracking-[0.06em] bg-ink text-paper rounded-full px-5 py-3 text-center hover:-translate-y-0.5 transition-all duration-200"
+              className="font-mono text-[12px] uppercase tracking-[0.06em] bg-accent text-paper rounded-full px-5 py-3 text-center hover:-translate-y-0.5 transition-all duration-200"
             >
               Prendre rendez-vous →
             </button>

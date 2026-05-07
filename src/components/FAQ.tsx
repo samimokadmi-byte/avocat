@@ -40,22 +40,22 @@ function FAQItem({ q, a }: { q: string; a: string }) {
   const [open, setOpen] = useState(false)
 
   return (
-    <div className="border-b border-hairline">
+    <div className="border-b border-paper/10">
       <button
         onClick={() => setOpen(o => !o)}
         className="w-full flex items-center justify-between gap-6 py-6 text-left"
         aria-expanded={open}
       >
-        <span className="text-body font-medium text-ink/80">{q}</span>
+        <span className="text-body font-medium text-paper/70">{q}</span>
         {open
           ? <Minus size={14} strokeWidth={1.5} className="flex-none text-accent" />
-          : <Plus size={14} strokeWidth={1.5} className="flex-none text-text2" />
+          : <Plus size={14} strokeWidth={1.5} className="flex-none text-paper/30" />
         }
       </button>
 
       {open && (
         <div className="pb-6">
-          <p className="text-body text-text2 leading-relaxed max-w-prose-luxury">{a}</p>
+          <p className="text-body text-paper/45 leading-relaxed max-w-prose-luxury">{a}</p>
         </div>
       )}
     </div>
@@ -64,17 +64,17 @@ function FAQItem({ q, a }: { q: string; a: string }) {
 
 export default function FAQ() {
   return (
-    <section id="faq" className="bg-paper">
+    <section id="faq" className="bg-ink-soft">
       <div className="px-8 py-16 md:py-section max-w-content mx-auto">
 
         {/* ── Section header ─────────────────────────────────────────── */}
         <div className="flex items-center gap-3 mb-10 md:mb-16">
-          <span className="font-mono text-[11px] uppercase tracking-[0.08em] text-text2">[08]</span>
-          <span className="w-8 h-px bg-hairline-strong flex-none" />
-          <span className="font-mono text-[11px] uppercase tracking-[0.08em] text-text2">FAQ</span>
+          <span className="font-mono text-[11px] uppercase tracking-[0.08em] text-paper/35">[08]</span>
+          <span className="w-8 h-px bg-paper/15 flex-none" />
+          <span className="font-mono text-[11px] uppercase tracking-[0.08em] text-paper/35">FAQ</span>
         </div>
 
-        <h2 className="font-display text-heading text-ink font-normal mb-10 md:mb-16 max-w-xl text-pretty">
+        <h2 className="font-display text-heading text-paper font-normal mb-10 md:mb-16 max-w-xl text-pretty">
           <span className="italic text-accent">Questions fréquentes.</span>
         </h2>
 

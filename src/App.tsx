@@ -58,7 +58,7 @@ function PageLoader() {
 
 function LandingPage() {
   return (
-    <div className="bg-paper text-ink font-sans">
+    <div className="bg-ink text-paper font-sans">
       <Nav />
       <main>
         <Hero />

@@ -35,30 +35,30 @@ const valeurs = [
 
 export default function APropos() {
   return (
-    <section id="apropos" className="bg-white">
+    <section id="apropos" className="bg-ink">
       <div className="px-8 py-16 md:py-section max-w-content mx-auto">
 
         {/* ── Section header ─────────────────────────────────────────── */}
         <div className="flex items-center gap-3 mb-10 md:mb-16">
-          <span className="font-mono text-[11px] uppercase tracking-[0.08em] text-gray-400">[01]</span>
-          <span className="w-8 h-px bg-gray-200 flex-none" />
-          <span className="font-mono text-[11px] uppercase tracking-[0.08em] text-gray-400">À Propos</span>
+          <span className="font-mono text-[11px] uppercase tracking-[0.08em] text-paper/35">[01]</span>
+          <span className="w-8 h-px bg-paper/15 flex-none" />
+          <span className="font-mono text-[11px] uppercase tracking-[0.08em] text-paper/35">À Propos</span>
         </div>
 
         {/* ── En-tête ────────────────────────────────────────────────── */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-8 md:gap-16 mb-12 md:mb-section">
           <div>
-            <h2 className="font-display text-heading text-gray-900 font-normal mb-6 text-pretty">
+            <h2 className="font-display text-heading text-paper font-normal mb-6 text-pretty">
               Un avocat qui pense{' '}
               <span className="italic text-accent">comme un architecte.</span>
             </h2>
-            <p className="text-body text-gray-700 leading-relaxed mb-4">
+            <p className="text-body text-paper/78 leading-relaxed mb-4">
               Maître Mokadmi Sami exerce depuis 24 ans au Barreau de Tunis. Sa singularité : ne jamais
               traiter le droit comme une contrainte, mais comme un levier de construction.
             </p>
-            <p className="text-body text-gray-600 leading-relaxed">
+            <p className="text-body text-paper/68 leading-relaxed">
               Formé au droit des affaires internationales, il a développé une méthode propre —
-              <span className="text-gray-900"> l'ingénierie juridique systémique </span> — qui combine
+              <span className="text-paper/90"> l'ingénierie juridique systémique </span> — qui combine
               structuration capitalistique, optimisation fiscale et anticipation réglementaire IA
               en un seul système cohérent, pensé pour durer.
             </p>
@@ -71,32 +71,32 @@ export default function APropos() {
                 <p className="font-mono text-[11px] uppercase tracking-[0.08em] text-accent mb-1.5">
                   {v.titre}
                 </p>
-                <p className="text-small text-gray-600 leading-relaxed">{v.texte}</p>
+                <p className="text-small text-paper/68 leading-relaxed">{v.texte}</p>
               </div>
             ))}
           </div>
         </div>
 
         {/* ── Séparateur ─────────────────────────────────────────────── */}
-        <div className="border-t border-gray-200 mb-12 md:mb-section" />
+        <div className="border-t border-paper/10 mb-12 md:mb-section" />
 
         {/* ── Parcours chronologique ─────────────────────────────────── */}
         <div>
-          <p className="font-mono text-[11px] uppercase tracking-[0.08em] text-gray-400 mb-8 md:mb-10">
+          <p className="font-mono text-[11px] uppercase tracking-[0.08em] text-paper/35 mb-8 md:mb-10">
             Parcours
           </p>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-px bg-gray-100">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-px bg-paper/8">
             {parcours.map(({ icon: Icon, periode, titre, detail }) => (
-              <div key={titre} className="bg-white p-6 md:p-8 flex flex-col gap-4">
+              <div key={titre} className="bg-ink p-6 md:p-8 flex flex-col gap-4">
                 <div className="flex items-center gap-3">
-                  <div className="w-8 h-8 border border-gray-200 flex items-center justify-center flex-none">
-                    <Icon size={14} strokeWidth={1.25} className="text-gray-400" />
+                  <div className="w-8 h-8 border border-paper/15 flex items-center justify-center flex-none">
+                    <Icon size={14} strokeWidth={1.25} className="text-paper/35" />
                   </div>
-                  <span className="font-mono text-[11px] uppercase tracking-[0.06em] text-gray-400">{periode}</span>
+                  <span className="font-mono text-[11px] uppercase tracking-[0.06em] text-paper/35">{periode}</span>
                 </div>
                 <div>
-                  <p className="font-display text-base font-normal text-gray-900 mb-2">{titre}</p>
-                  <p className="text-small text-gray-600 leading-relaxed">{detail}</p>
+                  <p className="font-display text-base font-normal text-paper mb-2">{titre}</p>
+                  <p className="text-small text-paper/68 leading-relaxed">{detail}</p>
                 </div>
               </div>
             ))}
@@ -104,12 +104,12 @@ export default function APropos() {
         </div>
 
         {/* ── Citation ───────────────────────────────────────────────── */}
-        <div className="mt-section-sm border-t border-gray-200 pt-12 max-w-2xl">
-          <blockquote className="border-l-2 border-gray-300 pl-8 font-display text-2xl italic text-gray-700 leading-relaxed font-normal">
+        <div className="mt-section-sm border-t border-paper/10 pt-12 max-w-2xl">
+          <blockquote className="border-l-2 border-paper/25 pl-8 font-display text-2xl italic text-paper/72 leading-relaxed font-normal">
             "Le droit n'est pas une protection contre le risque — c'est l'art de le structurer
             pour qu'il devienne un avantage compétitif."
           </blockquote>
-          <p className="mt-5 pl-8 font-mono text-[11px] uppercase tracking-[0.08em] text-gray-500">
+          <p className="mt-5 pl-8 font-mono text-[11px] uppercase tracking-[0.08em] text-paper/48">
             Maître Mokadmi Sami
           </p>
         </div>

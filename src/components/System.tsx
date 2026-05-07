@@ -29,31 +29,31 @@ const pillars = [
 
 export default function System() {
   return (
-    <section id="systeme" className="bg-slate-50">
+    <section id="systeme" className="bg-ink-soft">
       <div className="px-8 py-16 md:py-section max-w-content mx-auto">
 
         {/* ── Section header ─────────────────────────────────────────── */}
         <div className="flex items-center gap-3 mb-10 md:mb-16">
-          <span className="font-mono text-[11px] uppercase tracking-[0.08em] text-gray-400">[02]</span>
-          <span className="w-8 h-px bg-gray-300 flex-none" />
-          <span className="font-mono text-[11px] uppercase tracking-[0.08em] text-gray-400">Les 3 Piliers</span>
+          <span className="font-mono text-[11px] uppercase tracking-[0.08em] text-paper/35">[02]</span>
+          <span className="w-8 h-px bg-paper/15 flex-none" />
+          <span className="font-mono text-[11px] uppercase tracking-[0.08em] text-paper/35">Les 3 Piliers</span>
         </div>
 
-        <h2 className="font-display text-heading text-gray-900 font-normal mb-4 max-w-xl text-pretty">
+        <h2 className="font-display text-heading text-paper font-normal mb-4 max-w-xl text-pretty">
           Une triple compétence.{' '}
           <span className="italic text-accent">Une architecture globale.</span>
         </h2>
-        <p className="text-body text-gray-600 mb-10 md:mb-16 max-w-prose-luxury leading-relaxed">
+        <p className="text-body text-paper/70 mb-10 md:mb-16 max-w-prose-luxury leading-relaxed">
           Droit des affaires, fiscalité stratégique et ingénierie IA — rarement réunies, jamais aussi bien intégrées.
         </p>
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
           {pillars.map(({ icon: Icon, glyph, title, subtitle, body, tags }) => (
             <div key={title}
-              className="bg-white border border-gray-200 p-6 md:p-8 flex flex-col gap-6 group hover:border-gray-300 hover:-translate-y-0.5 transition-all duration-200">
+              className="bg-ink border border-paper/10 p-6 md:p-8 flex flex-col gap-6 group hover:border-paper/20 hover:-translate-y-0.5 transition-all duration-200">
               <div className="flex items-start justify-between">
                 <Icon size={20} strokeWidth={1.25}
-                  className="text-gray-400 group-hover:text-accent transition-colors duration-200" />
+                  className="text-paper/30 group-hover:text-accent transition-colors duration-200" />
                 <span
                   className="font-display font-normal italic text-accent/10 group-hover:text-accent/20 select-none transition-colors duration-200 leading-none"
                   style={{ fontSize: '72px' }}
@@ -62,13 +62,13 @@ export default function System() {
                 </span>
               </div>
               <div>
-                <p className="font-mono text-[11px] uppercase tracking-[0.08em] text-gray-400 mb-2">{subtitle}</p>
-                <h3 className="font-display text-xl font-normal text-gray-900 mb-4">{title}</h3>
-                <p className="text-small text-gray-600 leading-relaxed mb-6">{body}</p>
+                <p className="font-mono text-[11px] uppercase tracking-[0.08em] text-paper/35 mb-2">{subtitle}</p>
+                <h3 className="font-display text-xl font-normal text-paper mb-4">{title}</h3>
+                <p className="text-small text-paper/70 leading-relaxed mb-6">{body}</p>
                 <div className="flex flex-wrap gap-2">
                   {tags.map(tag => (
                     <span key={tag}
-                      className="font-mono text-[11px] uppercase tracking-[0.06em] text-gray-500 border border-gray-200 rounded-full px-2.5 py-0.5">
+                      className="font-mono text-[11px] uppercase tracking-[0.06em] text-paper/35 border border-paper/12 rounded-full px-2.5 py-0.5">
                       {tag}
                     </span>
                   ))}

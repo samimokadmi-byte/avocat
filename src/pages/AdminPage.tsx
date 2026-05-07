@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react'
+import { useState, useMemo, useRef, useEffect } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { useAuth, User } from '../contexts/AuthContext'
 import { Document } from './DashboardPage'
@@ -8,7 +8,7 @@ import {
   LayoutDashboard, Users, FileUp, LogOut, ChevronRight,
   Download, Trash2, CheckCircle2, Clock, Circle, Search,
   FolderOpen, ArrowLeft, FileText, File as FileIcon, AlertCircle,
-  CalendarDays, Plus, X, Receipt
+  CalendarDays, Plus, X, Receipt, MessageSquare, Send,
 } from 'lucide-react'
 import { Invoice, computeAmounts, fmtAmount, CURRENCIES } from '../components/BillingModule'
 
@@ -36,6 +36,14 @@ interface ClientData {
   documents: Document[]
 }
 
+interface Message {
+  id: string
+  from: 'admin' | 'client'
+  text: string
+  sentAt: string
+  read: boolean
+}
+
 // ─── Helpers ─────────────────────────────────────────────────────────────────
 
 function formatSize(bytes: number) {
@@ -47,8 +55,8 @@ function formatSize(bytes: number) {
 function StatusBadge({ statut }: { statut: Dossier['statut'] }) {
   const map = {
     en_cours: { label: 'En cours', cls: 'bg-blue-500/10 text-blue-400 border-blue-500/20' },
-    complete: { label: 'Clôturé', cls: 'bg-green-500/10 text-green-400 border-green-500/20' },
-    attente: { label: 'En attente', cls: 'bg-gold/50/10 text-amber-400 border-amber-500/20' },
+    complete:  { label: 'Clôturé',  cls: 'bg-green-500/10 text-green-400 border-green-500/20' },
+    attente:   { label: 'En attente', cls: 'bg-amber-500/10 text-amber-400 border-amber-500/20' },
   }
   const { label, cls } = map[statut]
   return <span className={`text-xs font-medium px-2 py-0.5 border ${cls}`}>{label}</span>
@@ -67,7 +75,7 @@ function fileIcon(type: string) {
   return <FileIcon size={14} strokeWidth={1.25} className="text-light/30 flex-none" />
 }
 
-// ─── getAllClients ─────────────────────────────────────────────────────────────
+// ─── Storage helpers ──────────────────────────────────────────────────────────
 
 function getAllClients(): ClientData[] {
   const accounts: Record<string, { password: string; user: User }> = JSON.parse(
@@ -125,6 +133,14 @@ function saveInvoicesForClient(clientId: string, invoices: Invoice[]) {
   localStorage.setItem(`avocat_invoices_${clientId}`, JSON.stringify(invoices))
 }
 
+function getMessagesForClient(clientId: string): Message[] {
+  return JSON.parse(localStorage.getItem(`avocat_messages_${clientId}`) || '[]')
+}
+
+function saveMessagesForClient(clientId: string, msgs: Message[]) {
+  localStorage.setItem(`avocat_messages_${clientId}`, JSON.stringify(msgs))
+}
+
 // ─── Vue d'ensemble ───────────────────────────────────────────────────────────
 
 function Overview({ clients }: { clients: ClientData[] }) {
@@ -178,13 +194,18 @@ function Overview({ clients }: { clients: ClientData[] }) {
   )
 }
 
-// ─── Detail client ────────────────────────────────────────────────────────────
+// ─── ClientDetail ─────────────────────────────────────────────────────────────
 
-function ClientDetail({
-  data,
-  onBack,
-  onRefresh,
-}: {
+const INV_STATUS_MAP = {
+  brouillon: { label: 'Brouillon',  cls: 'bg-light/5 text-light/40 border-light/15' },
+  envoyee:   { label: 'Envoyée',    cls: 'bg-blue-500/10 text-blue-400 border-blue-500/20' },
+  payee:     { label: 'Payée',      cls: 'bg-green-500/10 text-green-400 border-green-500/20' },
+  en_retard: { label: 'En retard',  cls: 'bg-red-500/10 text-red-400 border-red-500/20' },
+} as const
+
+const DEFAULT_ETAPES = ['Audit initial', 'Structuration', 'Rédaction', 'Validation', 'Clôture']
+
+function ClientDetail({ data, onBack, onRefresh }: {
   data: ClientData
   onBack: () => void
   onRefresh: () => void
@@ -194,13 +215,35 @@ function ClientDetail({
   const [selectedDossier, setSelectedDossier] = useState<Dossier | null>(null)
   const [clientInvoices, setClientInvoicesState] = useState<Invoice[]>(() => getInvoicesForClient(data.user.id))
 
+  // ── Dossier form ──
+  const [showDossierForm, setShowDossierForm] = useState(false)
+  const [dossierForm, setDossierForm] = useState({ titre: '', description: '', etapes: [...DEFAULT_ETAPES] })
+
+  // ── Messaging ──
+  const [clientMessages, setClientMessages] = useState<Message[]>(() => {
+    const msgs = getMessagesForClient(data.user.id)
+    const updated = msgs.map(m => m.from === 'client' && !m.read ? { ...m, read: true } : m)
+    saveMessagesForClient(data.user.id, updated)
+    return updated
+  })
+  const [msgInput, setMsgInput] = useState('')
+  const msgEndRef = useRef<HTMLDivElement>(null)
+
+  useEffect(() => {
+    msgEndRef.current?.scrollIntoView({ behavior: 'smooth' })
+  }, [clientMessages])
+
+  const unreadCount = clientMessages.filter(m => m.from === 'client' && !m.read).length
+
   const updateEtape = (dossierId: string, etapeIdx: number, newStatut: Etape['statut']) => {
     const updated = dossiers.map(d => {
       if (d.id !== dossierId) return d
-      const etapes = d.etapes.map((e, i) => i === etapeIdx ? { ...e, statut: newStatut, date: newStatut !== 'pending' ? new Date().toLocaleDateString('fr-FR', { day: 'numeric', month: 'short', year: 'numeric' }) : null } : e)
+      const etapes = d.etapes.map((e, i) => i === etapeIdx
+        ? { ...e, statut: newStatut, date: newStatut !== 'pending' ? new Date().toLocaleDateString('fr-FR', { day: 'numeric', month: 'short', year: 'numeric' }) : null }
+        : e)
       const allDone = etapes.every(e => e.statut === 'done')
-      const anyDone = etapes.some(e => e.statut !== 'pending')
-      return { ...d, etapes, statut: allDone ? 'complete' as const : anyDone ? 'en_cours' as const : 'attente' as const }
+      const anyActive = etapes.some(e => e.statut !== 'pending')
+      return { ...d, etapes, statut: allDone ? 'complete' as const : anyActive ? 'en_cours' as const : 'attente' as const }
     })
     setDossiersState(updated)
     saveDossiers(data.user.id, updated)
@@ -211,6 +254,38 @@ function ClientDetail({
   const removeDoc = (docId: string) => {
     deleteDocument(data.user.id, docId)
     setDocumentsState(prev => prev.filter(d => d.id !== docId))
+    onRefresh()
+  }
+
+  const createDossier = () => {
+    if (!dossierForm.titre.trim()) return
+    const newDossier: Dossier = {
+      id: crypto.randomUUID(),
+      titre: dossierForm.titre.trim(),
+      statut: 'attente',
+      dateOuverture: new Date().toISOString().split('T')[0],
+      prochainEcheance: null,
+      description: dossierForm.description.trim(),
+      etapes: dossierForm.etapes.filter(e => e.trim()).map(label => ({ label: label.trim(), statut: 'pending' as const, date: null })),
+    }
+    const updated = [...dossiers, newDossier]
+    setDossiersState(updated)
+    saveDossiers(data.user.id, updated)
+    setShowDossierForm(false)
+    setDossierForm({ titre: '', description: '', etapes: [...DEFAULT_ETAPES] })
+    onRefresh()
+  }
+
+  const sendAdminMessage = () => {
+    if (!msgInput.trim()) return
+    const msg: Message = {
+      id: crypto.randomUUID(), from: 'admin',
+      text: msgInput.trim(), sentAt: new Date().toISOString(), read: false,
+    }
+    const updated = [...clientMessages, msg]
+    saveMessagesForClient(data.user.id, updated)
+    setClientMessages(updated)
+    setMsgInput('')
     onRefresh()
   }
 
@@ -232,9 +307,62 @@ function ClientDetail({
         </div>
       </div>
 
-      {/* Dossiers */}
+      {/* ── Dossiers ── */}
       <div>
-        <p className="text-xs font-medium text-light/40 uppercase tracking-wide mb-3">Dossiers</p>
+        <div className="flex items-center justify-between mb-3">
+          <p className="text-xs font-medium text-light/40 uppercase tracking-wide">Dossiers</p>
+          <button
+            onClick={() => setShowDossierForm(v => !v)}
+            className="flex items-center gap-1.5 text-xs text-light/40 hover:text-light border border-gold/15 hover:border-gold/30 px-3 py-1.5 transition-colors"
+          >
+            <Plus size={11} strokeWidth={1.5} /> Nouveau dossier
+          </button>
+        </div>
+
+        {showDossierForm && (
+          <div className="border border-gold/15 p-5 mb-3 flex flex-col gap-4">
+            <div className="flex items-center justify-between">
+              <p className="text-sm font-medium text-light">Créer un dossier</p>
+              <button onClick={() => setShowDossierForm(false)} className="text-light/30 hover:text-light transition-colors">
+                <X size={14} strokeWidth={1.5} />
+              </button>
+            </div>
+            <div className="flex flex-col gap-1.5">
+              <label className="text-xs font-medium text-light/40 uppercase tracking-wide">Titre *</label>
+              <input
+                type="text" value={dossierForm.titre}
+                onChange={e => setDossierForm(f => ({ ...f, titre: e.target.value }))}
+                placeholder="Ex: Levée de fonds Série A"
+                className="border-b border-gold/15 bg-transparent py-2 text-sm text-light placeholder:text-light/20 focus:outline-none focus:border-gold"
+              />
+            </div>
+            <div className="flex flex-col gap-1.5">
+              <label className="text-xs font-medium text-light/40 uppercase tracking-wide">Description</label>
+              <input
+                type="text" value={dossierForm.description}
+                onChange={e => setDossierForm(f => ({ ...f, description: e.target.value }))}
+                placeholder="Contexte et objectifs du dossier"
+                className="border-b border-gold/15 bg-transparent py-2 text-sm text-light placeholder:text-light/20 focus:outline-none focus:border-gold"
+              />
+            </div>
+            <div className="flex flex-col gap-2">
+              <label className="text-xs font-medium text-light/40 uppercase tracking-wide">Étapes du dossier</label>
+              {dossierForm.etapes.map((e, i) => (
+                <input
+                  key={i} type="text" value={e}
+                  onChange={ev => setDossierForm(f => {
+                    const etapes = [...f.etapes]; etapes[i] = ev.target.value; return { ...f, etapes }
+                  })}
+                  className="border-b border-gold/10 bg-transparent py-1.5 text-sm text-light placeholder:text-light/20 focus:outline-none focus:border-gold"
+                />
+              ))}
+            </div>
+            <button onClick={createDossier} className="self-start bg-gold text-dark-bg text-xs font-medium px-5 py-2.5 hover:bg-gold/90 transition-colors">
+              Créer le dossier
+            </button>
+          </div>
+        )}
+
         {selectedDossier ? (
           <div className="border border-gold/10 p-6 flex flex-col gap-5">
             <button onClick={() => setSelectedDossier(null)} className="flex items-center gap-2 text-xs text-light/40 hover:text-light transition-colors">
@@ -248,8 +376,8 @@ function ClientDetail({
               {selectedDossier.etapes.map((etape, i) => (
                 <div key={i} className="flex items-start gap-4 pb-4 border-b border-gold/5 last:border-0 last:pb-0">
                   <div className="flex-none mt-0.5">
-                    {etape.statut === 'done' && <CheckCircle2 size={18} strokeWidth={1.5} className="text-light" />}
-                    {etape.statut === 'current' && <Clock size={18} strokeWidth={1.5} className="text-blue-600" />}
+                    {etape.statut === 'done'    && <CheckCircle2 size={18} strokeWidth={1.5} className="text-light" />}
+                    {etape.statut === 'current' && <Clock size={18} strokeWidth={1.5} className="text-blue-400" />}
                     {etape.statut === 'pending' && <Circle size={18} strokeWidth={1.5} className="text-light/20" />}
                   </div>
                   <div className="flex-1">
@@ -262,9 +390,7 @@ function ClientDetail({
                         key={s}
                         onClick={() => updateEtape(selectedDossier.id, i, s)}
                         className={`text-[10px] font-medium px-2 py-1 border transition-colors ${
-                          etape.statut === s
-                            ? 'bg-gold text-dark-bg border-gold'
-                            : 'text-light/40 border-gold/15 hover:border-gold/30'
+                          etape.statut === s ? 'bg-gold text-dark-bg border-gold' : 'text-light/40 border-gold/15 hover:border-gold/30'
                         }`}
                       >
                         {s === 'done' ? '✓' : s === 'current' ? '⏳' : '○'}
@@ -277,6 +403,9 @@ function ClientDetail({
           </div>
         ) : (
           <div className="flex flex-col gap-px bg-gold/10">
+            {dossiers.length === 0 && (
+              <div className="bg-dark-surface px-6 py-8 text-center text-sm text-light/30">Aucun dossier. Créez-en un ci-dessus.</div>
+            )}
             {dossiers.map(d => (
               <button
                 key={d.id}
@@ -302,11 +431,9 @@ function ClientDetail({
         )}
       </div>
 
-      {/* Documents */}
+      {/* ── Documents ── */}
       <div>
-        <p className="text-xs font-medium text-light/40 uppercase tracking-wide mb-3">
-          Documents ({documents.length})
-        </p>
+        <p className="text-xs font-medium text-light/40 uppercase tracking-wide mb-3">Documents ({documents.length})</p>
         {documents.length === 0 ? (
           <div className="border border-gold/10 px-6 py-8 text-center text-sm text-light/30">Aucun document déposé.</div>
         ) : (
@@ -322,25 +449,13 @@ function ClientDetail({
                 </div>
                 <div className="flex items-center gap-2 flex-none">
                   {doc.content ? (
-                    <button
-                      onClick={() => downloadDocument(doc)}
-                      className="flex items-center gap-1.5 text-xs text-light/50 hover:text-light border border-gold/15 hover:border-gold/30 px-3 py-1.5 transition-colors"
-                    >
-                      <Download size={11} strokeWidth={1.5} />
-                      Télécharger
+                    <button onClick={() => downloadDocument(doc)} className="flex items-center gap-1.5 text-xs text-light/50 hover:text-light border border-gold/15 hover:border-gold/30 px-3 py-1.5 transition-colors">
+                      <Download size={11} strokeWidth={1.5} /> Télécharger
                     </button>
                   ) : (
-                    <span className="flex items-center gap-1 text-xs text-light/30">
-                      <AlertCircle size={11} strokeWidth={1.5} /> Indisponible
-                    </span>
+                    <span className="flex items-center gap-1 text-xs text-light/30"><AlertCircle size={11} strokeWidth={1.5} /> Indisponible</span>
                   )}
-                  <button
-                    onClick={() => removeDoc(doc.id)}
-                    className="text-light/20 hover:text-red-500 transition-colors p-1"
-                    aria-label="Supprimer"
-                  >
-                    <Trash2 size={13} strokeWidth={1.5} />
-                  </button>
+                  <button onClick={() => removeDoc(doc.id)} className="text-light/20 hover:text-red-500 transition-colors p-1"><Trash2 size={13} strokeWidth={1.5} /></button>
                 </div>
               </div>
             ))}
@@ -348,11 +463,9 @@ function ClientDetail({
         )}
       </div>
 
-      {/* Factures */}
+      {/* ── Factures ── */}
       <div>
-        <p className="text-xs font-medium text-light/40 uppercase tracking-wide mb-3">
-          Factures ({clientInvoices.length})
-        </p>
+        <p className="text-xs font-medium text-light/40 uppercase tracking-wide mb-3">Factures ({clientInvoices.length})</p>
         {clientInvoices.length === 0 ? (
           <div className="border border-gold/10 px-6 py-8 text-center text-sm text-light/30">Aucune facture pour ce client.</div>
         ) : (
@@ -378,7 +491,6 @@ function ClientDetail({
                     <p className="text-sm font-semibold text-light">{fmtAmount(net, inv.currency)}</p>
                     <p className="text-[10px] text-light/40">net à payer</p>
                   </div>
-                  {/* Quick status buttons */}
                   <div className="flex gap-1 flex-none">
                     {(['brouillon', 'envoyee', 'payee', 'en_retard'] as const).map(s => (
                       <button
@@ -390,9 +502,7 @@ function ClientDetail({
                           onRefresh()
                         }}
                         title={INV_STATUS_MAP[s].label}
-                        className={`text-[10px] font-medium px-2 py-1 border transition-colors ${
-                          inv.status === s ? 'bg-gold text-dark-bg border-gold' : 'text-light/30 border-gold/10 hover:border-gold/30'
-                        }`}
+                        className={`text-[10px] font-medium px-2 py-1 border transition-colors ${inv.status === s ? 'bg-gold text-dark-bg border-gold' : 'text-light/30 border-gold/10 hover:border-gold/30'}`}
                       >
                         {s === 'brouillon' ? '✎' : s === 'envoyee' ? '✉' : s === 'payee' ? '✓' : '!'}
                       </button>
@@ -414,6 +524,55 @@ function ClientDetail({
             })}
           </div>
         )}
+      </div>
+
+      {/* ── Messagerie ── */}
+      <div>
+        <div className="flex items-center gap-2 mb-3">
+          <p className="text-xs font-medium text-light/40 uppercase tracking-wide">Messagerie</p>
+          {unreadCount > 0 && (
+            <span className="flex items-center justify-center w-4 h-4 bg-gold text-dark-bg text-[10px] font-bold rounded-sm">{unreadCount}</span>
+          )}
+        </div>
+        <div className="border border-gold/10 flex flex-col" style={{ height: '360px' }}>
+          <div className="flex-1 overflow-y-auto p-4 flex flex-col gap-2.5">
+            {clientMessages.length === 0 && (
+              <div className="flex-1 flex items-center justify-center">
+                <p className="text-xs text-light/30 text-center">Aucun message avec ce client.<br />Envoyez un message pour démarrer la conversation.</p>
+              </div>
+            )}
+            {clientMessages.map(msg => (
+              <div key={msg.id} className={`flex ${msg.from === 'admin' ? 'justify-end' : 'justify-start'}`}>
+                <div className={`max-w-xs px-3 py-2 ${msg.from === 'admin' ? 'bg-gold text-dark-bg' : 'bg-dark-card border border-gold/10 text-light'}`}>
+                  {msg.from === 'client' && (
+                    <p className="text-[10px] font-medium text-light/40 uppercase mb-0.5">{data.user.name.split(' ')[0]}</p>
+                  )}
+                  <p className="text-sm leading-relaxed">{msg.text}</p>
+                  <p className={`text-[10px] mt-0.5 ${msg.from === 'admin' ? 'text-dark-bg/50' : 'text-light/30'}`}>
+                    {new Date(msg.sentAt).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })}
+                    {' · '}
+                    {new Date(msg.sentAt).toLocaleDateString('fr-FR', { day: 'numeric', month: 'short' })}
+                  </p>
+                </div>
+              </div>
+            ))}
+            <div ref={msgEndRef} />
+          </div>
+          <div className="border-t border-gold/10 p-3 flex gap-2">
+            <input
+              type="text" value={msgInput} onChange={e => setMsgInput(e.target.value)}
+              onKeyDown={e => e.key === 'Enter' && sendAdminMessage()}
+              placeholder="Répondre au client…"
+              className="flex-1 bg-transparent text-sm text-light placeholder:text-light/20 focus:outline-none"
+            />
+            <button
+              onClick={sendAdminMessage} disabled={!msgInput.trim()}
+              className="flex items-center gap-1.5 bg-gold text-dark-bg text-xs font-medium px-3 py-2 hover:bg-gold/90 transition-colors disabled:opacity-30 disabled:cursor-not-allowed"
+            >
+              <Send size={11} strokeWidth={1.5} /> Envoyer
+            </button>
+          </div>
+        </div>
       </div>
     </div>
   )
@@ -444,9 +603,7 @@ function ClientsList({ clients, onSelect }: {
       <div className="relative">
         <Search size={14} strokeWidth={1.5} className="absolute left-3 top-1/2 -translate-y-1/2 text-light/30" />
         <input
-          type="text"
-          value={search}
-          onChange={e => setSearch(e.target.value)}
+          type="text" value={search} onChange={e => setSearch(e.target.value)}
           placeholder="Rechercher par nom, email ou société…"
           className="w-full border border-gold/15 bg-transparent pl-9 pr-4 py-2.5 text-sm text-light placeholder:text-light/20 focus:outline-none focus:border-gold transition-colors"
         />
@@ -458,8 +615,7 @@ function ClientsList({ clients, onSelect }: {
         <div className="flex flex-col gap-px bg-gold/10">
           {filtered.map(c => (
             <button
-              key={c.user.id}
-              onClick={() => onSelect(c)}
+              key={c.user.id} onClick={() => onSelect(c)}
               className="bg-dark-surface px-6 py-5 flex items-center justify-between gap-4 text-left hover:bg-dark-card group transition-colors"
             >
               <div className="flex items-center gap-4 min-w-0">
@@ -517,9 +673,7 @@ function AllDocuments({ clients, onRefresh }: { clients: ClientData[]; onRefresh
       <div className="relative">
         <Search size={14} strokeWidth={1.5} className="absolute left-3 top-1/2 -translate-y-1/2 text-light/30" />
         <input
-          type="text"
-          value={search}
-          onChange={e => setSearch(e.target.value)}
+          type="text" value={search} onChange={e => setSearch(e.target.value)}
           placeholder="Rechercher par nom de fichier ou client…"
           className="w-full border border-gold/15 bg-transparent pl-9 pr-4 py-2.5 text-sm text-light placeholder:text-light/20 focus:outline-none focus:border-gold transition-colors"
         />
@@ -542,22 +696,13 @@ function AllDocuments({ clients, onRefresh }: { clients: ClientData[]; onRefresh
               </div>
               <div className="flex items-center gap-2 flex-none">
                 {doc.content ? (
-                  <button
-                    onClick={() => downloadDocument(doc)}
-                    className="flex items-center gap-1.5 text-xs text-light/50 hover:text-light border border-gold/15 hover:border-gold/30 px-3 py-1.5 transition-colors"
-                  >
-                    <Download size={11} strokeWidth={1.5} />
-                    Télécharger
+                  <button onClick={() => downloadDocument(doc)} className="flex items-center gap-1.5 text-xs text-light/50 hover:text-light border border-gold/15 hover:border-gold/30 px-3 py-1.5 transition-colors">
+                    <Download size={11} strokeWidth={1.5} /> Télécharger
                   </button>
                 ) : (
-                  <span className="flex items-center gap-1 text-xs text-light/30">
-                    <AlertCircle size={11} strokeWidth={1.5} /> Indisponible
-                  </span>
+                  <span className="flex items-center gap-1 text-xs text-light/30"><AlertCircle size={11} strokeWidth={1.5} /> Indisponible</span>
                 )}
-                <button
-                  onClick={() => handleDelete(doc.client.id, doc.id)}
-                  className="text-light/20 hover:text-red-500 transition-colors p-1"
-                >
+                <button onClick={() => handleDelete(doc.client.id, doc.id)} className="text-light/20 hover:text-red-500 transition-colors p-1">
                   <Trash2 size={13} strokeWidth={1.5} />
                 </button>
               </div>
@@ -571,13 +716,6 @@ function AllDocuments({ clients, onRefresh }: { clients: ClientData[]; onRefresh
 
 // ─── Facturation Admin ────────────────────────────────────────────────────────
 
-const INV_STATUS_MAP = {
-  brouillon: { label: 'Brouillon',  cls: 'bg-light/5 text-light/40 border-light/15' },
-  envoyee:   { label: 'Envoyée',    cls: 'bg-blue-500/10 text-blue-400 border-blue-500/20' },
-  payee:     { label: 'Payée',      cls: 'bg-green-500/10 text-green-400 border-green-500/20' },
-  en_retard: { label: 'En retard',  cls: 'bg-red-500/10 text-red-400 border-red-500/20' },
-} as const
-
 function AllInvoicesAdmin({ clients, onRefresh }: { clients: ClientData[]; onRefresh: () => void }) {
   const [search, setSearch] = useState('')
   const [filterStatus, setFilterStatus] = useState<Invoice['status'] | 'all'>('all')
@@ -585,8 +723,7 @@ function AllInvoicesAdmin({ clients, onRefresh }: { clients: ClientData[]; onRef
   const allInvoices = useMemo(() =>
     clients.flatMap(c =>
       getInvoicesForClient(c.user.id).map(inv => ({ ...inv, clientName: c.user.name, clientCompany: c.user.company }))
-    ), [clients]
-  )
+    ), [clients])
 
   const filtered = useMemo(() =>
     allInvoices.filter(inv => {
@@ -597,8 +734,7 @@ function AllInvoicesAdmin({ clients, onRefresh }: { clients: ClientData[]; onRef
       const matchStatus = filterStatus === 'all' || inv.status === filterStatus
       return matchSearch && matchStatus
     }).sort((a, b) => b.dateEmission.localeCompare(a.dateEmission)),
-    [allInvoices, search, filterStatus]
-  )
+    [allInvoices, search, filterStatus])
 
   const totalNet = filtered.reduce((s, inv) => s + computeAmounts(inv).net, 0)
   const paidNet  = filtered.filter(i => i.status === 'payee').reduce((s, inv) => s + computeAmounts(inv).net, 0)
@@ -621,12 +757,11 @@ function AllInvoicesAdmin({ clients, onRefresh }: { clients: ClientData[]; onRef
         <h2 className="font-serif text-2xl text-light">Notes d'honoraires</h2>
       </div>
 
-      {/* Stats */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-px bg-gold/10">
         {[
-          { label: 'Total factures',  value: String(allInvoices.length) },
-          { label: 'En attente',      value: String(allInvoices.filter(i => i.status === 'envoyee' || i.status === 'en_retard').length) },
-          { label: 'Payées',          value: String(allInvoices.filter(i => i.status === 'payee').length) },
+          { label: 'Total factures',   value: String(allInvoices.length) },
+          { label: 'En attente',       value: String(allInvoices.filter(i => i.status === 'envoyee' || i.status === 'en_retard').length) },
+          { label: 'Payées',           value: String(allInvoices.filter(i => i.status === 'payee').length) },
           { label: 'Chiffre encaissé', value: paidNet > 0 ? fmtAmount(paidNet, 'TND') : '—' },
         ].map(({ label, value }) => (
           <div key={label} className="bg-dark-surface p-6">
@@ -636,14 +771,11 @@ function AllInvoicesAdmin({ clients, onRefresh }: { clients: ClientData[]; onRef
         ))}
       </div>
 
-      {/* Filters */}
       <div className="flex flex-col sm:flex-row gap-3">
         <div className="relative flex-1">
           <Search size={14} strokeWidth={1.5} className="absolute left-3 top-1/2 -translate-y-1/2 text-light/30" />
           <input
-            type="text"
-            value={search}
-            onChange={e => setSearch(e.target.value)}
+            type="text" value={search} onChange={e => setSearch(e.target.value)}
             placeholder="Rechercher par n°, client ou société…"
             className="w-full border border-gold/15 bg-transparent pl-9 pr-4 py-2.5 text-sm text-light placeholder:text-light/20 focus:outline-none focus:border-gold transition-colors"
           />
@@ -651,11 +783,8 @@ function AllInvoicesAdmin({ clients, onRefresh }: { clients: ClientData[]; onRef
         <div className="flex gap-1 flex-wrap">
           {(['all', 'brouillon', 'envoyee', 'payee', 'en_retard'] as const).map(s => (
             <button
-              key={s}
-              onClick={() => setFilterStatus(s)}
-              className={`text-xs font-medium px-3 py-1.5 border transition-colors ${
-                filterStatus === s ? 'bg-gold text-dark-bg border-gold' : 'text-light/40 border-gold/15 hover:border-gold/30'
-              }`}
+              key={s} onClick={() => setFilterStatus(s)}
+              className={`text-xs font-medium px-3 py-1.5 border transition-colors ${filterStatus === s ? 'bg-gold text-dark-bg border-gold' : 'text-light/40 border-gold/15 hover:border-gold/30'}`}
             >
               {s === 'all' ? 'Toutes' : INV_STATUS_MAP[s].label}
             </button>
@@ -697,25 +826,17 @@ function AllInvoicesAdmin({ clients, onRefresh }: { clients: ClientData[]; onRef
                   <p className="text-sm font-semibold text-light">{fmtAmount(net, inv.currency)}</p>
                   <p className="text-[10px] text-light/40">net à payer</p>
                 </div>
-                {/* Quick status change */}
                 <div className="flex gap-1 flex-none">
                   {(['brouillon', 'envoyee', 'payee', 'en_retard'] as const).map(s => (
                     <button
-                      key={s}
-                      onClick={() => updateStatus(inv, s)}
-                      title={INV_STATUS_MAP[s].label}
-                      className={`text-[10px] font-medium px-2 py-1 border transition-colors ${
-                        inv.status === s ? 'bg-gold text-dark-bg border-gold' : 'text-light/30 border-gold/10 hover:border-gold/30'
-                      }`}
+                      key={s} onClick={() => updateStatus(inv, s)} title={INV_STATUS_MAP[s].label}
+                      className={`text-[10px] font-medium px-2 py-1 border transition-colors ${inv.status === s ? 'bg-gold text-dark-bg border-gold' : 'text-light/30 border-gold/10 hover:border-gold/30'}`}
                     >
                       {s === 'brouillon' ? '✎' : s === 'envoyee' ? '✉' : s === 'payee' ? '✓' : '!'}
                     </button>
                   ))}
                 </div>
-                <button
-                  onClick={() => deleteInvoice(inv)}
-                  className="text-light/20 hover:text-red-500 transition-colors p-1 flex-none"
-                >
+                <button onClick={() => deleteInvoice(inv)} className="text-light/20 hover:text-red-500 transition-colors p-1 flex-none">
                   <Trash2 size={13} strokeWidth={1.5} />
                 </button>
               </div>
@@ -742,18 +863,23 @@ function AgendaAdmin({ clients, onRefresh }: { clients: ClientData[]; onRefresh:
     time: '10:00', type: 'visio' as Appointment['type'], notes: '',
   })
 
-  // Todo form
+  // Todo form (create + edit)
   const [showTodoForm, setShowTodoForm] = useState(false)
+  const [editTodoId, setEditTodoId] = useState<string | null>(null)
   const [todoForm, setTodoForm] = useState({
     clientId: clients[0]?.user.id ?? '',
     title: '', priority: 'normale' as Todo['priority'], dueDate: '',
   })
 
-  // All todos
   const allTodos = useMemo(() =>
     clients.flatMap(c => getTodosForClient(c.user.id).map(t => ({ ...t, clientName: c.user.name }))),
-    [clients]
-  )
+    [clients])
+
+  const allDossierMap = useMemo(() =>
+    Object.fromEntries(clients.flatMap(c =>
+      (JSON.parse(localStorage.getItem(`avocat_dossiers_${c.user.id}`) || '[]') as { id: string; titre: string }[])
+        .map(d => [d.id, d.titre])
+    )), [clients])
 
   const handleCreateRdv = () => {
     if (!rdvForm.title || !rdvForm.date || !rdvForm.clientId) return
@@ -769,18 +895,35 @@ function AgendaAdmin({ clients, onRefresh }: { clients: ClientData[]; onRefresh:
     onRefresh()
   }
 
-  const handleCreateTodo = () => {
+  const handleSaveTodo = () => {
     if (!todoForm.title || !todoForm.clientId) return
-    const newTodo: Todo = {
-      id: crypto.randomUUID(), title: todoForm.title,
-      done: false, priority: todoForm.priority,
-      dueDate: todoForm.dueDate || undefined,
-      clientId: todoForm.clientId, createdAt: new Date().toISOString(),
+    if (editTodoId) {
+      const todo = allTodos.find(t => t.id === editTodoId)
+      if (todo) {
+        const existing = getTodosForClient(todo.clientId)
+        saveTodosForClient(todo.clientId, existing.map(t =>
+          t.id === editTodoId ? { ...t, title: todoForm.title, priority: todoForm.priority, dueDate: todoForm.dueDate || undefined } : t
+        ))
+      }
+      setEditTodoId(null)
+    } else {
+      const newTodo: Todo = {
+        id: crypto.randomUUID(), title: todoForm.title,
+        done: false, priority: todoForm.priority,
+        dueDate: todoForm.dueDate || undefined,
+        clientId: todoForm.clientId, createdAt: new Date().toISOString(),
+      }
+      saveTodosForClient(todoForm.clientId, [...getTodosForClient(todoForm.clientId), newTodo])
     }
-    saveTodosForClient(todoForm.clientId, [...getTodosForClient(todoForm.clientId), newTodo])
     setShowTodoForm(false)
     setTodoForm(f => ({ ...f, title: '', dueDate: '' }))
     onRefresh()
+  }
+
+  const handleEditTodo = (todo: Todo) => {
+    setEditTodoId(todo.id)
+    setTodoForm({ clientId: todo.clientId, title: todo.title, priority: todo.priority, dueDate: todo.dueDate ?? '' })
+    setShowTodoForm(true)
   }
 
   const handleDeleteTodo = (todo: Todo & { clientName: string }) => {
@@ -801,7 +944,6 @@ function AgendaAdmin({ clients, onRefresh }: { clients: ClientData[]; onRefresh:
         <h2 className="font-serif text-2xl text-light">Planning & Tâches</h2>
       </div>
 
-      {/* Section tabs */}
       <div className="flex gap-1 border-b border-gold/10 pb-0">
         {(['rdv', 'todo'] as const).map(s => (
           <button key={s} onClick={() => setActiveSection(s)}
@@ -811,7 +953,7 @@ function AgendaAdmin({ clients, onRefresh }: { clients: ClientData[]; onRefresh:
         ))}
       </div>
 
-      {/* ── RDV section ── */}
+      {/* ── RDV ── */}
       {activeSection === 'rdv' && (
         <>
           <div className="flex justify-end">
@@ -891,11 +1033,11 @@ function AgendaAdmin({ clients, onRefresh }: { clients: ClientData[]; onRefresh:
         </>
       )}
 
-      {/* ── Todo section ── */}
+      {/* ── Todo ── */}
       {activeSection === 'todo' && (
         <>
           <div className="flex justify-end">
-            <button onClick={() => setShowTodoForm(v => !v)}
+            <button onClick={() => { setEditTodoId(null); setTodoForm(f => ({ ...f, title: '', dueDate: '' })); setShowTodoForm(v => !v) }}
               className="flex items-center gap-2 bg-gold text-dark-bg text-xs font-medium px-4 py-2.5 hover:bg-gold/90 transition-colors">
               <Plus size={13} strokeWidth={1.5} /> Nouvelle tâche
             </button>
@@ -904,16 +1046,18 @@ function AgendaAdmin({ clients, onRefresh }: { clients: ClientData[]; onRefresh:
           {showTodoForm && (
             <div className="border border-gold/15 p-6 flex flex-col gap-4">
               <div className="flex items-center justify-between">
-                <p className="text-sm font-medium text-light">Assigner une tâche</p>
-                <button onClick={() => setShowTodoForm(false)} className="text-light/30 hover:text-light transition-colors"><X size={14} strokeWidth={1.5} /></button>
+                <p className="text-sm font-medium text-light">{editTodoId ? 'Modifier la tâche' : 'Assigner une tâche'}</p>
+                <button onClick={() => { setShowTodoForm(false); setEditTodoId(null) }} className="text-light/30 hover:text-light transition-colors"><X size={14} strokeWidth={1.5} /></button>
               </div>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <div className="flex flex-col gap-1.5 sm:col-span-2">
-                  <label className="text-xs font-medium text-light/40 uppercase tracking-wide">Client</label>
-                  <select value={todoForm.clientId} onChange={e => setTodoForm(f => ({ ...f, clientId: e.target.value }))} className="border-b border-gold/15 bg-transparent py-2 text-sm text-light focus:outline-none focus:border-gold">
-                    {clients.map(c => <option key={c.user.id} value={c.user.id}>{c.user.name}{c.user.company ? ` — ${c.user.company}` : ''}</option>)}
-                  </select>
-                </div>
+                {!editTodoId && (
+                  <div className="flex flex-col gap-1.5 sm:col-span-2">
+                    <label className="text-xs font-medium text-light/40 uppercase tracking-wide">Client</label>
+                    <select value={todoForm.clientId} onChange={e => setTodoForm(f => ({ ...f, clientId: e.target.value }))} className="border-b border-gold/15 bg-transparent py-2 text-sm text-light focus:outline-none focus:border-gold">
+                      {clients.map(c => <option key={c.user.id} value={c.user.id}>{c.user.name}{c.user.company ? ` — ${c.user.company}` : ''}</option>)}
+                    </select>
+                  </div>
+                )}
                 <div className="flex flex-col gap-1.5 sm:col-span-2">
                   <label className="text-xs font-medium text-light/40 uppercase tracking-wide">Tâche</label>
                   <input type="text" value={todoForm.title} onChange={e => setTodoForm(f => ({ ...f, title: e.target.value }))} placeholder="Ex: Envoyer les statuts mis à jour" className="border-b border-gold/15 bg-transparent py-2 text-sm text-light placeholder:text-light/20 focus:outline-none focus:border-gold" />
@@ -930,7 +1074,9 @@ function AgendaAdmin({ clients, onRefresh }: { clients: ClientData[]; onRefresh:
                   <input type="date" value={todoForm.dueDate} onChange={e => setTodoForm(f => ({ ...f, dueDate: e.target.value }))} className="border-b border-gold/15 bg-transparent py-2 text-sm text-light focus:outline-none focus:border-gold" />
                 </div>
               </div>
-              <button onClick={handleCreateTodo} className="self-start bg-gold text-dark-bg text-xs font-medium px-5 py-2.5 hover:bg-gold/90 transition-colors">Assigner la tâche</button>
+              <button onClick={handleSaveTodo} className="self-start bg-gold text-dark-bg text-xs font-medium px-5 py-2.5 hover:bg-gold/90 transition-colors">
+                {editTodoId ? 'Enregistrer' : 'Assigner la tâche'}
+              </button>
             </div>
           )}
 
@@ -938,8 +1084,145 @@ function AgendaAdmin({ clients, onRefresh }: { clients: ClientData[]; onRefresh:
             todos={allTodos}
             onToggle={id => { const t = allTodos.find(x => x.id === id); if (t) handleToggleTodo(t) }}
             onDelete={id => { const t = allTodos.find(x => x.id === id); if (t) handleDeleteTodo(t) }}
+            onEdit={todo => handleEditTodo(todo)}
+            dossierMap={allDossierMap}
           />
         </>
+      )}
+    </div>
+  )
+}
+
+// ─── Messagerie Admin ─────────────────────────────────────────────────────────
+
+function MessagerieAdmin({ clients, onRefresh }: { clients: ClientData[]; onRefresh: () => void }) {
+  const [selectedClientId, setSelectedClientId] = useState<string | null>(null)
+  const [messages, setMessages] = useState<Message[]>([])
+  const [msgInput, setMsgInput] = useState('')
+  const endRef = useRef<HTMLDivElement>(null)
+
+  const selectedClient = clients.find(c => c.user.id === selectedClientId)
+
+  useEffect(() => {
+    endRef.current?.scrollIntoView({ behavior: 'smooth' })
+  }, [messages])
+
+  const openConversation = (clientId: string) => {
+    const msgs = getMessagesForClient(clientId)
+    const updated = msgs.map(m => m.from === 'client' && !m.read ? { ...m, read: true } : m)
+    saveMessagesForClient(clientId, updated)
+    setMessages(updated)
+    setSelectedClientId(clientId)
+    onRefresh()
+  }
+
+  const sendMessage = () => {
+    if (!msgInput.trim() || !selectedClientId) return
+    const msg: Message = {
+      id: crypto.randomUUID(), from: 'admin',
+      text: msgInput.trim(), sentAt: new Date().toISOString(), read: false,
+    }
+    const updated = [...messages, msg]
+    saveMessagesForClient(selectedClientId, updated)
+    setMessages(updated)
+    setMsgInput('')
+    onRefresh()
+  }
+
+  const unreadFor = (clientId: string) =>
+    getMessagesForClient(clientId).filter(m => m.from === 'client' && !m.read).length
+
+  if (selectedClient) {
+    return (
+      <div className="flex flex-col gap-6">
+        <button onClick={() => setSelectedClientId(null)} className="flex items-center gap-2 text-xs text-light/40 hover:text-light transition-colors">
+          <ArrowLeft size={12} strokeWidth={1.5} /> Retour aux conversations
+        </button>
+        <div>
+          <p className="text-xs text-light/40 uppercase tracking-wide mb-1">Messagerie</p>
+          <h2 className="font-serif text-xl text-light">{selectedClient.user.name}</h2>
+          {selectedClient.user.company && <p className="text-xs text-light/40">{selectedClient.user.company}</p>}
+        </div>
+        <div className="border border-gold/10 flex flex-col" style={{ height: '500px' }}>
+          <div className="flex-1 overflow-y-auto p-6 flex flex-col gap-3">
+            {messages.length === 0 && (
+              <div className="flex-1 flex flex-col items-center justify-center gap-2 text-center">
+                <MessageSquare size={24} strokeWidth={1.25} className="text-light/20" />
+                <p className="text-xs text-light/40">Aucun message pour le moment.</p>
+              </div>
+            )}
+            {messages.map(msg => (
+              <div key={msg.id} className={`flex ${msg.from === 'admin' ? 'justify-end' : 'justify-start'}`}>
+                <div className={`max-w-sm px-4 py-2.5 ${msg.from === 'admin' ? 'bg-gold text-dark-bg' : 'bg-dark-surface border border-gold/10 text-light'}`}>
+                  {msg.from === 'client' && (
+                    <p className="text-[10px] font-medium text-light/40 uppercase mb-0.5">{selectedClient.user.name.split(' ')[0]}</p>
+                  )}
+                  <p className="text-sm leading-relaxed">{msg.text}</p>
+                  <p className={`text-[10px] mt-0.5 ${msg.from === 'admin' ? 'text-dark-bg/50' : 'text-light/30'}`}>
+                    {new Date(msg.sentAt).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })}
+                    {' · '}
+                    {new Date(msg.sentAt).toLocaleDateString('fr-FR', { day: 'numeric', month: 'short' })}
+                  </p>
+                </div>
+              </div>
+            ))}
+            <div ref={endRef} />
+          </div>
+          <div className="border-t border-gold/10 p-4 flex gap-3">
+            <input
+              type="text" value={msgInput} onChange={e => setMsgInput(e.target.value)}
+              onKeyDown={e => e.key === 'Enter' && sendMessage()}
+              placeholder="Message au client…"
+              className="flex-1 bg-transparent text-sm text-light placeholder:text-light/20 focus:outline-none"
+            />
+            <button onClick={sendMessage} disabled={!msgInput.trim()}
+              className="flex items-center gap-1.5 bg-gold text-dark-bg text-xs font-medium px-4 py-2 hover:bg-gold/90 transition-colors disabled:opacity-30 disabled:cursor-not-allowed">
+              <Send size={12} strokeWidth={1.5} /> Envoyer
+            </button>
+          </div>
+        </div>
+      </div>
+    )
+  }
+
+  return (
+    <div className="flex flex-col gap-6">
+      <div>
+        <p className="text-xs font-medium tracking-[0.2em] uppercase text-light/40 mb-2">Messagerie</p>
+        <h2 className="font-serif text-2xl text-light">Conversations clients</h2>
+      </div>
+      {clients.length === 0 ? (
+        <div className="border border-gold/10 px-6 py-12 text-center text-sm text-light/30">Aucun client enregistré.</div>
+      ) : (
+        <div className="flex flex-col gap-px bg-gold/10">
+          {clients.map(c => {
+            const unread = unreadFor(c.user.id)
+            const msgs = getMessagesForClient(c.user.id)
+            const last = msgs[msgs.length - 1]
+            return (
+              <button key={c.user.id} onClick={() => openConversation(c.user.id)}
+                className="bg-dark-surface px-6 py-4 flex items-center justify-between gap-4 text-left hover:bg-dark-card group transition-colors">
+                <div className="flex items-center gap-3 min-w-0">
+                  <div className="relative flex-none">
+                    <div className="w-8 h-8 bg-dark-card flex items-center justify-center">
+                      <span className="text-xs font-semibold text-light/50">
+                        {c.user.name.split(' ').map(n => n[0]).slice(0, 2).join('')}
+                      </span>
+                    </div>
+                    {unread > 0 && (
+                      <span className="absolute -top-1 -right-1 flex items-center justify-center w-4 h-4 bg-gold text-dark-bg text-[10px] font-bold rounded-sm">{unread}</span>
+                    )}
+                  </div>
+                  <div className="min-w-0">
+                    <p className="text-sm font-medium text-light">{c.user.name}</p>
+                    <p className="text-xs text-light/40 truncate">{last ? (last.from === 'admin' ? 'Vous : ' : '') + last.text : 'Aucun message'}</p>
+                  </div>
+                </div>
+                <ChevronRight size={13} strokeWidth={1.5} className="text-light/20 group-hover:text-light/50 transition-colors flex-none" />
+              </button>
+            )
+          })}
+        </div>
       )}
     </div>
   )
@@ -948,11 +1231,12 @@ function AgendaAdmin({ clients, onRefresh }: { clients: ClientData[]; onRefresh:
 // ─── Admin Page ───────────────────────────────────────────────────────────────
 
 const navItems = [
-  { id: 'overview', label: "Vue d'ensemble", icon: LayoutDashboard },
-  { id: 'clients', label: 'Clients', icon: Users },
-  { id: 'documents', label: 'Documents', icon: FileUp },
-  { id: 'agenda', label: 'Agenda', icon: CalendarDays },
-  { id: 'facturation', label: 'Facturation', icon: Receipt },
+  { id: 'overview',    label: "Vue d'ensemble", icon: LayoutDashboard },
+  { id: 'clients',    label: 'Clients',         icon: Users },
+  { id: 'documents',  label: 'Documents',       icon: FileUp },
+  { id: 'agenda',     label: 'Agenda',          icon: CalendarDays },
+  { id: 'facturation',label: 'Facturation',     icon: Receipt },
+  { id: 'messagerie', label: 'Messagerie',      icon: MessageSquare },
 ]
 
 export default function AdminPage() {
@@ -964,6 +1248,10 @@ export default function AdminPage() {
   const [tick, setTick] = useState(0)
 
   const clients = useMemo(() => getAllClients(), [tick])
+
+  const totalUnread = useMemo(() =>
+    clients.reduce((sum, c) => sum + getMessagesForClient(c.user.id).filter(m => m.from === 'client' && !m.read).length, 0),
+    [tick, clients])
 
   const refresh = () => setTick(t => t + 1)
 
@@ -990,19 +1278,11 @@ export default function AdminPage() {
         </Link>
         <div className="flex items-center gap-4">
           <span className="hidden sm:block text-xs text-white/50">{user?.name}</span>
-          <button
-            onClick={handleLogout}
-            className="flex items-center gap-1.5 text-xs text-white/40 hover:text-white transition-colors"
-          >
+          <button onClick={handleLogout} className="flex items-center gap-1.5 text-xs text-white/40 hover:text-white transition-colors">
             <LogOut size={13} strokeWidth={1.5} />
             <span className="hidden sm:inline">Déconnexion</span>
           </button>
-          <button
-            onClick={() => setMobileOpen(v => !v)}
-            className="md:hidden text-white/50 hover:text-white transition-colors text-lg"
-          >
-            ☰
-          </button>
+          <button onClick={() => setMobileOpen(v => !v)} className="md:hidden text-white/50 hover:text-white transition-colors text-lg">☰</button>
         </div>
       </header>
 
@@ -1010,25 +1290,25 @@ export default function AdminPage() {
         {/* Sidebar */}
         <aside className="hidden md:flex flex-col w-56 border-r border-gold/10 pt-8 pb-6 px-4 sticky top-14 h-[calc(100vh-3.5rem)]">
           <nav className="flex flex-col gap-1">
-            {navItems.map(({ id, label, icon: Icon }) => (
-              <button
-                key={id}
-                onClick={() => changeTab(id)}
-                className={`flex items-center gap-3 px-4 py-2.5 text-sm font-medium transition-colors text-left ${
-                  tab === id ? 'bg-gold text-dark-bg' : 'text-light/50 hover:text-light hover:bg-dark-card'
-                }`}
-              >
-                <Icon size={15} strokeWidth={1.25} />
-                {label}
-              </button>
-            ))}
+            {navItems.map(({ id, label, icon: Icon }) => {
+              const isMsg = id === 'messagerie'
+              return (
+                <button
+                  key={id} onClick={() => changeTab(id)}
+                  className={`flex items-center gap-3 px-4 py-2.5 text-sm font-medium transition-colors text-left ${tab === id ? 'bg-gold text-dark-bg' : 'text-light/50 hover:text-light hover:bg-dark-card'}`}
+                >
+                  <Icon size={15} strokeWidth={1.25} />
+                  {label}
+                  {isMsg && totalUnread > 0 && (
+                    <span className={`ml-auto flex items-center justify-center w-4 h-4 text-[10px] font-bold rounded-sm ${tab === id ? 'bg-dark-bg text-gold' : 'bg-gold text-dark-bg'}`}>{totalUnread}</span>
+                  )}
+                </button>
+              )
+            })}
           </nav>
 
           <div className="mt-auto border-t border-gold/10 pt-4">
-            <Link
-              to="/dashboard"
-              className="flex items-center gap-2 px-4 py-2 text-xs text-light/40 hover:text-light transition-colors"
-            >
+            <Link to="/dashboard" className="flex items-center gap-2 px-4 py-2 text-xs text-light/40 hover:text-light transition-colors">
               Vue client →
             </Link>
           </div>
@@ -1039,14 +1319,14 @@ export default function AdminPage() {
           <div className="md:hidden fixed inset-0 top-14 z-30 bg-dark-surface border-t border-gold/10 p-6 flex flex-col gap-2">
             {navItems.map(({ id, label, icon: Icon }) => (
               <button
-                key={id}
-                onClick={() => changeTab(id)}
-                className={`flex items-center gap-3 px-4 py-3 text-sm font-medium transition-colors text-left ${
-                  tab === id ? 'bg-gold text-dark-bg' : 'text-light/60 hover:text-light hover:bg-dark-card'
-                }`}
+                key={id} onClick={() => changeTab(id)}
+                className={`flex items-center gap-3 px-4 py-3 text-sm font-medium transition-colors text-left ${tab === id ? 'bg-gold text-dark-bg' : 'text-light/60 hover:text-light hover:bg-dark-card'}`}
               >
                 <Icon size={15} strokeWidth={1.25} />
                 {label}
+                {id === 'messagerie' && totalUnread > 0 && (
+                  <span className="ml-auto flex items-center justify-center w-4 h-4 bg-gold text-dark-bg text-[10px] font-bold rounded-sm">{totalUnread}</span>
+                )}
               </button>
             ))}
           </div>
@@ -1054,20 +1334,13 @@ export default function AdminPage() {
 
         {/* Main */}
         <main className="flex-1 px-6 md:px-12 py-10 max-w-4xl">
-          {tab === 'overview' && <Overview clients={clients} />}
-          {tab === 'clients' && !selectedClient && (
-            <ClientsList clients={clients} onSelect={handleSelectClient} onRefresh={refresh} />
-          )}
-          {tab === 'clients' && selectedClient && (
-            <ClientDetail
-              data={selectedClient}
-              onBack={() => setSelectedClient(null)}
-              onRefresh={refresh}
-            />
-          )}
-          {tab === 'documents' && <AllDocuments clients={clients} onRefresh={refresh} />}
-          {tab === 'agenda' && <AgendaAdmin clients={clients} onRefresh={refresh} />}
+          {tab === 'overview'    && <Overview clients={clients} />}
+          {tab === 'clients'     && !selectedClient && <ClientsList clients={clients} onSelect={handleSelectClient} onRefresh={refresh} />}
+          {tab === 'clients'     && selectedClient  && <ClientDetail data={selectedClient} onBack={() => setSelectedClient(null)} onRefresh={refresh} />}
+          {tab === 'documents'   && <AllDocuments clients={clients} onRefresh={refresh} />}
+          {tab === 'agenda'      && <AgendaAdmin clients={clients} onRefresh={refresh} />}
           {tab === 'facturation' && <AllInvoicesAdmin clients={clients} onRefresh={refresh} />}
+          {tab === 'messagerie'  && <MessagerieAdmin clients={clients} onRefresh={refresh} />}
         </main>
       </div>
     </div>

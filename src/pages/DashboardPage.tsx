@@ -1,10 +1,10 @@
-import { useState, useRef, DragEvent, ChangeEvent } from 'react'
+import { useState, useRef, useEffect, useMemo, DragEvent, ChangeEvent } from 'react'
 import { useNavigate, Link } from 'react-router-dom'
 import { useAuth } from '../contexts/AuthContext'
 import {
   LayoutDashboard, FolderOpen, FileUp, MessageSquare, LogOut,
   CheckCircle2, Clock, Circle, ChevronRight, Upload, File,
-  FileText, Trash2, Menu, X, Shield, CalendarDays, Plus, Pencil, Bell, Receipt
+  FileText, Trash2, Menu, X, Shield, CalendarDays, Plus, Pencil, Bell, Receipt, Send,
 } from 'lucide-react'
 import CalendarView, { Appointment } from '../components/CalendarView'
 import TodoList, { Todo } from '../components/TodoList'
@@ -27,6 +27,21 @@ interface Dossier {
   prochainEcheance: string | null
   description: string
   etapes: Etape[]
+}
+
+interface Message {
+  id: string
+  from: 'admin' | 'client'
+  text: string
+  sentAt: string
+  read: boolean
+}
+
+function getMessagesForClient(clientId: string): Message[] {
+  return JSON.parse(localStorage.getItem(`avocat_messages_${clientId}`) || '[]')
+}
+function saveMessagesForClient(clientId: string, msgs: Message[]) {
+  localStorage.setItem(`avocat_messages_${clientId}`, JSON.stringify(msgs))
 }
 
 export interface Document {
@@ -686,23 +701,87 @@ function Rendezvous({ rdvs, setRdvs, todos, setTodos, userId, dossiers }: {
 
 // ─── Messagerie ───────────────────────────────────────────────────────────────
 
-function Messagerie() {
+function Messagerie({ userId }: { userId: string }) {
+  const [messages, setMessages] = useState<Message[]>(() => {
+    const msgs = getMessagesForClient(userId)
+    const updated = msgs.map(m => m.from === 'admin' && !m.read ? { ...m, read: true } : m)
+    saveMessagesForClient(userId, updated)
+    return updated
+  })
+  const [input, setInput] = useState('')
+  const endRef = useRef<HTMLDivElement>(null)
+
+  useEffect(() => {
+    endRef.current?.scrollIntoView({ behavior: 'smooth' })
+  }, [messages])
+
+  const sendMessage = () => {
+    if (!input.trim()) return
+    const msg: Message = {
+      id: crypto.randomUUID(), from: 'client',
+      text: input.trim(), sentAt: new Date().toISOString(), read: false,
+    }
+    const updated = [...messages, msg]
+    saveMessagesForClient(userId, updated)
+    setMessages(updated)
+    setInput('')
+  }
+
   return (
     <div className="flex flex-col gap-6">
       <div>
         <p className="text-xs font-medium tracking-[0.2em] uppercase text-light/40 mb-2">Messagerie</p>
         <h2 className="font-serif text-2xl text-light">Échanges sécurisés</h2>
       </div>
-      <div className="border border-gold/10 px-8 py-12 flex flex-col items-center text-center gap-3">
-        <MessageSquare size={28} strokeWidth={1.25} className="text-light/20" />
-        <p className="text-sm font-medium text-light">Messagerie en cours d'activation</p>
-        <p className="text-xs text-light/40 max-w-xs leading-relaxed">
-          Pour toute question urgente, contactez le cabinet directement à{' '}
-          <a href="mailto:office@mokadmi.lawyer" className="text-light underline">
-            office@mokadmi.lawyer
-          </a>
-        </p>
+
+      <div className="border border-gold/10 flex flex-col" style={{ height: '500px' }}>
+        <div className="flex-1 overflow-y-auto p-6 flex flex-col gap-3">
+          {messages.length === 0 && (
+            <div className="flex-1 flex flex-col items-center justify-center gap-3 text-center">
+              <MessageSquare size={28} strokeWidth={1.25} className="text-light/20" />
+              <p className="text-sm font-medium text-light">Échangez directement avec le cabinet</p>
+              <p className="text-xs text-light/40 max-w-xs leading-relaxed">
+                Vos messages sont sécurisés et accessibles uniquement par vous et l'équipe de Maître Mokadmi.
+              </p>
+            </div>
+          )}
+          {messages.map(msg => (
+            <div key={msg.id} className={`flex ${msg.from === 'client' ? 'justify-end' : 'justify-start'}`}>
+              <div className={`max-w-xs px-4 py-2.5 ${msg.from === 'client' ? 'bg-gold text-dark-bg' : 'bg-dark-surface border border-gold/10 text-light'}`}>
+                {msg.from === 'admin' && (
+                  <p className="text-[10px] font-medium text-light/40 uppercase mb-0.5">Cabinet</p>
+                )}
+                <p className="text-sm leading-relaxed">{msg.text}</p>
+                <p className={`text-[10px] mt-1 ${msg.from === 'client' ? 'text-dark-bg/50' : 'text-light/30'}`}>
+                  {new Date(msg.sentAt).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })}
+                  {' · '}
+                  {new Date(msg.sentAt).toLocaleDateString('fr-FR', { day: 'numeric', month: 'short' })}
+                </p>
+              </div>
+            </div>
+          ))}
+          <div ref={endRef} />
+        </div>
+        <div className="border-t border-gold/10 p-4 flex gap-3">
+          <input
+            type="text" value={input} onChange={e => setInput(e.target.value)}
+            onKeyDown={e => e.key === 'Enter' && !e.shiftKey && sendMessage()}
+            placeholder="Votre message au cabinet…"
+            className="flex-1 bg-transparent text-sm text-light placeholder:text-light/20 focus:outline-none"
+          />
+          <button
+            onClick={sendMessage} disabled={!input.trim()}
+            className="flex items-center gap-1.5 bg-gold text-dark-bg text-xs font-medium px-4 py-2 hover:bg-gold/90 transition-colors disabled:opacity-30 disabled:cursor-not-allowed"
+          >
+            <Send size={12} strokeWidth={1.5} /> Envoyer
+          </button>
+        </div>
       </div>
+
+      <p className="text-xs text-light/30 text-center">
+        Pour toute urgence, contactez directement le cabinet au{' '}
+        <span className="text-light/50">+216 29784651</span>
+      </p>
     </div>
   )
 }
@@ -731,6 +810,11 @@ export default function DashboardPage() {
   const [invoices, setInvoices] = useLocalState<Invoice[]>(`avocat_invoices_${user?.id}`, [])
 
   const { alerts, dismiss } = useReminders(rdvs, todos)
+
+  const unreadMessages = useMemo(() => {
+    if (!user?.id) return 0
+    return getMessagesForClient(user.id).filter(m => m.from === 'admin' && !m.read).length
+  }, [user?.id, tab])
 
   const handleLogout = () => { logout(); navigate('/') }
 
@@ -790,20 +874,24 @@ export default function DashboardPage() {
         {/* Sidebar desktop */}
         <aside className="hidden md:flex flex-col w-56 border-r border-gold/10 pt-8 pb-6 px-4 sticky top-14 h-[calc(100vh-3.5rem)]">
           <nav className="flex flex-col gap-1 flex-1">
-            {navItems.map(({ id, label, icon: Icon }) => (
-              <button
-                key={id}
-                onClick={() => changeTab(id)}
-                className={`flex items-center gap-3 px-4 py-2.5 text-sm font-medium transition-colors text-left ${
-                  tab === id
-                    ? 'bg-gold text-dark-bg'
-                    : 'text-light/50 hover:text-light hover:bg-dark-card'
-                }`}
-              >
-                <Icon size={15} strokeWidth={1.25} />
-                {label}
-              </button>
-            ))}
+            {navItems.map(({ id, label, icon: Icon }) => {
+              const isMsg = id === 'messagerie'
+              return (
+                <button
+                  key={id}
+                  onClick={() => changeTab(id)}
+                  className={`flex items-center gap-3 px-4 py-2.5 text-sm font-medium transition-colors text-left ${
+                    tab === id ? 'bg-gold text-dark-bg' : 'text-light/50 hover:text-light hover:bg-dark-card'
+                  }`}
+                >
+                  <Icon size={15} strokeWidth={1.25} />
+                  {label}
+                  {isMsg && unreadMessages > 0 && (
+                    <span className={`ml-auto flex items-center justify-center w-4 h-4 text-[10px] font-bold rounded-sm ${tab === id ? 'bg-dark-bg text-gold' : 'bg-gold text-dark-bg'}`}>{unreadMessages}</span>
+                  )}
+                </button>
+              )
+            })}
           </nav>
         </aside>
 
@@ -820,6 +908,9 @@ export default function DashboardPage() {
               >
                 <Icon size={15} strokeWidth={1.25} />
                 {label}
+                {id === 'messagerie' && unreadMessages > 0 && (
+                  <span className="ml-auto flex items-center justify-center w-4 h-4 bg-gold text-dark-bg text-[10px] font-bold rounded-sm">{unreadMessages}</span>
+                )}
               </button>
             ))}
             <div className="mt-auto pt-6 border-t border-gold/10">
@@ -849,7 +940,7 @@ export default function DashboardPage() {
               userEmail={user?.email}
             />
           )}
-          {tab === 'messagerie' && <Messagerie />}
+          {tab === 'messagerie' && <Messagerie userId={user?.id ?? ''} />}
         </main>
       </div>
     </div>

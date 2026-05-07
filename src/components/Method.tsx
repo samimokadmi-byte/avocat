@@ -24,38 +24,46 @@ const steps = [
 
 export default function Method() {
   return (
-    <section id="methode" className="px-6 py-12 md:py-section max-w-content mx-auto">
-      <p className="text-xs font-medium tracking-[0.2em] uppercase text-gold/60 mb-4">
-        Méthode
-      </p>
-      <h2 className="font-serif text-heading text-light mb-8 md:mb-16 max-w-xl">
-        Trois actes. Zéro improvisation.
-      </h2>
+    <section id="methode" className="bg-paper">
+      <div className="px-8 py-16 md:py-section max-w-content mx-auto">
 
-      <div className="flex flex-col">
-        {steps.map((step, i) => (
-          <div key={step.number} className="relative flex gap-6 md:gap-16 pb-10 md:pb-16 last:pb-0">
-            {i < steps.length - 1 && (
-              <div className="absolute left-[1.35rem] top-12 bottom-0 w-px bg-gold/15" />
-            )}
+        {/* ── Section header ─────────────────────────────────────────── */}
+        <div className="flex items-center gap-3 mb-10 md:mb-16">
+          <span className="font-mono text-[11px] uppercase tracking-[0.08em] text-text2">[03]</span>
+          <span className="w-8 h-px bg-hairline-strong flex-none" />
+          <span className="font-mono text-[11px] uppercase tracking-[0.08em] text-text2">Méthode</span>
+        </div>
 
-            <div className="relative flex-none w-11 h-11 border border-gold/30 bg-dark-surface flex items-center justify-center">
-              <span className="text-xs font-medium tracking-wide text-gold">{step.number}</span>
-            </div>
+        <h2 className="font-display text-heading text-ink font-normal mb-12 md:mb-16 max-w-xl text-pretty">
+          Trois actes.{' '}
+          <span className="italic text-accent">Zéro improvisation.</span>
+        </h2>
 
-            <div className="flex-1 pt-2">
-              <div className="flex flex-col sm:flex-row sm:items-baseline sm:gap-5 mb-4">
-                <h3 className="font-serif text-xl font-semibold text-light">{step.title}</h3>
-                <span className="text-xs font-medium text-gold/40 tracking-wide uppercase mt-1 sm:mt-0">
-                  {step.duration}
-                </span>
+        <div className="flex flex-col">
+          {steps.map((step, i) => (
+            <div key={step.number} className="relative flex gap-8 md:gap-16 pb-12 md:pb-16 last:pb-0">
+              {i < steps.length - 1 && (
+                <div className="absolute left-[1.35rem] top-12 bottom-0 w-px bg-hairline-strong" />
+              )}
+
+              <div className="relative flex-none w-11 h-11 border border-hairline-strong bg-paper-2 flex items-center justify-center">
+                <span className="font-mono text-[11px] uppercase tracking-[0.06em] text-accent">{step.number}</span>
               </div>
-              <p className="text-sm text-light/50 leading-relaxed max-w-prose-luxury">
-                {step.description}
-              </p>
+
+              <div className="flex-1 pt-2">
+                <div className="flex flex-col sm:flex-row sm:items-baseline sm:gap-4 mb-4">
+                  <h3 className="font-display text-xl font-normal text-ink">{step.title}</h3>
+                  <span className="inline-flex items-center border border-hairline-strong rounded-full px-2.5 py-0.5 font-mono text-[11px] uppercase tracking-[0.06em] text-text2 mt-1.5 sm:mt-0 self-start">
+                    {step.duration}
+                  </span>
+                </div>
+                <p className="text-body text-text2 leading-relaxed max-w-prose-luxury">
+                  {step.description}
+                </p>
+              </div>
             </div>
-          </div>
-        ))}
+          ))}
+        </div>
       </div>
     </section>
   )

@@ -3,6 +3,7 @@ import { Scale, BarChart3, Cpu } from 'lucide-react'
 const pillars = [
   {
     icon: Scale,
+    glyph: '§',
     number: '01',
     title: 'Ingénierie Juridique & Levées de Fonds',
     subtitle: 'Architecture de Levée de Fonds',
@@ -11,6 +12,7 @@ const pillars = [
   },
   {
     icon: BarChart3,
+    glyph: '%',
     number: '02',
     title: 'Stratégie Fiscale Avancée',
     subtitle: 'Gouvernance Fiscale Systémique',
@@ -19,6 +21,7 @@ const pillars = [
   },
   {
     icon: Cpu,
+    glyph: '◇',
     number: '03',
     title: 'Architecture IA & Automatisation',
     subtitle: 'Gouvernance Algorithmique',
@@ -29,43 +32,54 @@ const pillars = [
 
 export default function System() {
   return (
-    <section id="systeme" className="px-6 py-12 md:py-section max-w-content mx-auto">
-      <p className="text-xs font-medium tracking-[0.2em] uppercase text-gold/60 mb-4">
-        Les 3 Piliers de l'Architecte
-      </p>
-      <h2 className="font-serif text-heading text-light mb-3 max-w-xl">
-        Une triple compétence. Une architecture globale.
-      </h2>
-      <p className="text-sm text-light/40 mb-8 md:mb-16 max-w-prose-luxury leading-relaxed">
-        Droit des affaires, fiscalité stratégique et ingénierie IA — rarement réunies, jamais aussi bien intégrées.
-      </p>
+    <section id="systeme" className="bg-paper-2">
+      <div className="px-8 py-16 md:py-section max-w-content mx-auto">
 
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-px bg-gold/10">
-        {pillars.map(({ icon: Icon, number, title, subtitle, body, tags }) => (
-          <div key={title}
-            className="bg-dark-surface p-6 md:p-10 flex flex-col gap-6 group hover:bg-dark-card transition-colors duration-300">
-            <div className="flex items-start justify-between">
-              <Icon size={22} strokeWidth={1.25}
-                className="text-gold/50 group-hover:text-gold transition-colors duration-300" />
-              <span className="font-serif text-4xl font-bold text-gold/8 group-hover:text-gold/15 transition-colors duration-300 select-none">
-                {number}
-              </span>
-            </div>
-            <div>
-              <p className="text-xs font-medium text-gold/50 uppercase tracking-[0.15em] mb-2">{subtitle}</p>
-              <h3 className="font-serif text-lg font-semibold text-light mb-4">{title}</h3>
-              <p className="text-sm text-light/50 leading-relaxed mb-6">{body}</p>
-              <div className="flex flex-wrap gap-2">
-                {tags.map(tag => (
-                  <span key={tag}
-                    className="text-xs font-medium text-gold/40 border border-gold/15 px-2 py-0.5">
-                    {tag}
-                  </span>
-                ))}
+        {/* ── Section header ─────────────────────────────────────────── */}
+        <div className="flex items-center gap-3 mb-10 md:mb-16">
+          <span className="font-mono text-[11px] uppercase tracking-[0.08em] text-text2">[02]</span>
+          <span className="w-8 h-px bg-hairline-strong flex-none" />
+          <span className="font-mono text-[11px] uppercase tracking-[0.08em] text-text2">Les 3 Piliers</span>
+        </div>
+
+        <h2 className="font-display text-heading text-ink font-normal mb-4 max-w-xl text-pretty">
+          Une triple compétence.{' '}
+          <span className="italic text-accent">Une architecture globale.</span>
+        </h2>
+        <p className="text-body text-text2 mb-10 md:mb-16 max-w-prose-luxury leading-relaxed">
+          Droit des affaires, fiscalité stratégique et ingénierie IA — rarement réunies, jamais aussi bien intégrées.
+        </p>
+
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+          {pillars.map(({ icon: Icon, glyph, title, subtitle, body, tags }) => (
+            <div key={title}
+              className="bg-paper border border-hairline-strong p-6 md:p-8 flex flex-col gap-6 group hover:-translate-y-0.5 hover:shadow-card-hover transition-all duration-200">
+              <div className="flex items-start justify-between">
+                <Icon size={20} strokeWidth={1.25}
+                  className="text-text2 group-hover:text-accent transition-colors duration-200" />
+                <span
+                  className="font-display font-normal italic text-accent/10 group-hover:text-accent/18 select-none transition-colors duration-200 leading-none"
+                  style={{ fontSize: '72px' }}
+                >
+                  {glyph}
+                </span>
+              </div>
+              <div>
+                <p className="font-mono text-[11px] uppercase tracking-[0.08em] text-text2 mb-2">{subtitle}</p>
+                <h3 className="font-display text-xl font-normal text-ink mb-4">{title}</h3>
+                <p className="text-small text-text2 leading-relaxed mb-6">{body}</p>
+                <div className="flex flex-wrap gap-2">
+                  {tags.map(tag => (
+                    <span key={tag}
+                      className="font-mono text-[11px] uppercase tracking-[0.06em] text-text2 border border-hairline-strong rounded-full px-2.5 py-0.5">
+                      {tag}
+                    </span>
+                  ))}
+                </div>
               </div>
             </div>
-          </div>
-        ))}
+          ))}
+        </div>
       </div>
     </section>
   )

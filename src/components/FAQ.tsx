@@ -40,22 +40,22 @@ function FAQItem({ q, a }: { q: string; a: string }) {
   const [open, setOpen] = useState(false)
 
   return (
-    <div className="border-b border-gold/10">
+    <div className="border-b border-hairline">
       <button
         onClick={() => setOpen(o => !o)}
         className="w-full flex items-center justify-between gap-6 py-6 text-left"
         aria-expanded={open}
       >
-        <span className="text-sm font-medium text-light/70">{q}</span>
+        <span className="text-body font-medium text-ink/80">{q}</span>
         {open
-          ? <Minus size={14} strokeWidth={1.5} className="flex-none text-gold/50" />
-          : <Plus size={14} strokeWidth={1.5} className="flex-none text-gold/30" />
+          ? <Minus size={14} strokeWidth={1.5} className="flex-none text-accent" />
+          : <Plus size={14} strokeWidth={1.5} className="flex-none text-text2" />
         }
       </button>
 
       {open && (
         <div className="pb-6">
-          <p className="text-sm text-light/45 leading-relaxed max-w-prose-luxury">{a}</p>
+          <p className="text-body text-text2 leading-relaxed max-w-prose-luxury">{a}</p>
         </div>
       )}
     </div>
@@ -64,18 +64,25 @@ function FAQItem({ q, a }: { q: string; a: string }) {
 
 export default function FAQ() {
   return (
-    <section id="faq" className="px-6 py-12 md:py-section max-w-content mx-auto">
-      <p className="text-xs font-medium tracking-[0.2em] uppercase text-gold/60 mb-4">
-        FAQ
-      </p>
-      <h2 className="font-serif text-heading text-light mb-8 md:mb-16 max-w-xl">
-        Questions fréquentes.
-      </h2>
+    <section id="faq" className="bg-paper">
+      <div className="px-8 py-16 md:py-section max-w-content mx-auto">
 
-      <div className="max-w-2xl">
-        {items.map(item => (
-          <FAQItem key={item.q} {...item} />
-        ))}
+        {/* ── Section header ─────────────────────────────────────────── */}
+        <div className="flex items-center gap-3 mb-10 md:mb-16">
+          <span className="font-mono text-[11px] uppercase tracking-[0.08em] text-text2">[08]</span>
+          <span className="w-8 h-px bg-hairline-strong flex-none" />
+          <span className="font-mono text-[11px] uppercase tracking-[0.08em] text-text2">FAQ</span>
+        </div>
+
+        <h2 className="font-display text-heading text-ink font-normal mb-10 md:mb-16 max-w-xl text-pretty">
+          <span className="italic text-accent">Questions fréquentes.</span>
+        </h2>
+
+        <div className="max-w-2xl">
+          {items.map(item => (
+            <FAQItem key={item.q} {...item} />
+          ))}
+        </div>
       </div>
     </section>
   )

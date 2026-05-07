@@ -5,15 +5,15 @@
 @layer base {
   html {
     scroll-behavior: smooth;
-    scroll-padding-top: 4rem;
-    background-color: #070C18;
-    color: #E8EDF5;
+    scroll-padding-top: 6rem; /* utility bar 32px + nav 64px */
+    background-color: #FAF8F2;
+    color: #0F172A;
   }
 
   body {
     font-family: 'Inter', system-ui, sans-serif;
-    font-size: 1rem;
-    line-height: 1.6;
+    font-size: 17px;
+    line-height: 1.55;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
   }
@@ -23,7 +23,12 @@
   }
 
   *:focus-visible {
-    outline: 2px solid #C9A96E;
+    outline: 2px solid #A47A2C;
     outline-offset: 3px;
   }
+}
+
+@layer utilities {
+  .text-pretty  { text-wrap: pretty;  }
+  .text-balance { text-wrap: balance; }
 }

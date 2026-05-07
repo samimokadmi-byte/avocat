@@ -35,63 +35,68 @@ const valeurs = [
 
 export default function APropos() {
   return (
-    <section id="apropos" className="bg-dark-bg">
-      <div className="px-6 py-12 md:py-section max-w-content mx-auto">
+    <section id="apropos" className="bg-paper">
+      <div className="px-8 py-16 md:py-section max-w-content mx-auto">
+
+        {/* ── Section header ─────────────────────────────────────────── */}
+        <div className="flex items-center gap-3 mb-10 md:mb-16">
+          <span className="font-mono text-[11px] uppercase tracking-[0.08em] text-text2">[01]</span>
+          <span className="w-8 h-px bg-hairline-strong flex-none" />
+          <span className="font-mono text-[11px] uppercase tracking-[0.08em] text-text2">À Propos</span>
+        </div>
 
         {/* ── En-tête ────────────────────────────────────────────────── */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-8 md:gap-16 mb-10 md:mb-section">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-8 md:gap-16 mb-12 md:mb-section">
           <div>
-            <p className="text-xs font-medium tracking-[0.2em] uppercase text-gold/60 mb-4">
-              À propos
-            </p>
-            <h2 className="font-serif text-heading text-light mb-6">
-              Un avocat qui pense comme un architecte.
+            <h2 className="font-display text-heading text-ink font-normal mb-6 text-pretty">
+              Un avocat qui pense{' '}
+              <span className="italic text-accent">comme un architecte.</span>
             </h2>
-            <p className="text-sm text-light/50 leading-relaxed mb-4">
+            <p className="text-body text-text2 leading-relaxed mb-4">
               Maître Mokadmi Sami exerce depuis 24 ans au Barreau de Tunis. Sa singularité : ne jamais
               traiter le droit comme une contrainte, mais comme un levier de construction.
             </p>
-            <p className="text-sm text-light/40 leading-relaxed">
+            <p className="text-body text-text2 leading-relaxed">
               Formé au droit des affaires internationales, il a développé une méthode propre —
-              <span className="text-light/60"> l'ingénierie juridique systémique </span> — qui combine
+              <span className="text-ink"> l'ingénierie juridique systémique </span> — qui combine
               structuration capitalistique, optimisation fiscale et anticipation réglementaire IA
               en un seul système cohérent, pensé pour durer.
             </p>
           </div>
 
           {/* Valeurs */}
-          <div className="flex flex-col gap-6 justify-center">
+          <div className="flex flex-col gap-7 justify-center">
             {valeurs.map(v => (
-              <div key={v.titre} className="border-l border-gold/20 pl-6">
-                <p className="text-xs font-semibold tracking-[0.15em] uppercase text-gold mb-1">
+              <div key={v.titre} className="border-l-2 border-accent pl-6">
+                <p className="font-mono text-[11px] uppercase tracking-[0.08em] text-accent mb-1.5">
                   {v.titre}
                 </p>
-                <p className="text-sm text-light/45 leading-relaxed">{v.texte}</p>
+                <p className="text-small text-text2 leading-relaxed">{v.texte}</p>
               </div>
             ))}
           </div>
         </div>
 
-        {/* ── Ligne de séparation ────────────────────────────────────── */}
-        <div className="border-t border-gold/10 mb-10 md:mb-section" />
+        {/* ── Séparateur ─────────────────────────────────────────────── */}
+        <div className="border-t border-hairline mb-12 md:mb-section" />
 
         {/* ── Parcours chronologique ─────────────────────────────────── */}
-        <div className="mb-4">
-          <p className="text-xs font-medium tracking-[0.2em] uppercase text-gold/60 mb-6 md:mb-10">
+        <div>
+          <p className="font-mono text-[11px] uppercase tracking-[0.08em] text-text2 mb-8 md:mb-10">
             Parcours
           </p>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-px bg-gold/8">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-px bg-hairline">
             {parcours.map(({ icon: Icon, periode, titre, detail }) => (
-              <div key={titre} className="bg-dark-bg p-5 md:p-8 flex flex-col gap-4">
+              <div key={titre} className="bg-paper p-6 md:p-8 flex flex-col gap-4">
                 <div className="flex items-center gap-3">
-                  <div className="w-8 h-8 border border-gold/20 flex items-center justify-center flex-none">
-                    <Icon size={14} strokeWidth={1.5} className="text-gold/70" />
+                  <div className="w-8 h-8 border border-hairline-strong flex items-center justify-center flex-none">
+                    <Icon size={14} strokeWidth={1.25} className="text-text2" />
                   </div>
-                  <span className="text-xs font-medium text-gold/50 tracking-wide">{periode}</span>
+                  <span className="font-mono text-[11px] uppercase tracking-[0.06em] text-text2">{periode}</span>
                 </div>
                 <div>
-                  <p className="font-serif text-base font-semibold text-light mb-2">{titre}</p>
-                  <p className="text-sm text-light/40 leading-relaxed">{detail}</p>
+                  <p className="font-display text-base font-normal text-ink mb-2">{titre}</p>
+                  <p className="text-small text-text2 leading-relaxed">{detail}</p>
                 </div>
               </div>
             ))}
@@ -99,12 +104,12 @@ export default function APropos() {
         </div>
 
         {/* ── Citation ───────────────────────────────────────────────── */}
-        <div className="mt-section-sm border-t border-gold/10 pt-12 max-w-2xl">
-          <blockquote className="font-serif text-xl italic text-light/60 leading-relaxed">
+        <div className="mt-section-sm border-t border-hairline pt-12 max-w-2xl">
+          <blockquote className="border-l-2 border-ink pl-8 font-display text-2xl italic text-ink/60 leading-relaxed font-normal">
             "Le droit n'est pas une protection contre le risque — c'est l'art de le structurer
             pour qu'il devienne un avantage compétitif."
           </blockquote>
-          <p className="mt-4 text-xs text-gold/50 tracking-wide uppercase">
+          <p className="mt-5 pl-8 font-mono text-[11px] uppercase tracking-[0.08em] text-text2">
             Maître Mokadmi Sami
           </p>
         </div>

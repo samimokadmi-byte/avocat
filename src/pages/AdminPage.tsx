@@ -153,7 +153,7 @@ function Overview({ clients }: { clients: ClientData[] }) {
     <div className="flex flex-col gap-8">
       <div>
         <p className="text-xs font-medium tracking-[0.2em] uppercase text-paper/40 mb-2">Administration</p>
-        <h2 className="font-serif text-2xl text-paper">Tableau de bord</h2>
+        <h2 className="font-display text-2xl text-paper">Tableau de bord</h2>
       </div>
 
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-px bg-accent/10">
@@ -165,13 +165,13 @@ function Overview({ clients }: { clients: ClientData[] }) {
         ].map(({ label, value }) => (
           <div key={label} className="bg-ink-soft p-6">
             <p className="text-xs text-paper/40 uppercase tracking-wide mb-2">{label}</p>
-            <p className="font-serif text-2xl font-bold text-paper">{value}</p>
+            <p className="font-display text-2xl font-bold text-paper">{value}</p>
           </div>
         ))}
       </div>
 
       <div>
-        <p className="text-xs font-medium text-paper/40 uppercase tracking-wide mb-4">Dossiers actifs</p>
+        <p className="font-mono text-[11px] uppercase tracking-[0.08em] text-paper/35 mb-4">Dossiers actifs</p>
         <div className="flex flex-col gap-px bg-accent/10">
           {clients.flatMap(c =>
             c.dossiers.filter(d => d.statut === 'en_cours').map(d => (
@@ -310,7 +310,7 @@ function ClientDetail({ data, onBack, onRefresh }: {
       {/* ── Dossiers ── */}
       <div>
         <div className="flex items-center justify-between mb-3">
-          <p className="text-xs font-medium text-paper/40 uppercase tracking-wide">Dossiers</p>
+          <p className="font-mono text-[11px] uppercase tracking-[0.08em] text-paper/35">Dossiers</p>
           <button
             onClick={() => setShowDossierForm(v => !v)}
             className="flex items-center gap-1.5 text-xs text-paper/40 hover:text-paper border border-accent/15 hover:border-accent/30 px-3 py-1.5 transition-colors"
@@ -328,7 +328,7 @@ function ClientDetail({ data, onBack, onRefresh }: {
               </button>
             </div>
             <div className="flex flex-col gap-1.5">
-              <label className="text-xs font-medium text-paper/40 uppercase tracking-wide">Titre *</label>
+              <label className="font-mono text-[11px] uppercase tracking-[0.08em] text-paper/35">Titre *</label>
               <input
                 type="text" value={dossierForm.titre}
                 onChange={e => setDossierForm(f => ({ ...f, titre: e.target.value }))}
@@ -337,7 +337,7 @@ function ClientDetail({ data, onBack, onRefresh }: {
               />
             </div>
             <div className="flex flex-col gap-1.5">
-              <label className="text-xs font-medium text-paper/40 uppercase tracking-wide">Description</label>
+              <label className="font-mono text-[11px] uppercase tracking-[0.08em] text-paper/35">Description</label>
               <input
                 type="text" value={dossierForm.description}
                 onChange={e => setDossierForm(f => ({ ...f, description: e.target.value }))}
@@ -346,7 +346,7 @@ function ClientDetail({ data, onBack, onRefresh }: {
               />
             </div>
             <div className="flex flex-col gap-2">
-              <label className="text-xs font-medium text-paper/40 uppercase tracking-wide">Étapes du dossier</label>
+              <label className="font-mono text-[11px] uppercase tracking-[0.08em] text-paper/35">Étapes du dossier</label>
               {dossierForm.etapes.map((e, i) => (
                 <input
                   key={i} type="text" value={e}
@@ -369,7 +369,7 @@ function ClientDetail({ data, onBack, onRefresh }: {
               <ArrowLeft size={12} strokeWidth={1.5} /> Retour à la liste
             </button>
             <div className="flex items-start justify-between gap-3 flex-wrap">
-              <h3 className="font-serif text-lg text-paper">{selectedDossier.titre}</h3>
+              <h3 className="font-display text-lg text-paper">{selectedDossier.titre}</h3>
               <StatusBadge statut={selectedDossier.statut} />
             </div>
             <div className="flex flex-col gap-4">
@@ -433,7 +433,7 @@ function ClientDetail({ data, onBack, onRefresh }: {
 
       {/* ── Documents ── */}
       <div>
-        <p className="text-xs font-medium text-paper/40 uppercase tracking-wide mb-3">Documents ({documents.length})</p>
+        <p className="font-mono text-[11px] uppercase tracking-[0.08em] text-paper/35 mb-3">Documents ({documents.length})</p>
         {documents.length === 0 ? (
           <div className="border border-accent/10 px-6 py-8 text-center text-sm text-paper/30">Aucun document déposé.</div>
         ) : (
@@ -465,7 +465,7 @@ function ClientDetail({ data, onBack, onRefresh }: {
 
       {/* ── Factures ── */}
       <div>
-        <p className="text-xs font-medium text-paper/40 uppercase tracking-wide mb-3">Factures ({clientInvoices.length})</p>
+        <p className="font-mono text-[11px] uppercase tracking-[0.08em] text-paper/35 mb-3">Factures ({clientInvoices.length})</p>
         {clientInvoices.length === 0 ? (
           <div className="border border-accent/10 px-6 py-8 text-center text-sm text-paper/30">Aucune facture pour ce client.</div>
         ) : (
@@ -529,7 +529,7 @@ function ClientDetail({ data, onBack, onRefresh }: {
       {/* ── Messagerie ── */}
       <div>
         <div className="flex items-center gap-2 mb-3">
-          <p className="text-xs font-medium text-paper/40 uppercase tracking-wide">Messagerie</p>
+          <p className="font-mono text-[11px] uppercase tracking-[0.08em] text-paper/35">Messagerie</p>
           {unreadCount > 0 && (
             <span className="flex items-center justify-center w-4 h-4 bg-accent text-paper text-[10px] font-bold rounded-sm">{unreadCount}</span>
           )}
@@ -597,7 +597,7 @@ function ClientsList({ clients, onSelect }: {
     <div className="flex flex-col gap-6">
       <div>
         <p className="text-xs font-medium tracking-[0.2em] uppercase text-paper/40 mb-2">Clients</p>
-        <h2 className="font-serif text-2xl text-paper">{clients.length} client{clients.length > 1 ? 's' : ''}</h2>
+        <h2 className="font-display text-2xl text-paper">{clients.length} client{clients.length > 1 ? 's' : ''}</h2>
       </div>
 
       <div className="relative">
@@ -667,7 +667,7 @@ function AllDocuments({ clients, onRefresh }: { clients: ClientData[]; onRefresh
     <div className="flex flex-col gap-6">
       <div>
         <p className="text-xs font-medium tracking-[0.2em] uppercase text-paper/40 mb-2">Documents</p>
-        <h2 className="font-serif text-2xl text-paper">{allDocs.length} document{allDocs.length > 1 ? 's' : ''}</h2>
+        <h2 className="font-display text-2xl text-paper">{allDocs.length} document{allDocs.length > 1 ? 's' : ''}</h2>
       </div>
 
       <div className="relative">
@@ -754,7 +754,7 @@ function AllInvoicesAdmin({ clients, onRefresh }: { clients: ClientData[]; onRef
     <div className="flex flex-col gap-6">
       <div>
         <p className="text-xs font-medium tracking-[0.2em] uppercase text-paper/40 mb-2">Facturation</p>
-        <h2 className="font-serif text-2xl text-paper">Notes d'honoraires</h2>
+        <h2 className="font-display text-2xl text-paper">Notes d'honoraires</h2>
       </div>
 
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-px bg-accent/10">
@@ -766,7 +766,7 @@ function AllInvoicesAdmin({ clients, onRefresh }: { clients: ClientData[]; onRef
         ].map(({ label, value }) => (
           <div key={label} className="bg-ink-soft p-6">
             <p className="text-xs text-paper/40 uppercase tracking-wide mb-2">{label}</p>
-            <p className="font-serif text-xl font-bold text-paper">{value}</p>
+            <p className="font-display text-xl font-bold text-paper">{value}</p>
           </div>
         ))}
       </div>
@@ -941,7 +941,7 @@ function AgendaAdmin({ clients, onRefresh }: { clients: ClientData[]; onRefresh:
     <div className="flex flex-col gap-6">
       <div>
         <p className="text-xs font-medium tracking-[0.2em] uppercase text-paper/40 mb-2">Agenda</p>
-        <h2 className="font-serif text-2xl text-paper">Planning & Tâches</h2>
+        <h2 className="font-display text-2xl text-paper">Planning & Tâches</h2>
       </div>
 
       <div className="flex gap-1 border-b border-accent/10 pb-0">
@@ -971,25 +971,25 @@ function AgendaAdmin({ clients, onRefresh }: { clients: ClientData[]; onRefresh:
               </div>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div className="flex flex-col gap-1.5 sm:col-span-2">
-                  <label className="text-xs font-medium text-paper/40 uppercase tracking-wide">Client</label>
+                  <label className="font-mono text-[11px] uppercase tracking-[0.08em] text-paper/35">Client</label>
                   <select value={rdvForm.clientId} onChange={e => setRdvForm(f => ({ ...f, clientId: e.target.value }))} className="border-b border-accent/15 bg-transparent py-2 text-sm text-paper focus:outline-none focus:border-accent transition-colors">
                     {clients.map(c => <option key={c.user.id} value={c.user.id}>{c.user.name}{c.user.company ? ` — ${c.user.company}` : ''}</option>)}
                   </select>
                 </div>
                 <div className="flex flex-col gap-1.5 sm:col-span-2">
-                  <label className="text-xs font-medium text-paper/40 uppercase tracking-wide">Titre</label>
+                  <label className="font-mono text-[11px] uppercase tracking-[0.08em] text-paper/35">Titre</label>
                   <input type="text" value={rdvForm.title} onChange={e => setRdvForm(f => ({ ...f, title: e.target.value }))} placeholder="Ex: Point d'avancement Série A" className="border-b border-accent/15 bg-transparent py-2 text-sm text-paper placeholder:text-paper/20 focus:outline-none focus:border-accent" />
                 </div>
                 <div className="flex flex-col gap-1.5">
-                  <label className="text-xs font-medium text-paper/40 uppercase tracking-wide">Date</label>
+                  <label className="font-mono text-[11px] uppercase tracking-[0.08em] text-paper/35">Date</label>
                   <input type="date" value={rdvForm.date} onChange={e => setRdvForm(f => ({ ...f, date: e.target.value }))} className="border-b border-accent/15 bg-transparent py-2 text-sm text-paper focus:outline-none focus:border-accent" />
                 </div>
                 <div className="flex flex-col gap-1.5">
-                  <label className="text-xs font-medium text-paper/40 uppercase tracking-wide">Heure</label>
+                  <label className="font-mono text-[11px] uppercase tracking-[0.08em] text-paper/35">Heure</label>
                   <input type="time" value={rdvForm.time} onChange={e => setRdvForm(f => ({ ...f, time: e.target.value }))} className="border-b border-accent/15 bg-transparent py-2 text-sm text-paper focus:outline-none focus:border-accent" />
                 </div>
                 <div className="flex flex-col gap-1.5">
-                  <label className="text-xs font-medium text-paper/40 uppercase tracking-wide">Type</label>
+                  <label className="font-mono text-[11px] uppercase tracking-[0.08em] text-paper/35">Type</label>
                   <select value={rdvForm.type} onChange={e => setRdvForm(f => ({ ...f, type: e.target.value as Appointment['type'] }))} className="border-b border-accent/15 bg-transparent py-2 text-sm text-paper focus:outline-none focus:border-accent">
                     <option value="visio">Visioconférence</option>
                     <option value="presentiel">Présentiel</option>
@@ -997,7 +997,7 @@ function AgendaAdmin({ clients, onRefresh }: { clients: ClientData[]; onRefresh:
                   </select>
                 </div>
                 <div className="flex flex-col gap-1.5">
-                  <label className="text-xs font-medium text-paper/40 uppercase tracking-wide">Notes</label>
+                  <label className="font-mono text-[11px] uppercase tracking-[0.08em] text-paper/35">Notes</label>
                   <input type="text" value={rdvForm.notes} onChange={e => setRdvForm(f => ({ ...f, notes: e.target.value }))} placeholder="Optionnel" className="border-b border-accent/15 bg-transparent py-2 text-sm text-paper placeholder:text-paper/20 focus:outline-none focus:border-accent" />
                 </div>
               </div>
@@ -1008,7 +1008,7 @@ function AgendaAdmin({ clients, onRefresh }: { clients: ClientData[]; onRefresh:
           <CalendarView appointments={allRdvs} selectedDate={selectedDate} onSelectDate={date => { setSelectedDate(date); setRdvForm(f => ({ ...f, date })) }} />
 
           <div>
-            <p className="text-xs font-medium text-paper/40 uppercase tracking-wide mb-3">Tous les rendez-vous</p>
+            <p className="font-mono text-[11px] uppercase tracking-[0.08em] text-paper/35 mb-3">Tous les rendez-vous</p>
             {allRdvs.length === 0 ? (
               <div className="border border-accent/10 px-6 py-8 text-center text-sm text-paper/30">Aucun rendez-vous planifié.</div>
             ) : (
@@ -1052,25 +1052,25 @@ function AgendaAdmin({ clients, onRefresh }: { clients: ClientData[]; onRefresh:
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 {!editTodoId && (
                   <div className="flex flex-col gap-1.5 sm:col-span-2">
-                    <label className="text-xs font-medium text-paper/40 uppercase tracking-wide">Client</label>
+                    <label className="font-mono text-[11px] uppercase tracking-[0.08em] text-paper/35">Client</label>
                     <select value={todoForm.clientId} onChange={e => setTodoForm(f => ({ ...f, clientId: e.target.value }))} className="border-b border-accent/15 bg-transparent py-2 text-sm text-paper focus:outline-none focus:border-accent">
                       {clients.map(c => <option key={c.user.id} value={c.user.id}>{c.user.name}{c.user.company ? ` — ${c.user.company}` : ''}</option>)}
                     </select>
                   </div>
                 )}
                 <div className="flex flex-col gap-1.5 sm:col-span-2">
-                  <label className="text-xs font-medium text-paper/40 uppercase tracking-wide">Tâche</label>
+                  <label className="font-mono text-[11px] uppercase tracking-[0.08em] text-paper/35">Tâche</label>
                   <input type="text" value={todoForm.title} onChange={e => setTodoForm(f => ({ ...f, title: e.target.value }))} placeholder="Ex: Envoyer les statuts mis à jour" className="border-b border-accent/15 bg-transparent py-2 text-sm text-paper placeholder:text-paper/20 focus:outline-none focus:border-accent" />
                 </div>
                 <div className="flex flex-col gap-1.5">
-                  <label className="text-xs font-medium text-paper/40 uppercase tracking-wide">Priorité</label>
+                  <label className="font-mono text-[11px] uppercase tracking-[0.08em] text-paper/35">Priorité</label>
                   <select value={todoForm.priority} onChange={e => setTodoForm(f => ({ ...f, priority: e.target.value as Todo['priority'] }))} className="border-b border-accent/15 bg-transparent py-2 text-sm text-paper focus:outline-none focus:border-accent">
                     <option value="normale">Normale</option>
                     <option value="urgente">Urgente</option>
                   </select>
                 </div>
                 <div className="flex flex-col gap-1.5">
-                  <label className="text-xs font-medium text-paper/40 uppercase tracking-wide">Échéance <span className="normal-case text-paper/30">(optionnel)</span></label>
+                  <label className="font-mono text-[11px] uppercase tracking-[0.08em] text-paper/35">Échéance <span className="normal-case text-paper/30">(optionnel)</span></label>
                   <input type="date" value={todoForm.dueDate} onChange={e => setTodoForm(f => ({ ...f, dueDate: e.target.value }))} className="border-b border-accent/15 bg-transparent py-2 text-sm text-paper focus:outline-none focus:border-accent" />
                 </div>
               </div>
@@ -1362,7 +1362,7 @@ function MessagerieAdmin({ clients, onRefresh }: { clients: ClientData[]; onRefr
         </button>
         <div>
           <p className="text-xs text-paper/40 uppercase tracking-wide mb-1">Messagerie</p>
-          <h2 className="font-serif text-xl text-paper">{selectedClient.user.name}</h2>
+          <h2 className="font-display text-xl text-paper">{selectedClient.user.name}</h2>
           {selectedClient.user.company && <p className="text-xs text-paper/40">{selectedClient.user.company}</p>}
         </div>
         <div className="border border-accent/10 flex flex-col" style={{ height: '500px' }}>
@@ -1411,7 +1411,7 @@ function MessagerieAdmin({ clients, onRefresh }: { clients: ClientData[]; onRefr
     <div className="flex flex-col gap-6">
       <div>
         <p className="text-xs font-medium tracking-[0.2em] uppercase text-paper/40 mb-2">Messagerie</p>
-        <h2 className="font-serif text-2xl text-paper">Conversations clients</h2>
+        <h2 className="font-display text-2xl text-paper">Conversations clients</h2>
       </div>
       {clients.length === 0 ? (
         <div className="border border-accent/10 px-6 py-12 text-center text-sm text-paper/30">Aucun client enregistré.</div>
@@ -1496,7 +1496,7 @@ export default function AdminPage() {
       {/* Header */}
       <header className="border-b border-accent/10 bg-ink-soft flex items-center justify-between px-6 h-14 sticky top-0 z-40">
         <Link to="/" className="flex flex-col">
-          <span className="font-serif text-base font-semibold text-white leading-tight">Maître Mokadmi Sami</span>
+          <span className="font-display text-base font-semibold text-white leading-tight">Maître Mokadmi Sami</span>
           <span className="text-[10px] text-white/40 tracking-wide uppercase">Administration</span>
         </Link>
         <div className="flex items-center gap-4">

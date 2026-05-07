@@ -101,21 +101,21 @@ function Apercu({ dossiers, documents, userName }: { dossiers: Dossier[]; docume
     <div className="flex flex-col gap-8">
       <div>
         <p className="text-xs font-medium tracking-[0.2em] uppercase text-paper/40 mb-2">Tableau de bord</p>
-        <h2 className="font-serif text-2xl text-paper">Bonjour, {userName.split(' ')[0]}.</h2>
+        <h2 className="font-display text-2xl text-paper">Bonjour, {userName.split(' ')[0]}.</h2>
       </div>
 
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-px bg-accent/10">
         <div className="bg-ink-soft p-6">
           <p className="text-xs text-paper/40 uppercase tracking-wide mb-2">Dossiers actifs</p>
-          <p className="font-serif text-3xl font-bold text-paper">{actifs}</p>
+          <p className="font-display text-3xl font-bold text-paper">{actifs}</p>
         </div>
         <div className="bg-ink-soft p-6">
           <p className="text-xs text-paper/40 uppercase tracking-wide mb-2">Documents</p>
-          <p className="font-serif text-3xl font-bold text-paper">{documents.length}</p>
+          <p className="font-display text-3xl font-bold text-paper">{documents.length}</p>
         </div>
         <div className="bg-ink-soft p-6">
           <p className="text-xs text-paper/40 uppercase tracking-wide mb-2">Prochaine échéance</p>
-          <p className="font-serif text-base font-semibold text-paper leading-tight">
+          <p className="font-display text-base font-semibold text-paper leading-tight">
             {prochaine ? new Date(prochaine.prochainEcheance!).toLocaleDateString('fr-FR', { day: 'numeric', month: 'long' }) : '—'}
           </p>
           {prochaine && <p className="text-xs text-paper/40 mt-0.5">{prochaine.titre}</p>}
@@ -123,7 +123,7 @@ function Apercu({ dossiers, documents, userName }: { dossiers: Dossier[]; docume
       </div>
 
       <div>
-        <p className="text-xs font-medium text-paper/40 uppercase tracking-wide mb-4">Dossiers récents</p>
+        <p className="font-mono text-[11px] uppercase tracking-[0.08em] text-paper/35 mb-4">Dossiers récents</p>
         <div className="flex flex-col gap-px bg-accent/10">
           {dossiers.slice(0, 3).map(d => (
             <div key={d.id} className="bg-ink-soft px-6 py-4 flex items-center justify-between gap-4">
@@ -171,7 +171,7 @@ function Dossiers({ dossiers, rdvs, todos, invoices }: { dossiers: Dossier[]; rd
             <p className="text-xs font-medium tracking-[0.2em] uppercase text-paper/40 mb-1">
               Dossier · {new Date(selected.dateOuverture).toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric' })}
             </p>
-            <h2 className="font-serif text-2xl text-paper">{selected.titre}</h2>
+            <h2 className="font-display text-2xl text-paper">{selected.titre}</h2>
           </div>
           <StatusBadge statut={selected.statut} />
         </div>
@@ -179,7 +179,7 @@ function Dossiers({ dossiers, rdvs, todos, invoices }: { dossiers: Dossier[]; rd
         <p className="text-sm text-paper/60 leading-relaxed max-w-prose">{selected.description}</p>
 
         <div>
-          <p className="text-xs font-medium text-paper/40 uppercase tracking-wide mb-6">Avancement</p>
+          <p className="font-mono text-[11px] uppercase tracking-[0.08em] text-paper/35 mb-6">Avancement</p>
           <div className="flex flex-col gap-0">
             {selected.etapes.map((etape, i) => (
               <div key={i} className="flex gap-5 pb-8 last:pb-0 relative">
@@ -215,7 +215,7 @@ function Dossiers({ dossiers, rdvs, todos, invoices }: { dossiers: Dossier[]; rd
 
         {linkedRdvs.length > 0 && (
           <div>
-            <p className="text-xs font-medium text-paper/40 uppercase tracking-wide mb-3">Rendez-vous liés</p>
+            <p className="font-mono text-[11px] uppercase tracking-[0.08em] text-paper/35 mb-3">Rendez-vous liés</p>
             <div className="flex flex-col gap-px bg-accent/10">
               {linkedRdvs.map(r => (
                 <div key={r.id} className="bg-ink-soft px-5 py-3 flex items-center gap-3">
@@ -234,7 +234,7 @@ function Dossiers({ dossiers, rdvs, todos, invoices }: { dossiers: Dossier[]; rd
 
         {linkedTodos.length > 0 && (
           <div>
-            <p className="text-xs font-medium text-paper/40 uppercase tracking-wide mb-3">Tâches liées</p>
+            <p className="font-mono text-[11px] uppercase tracking-[0.08em] text-paper/35 mb-3">Tâches liées</p>
             <div className="flex flex-col gap-px bg-accent/10">
               {linkedTodos.map(t => (
                 <div key={t.id} className={`bg-ink-soft px-5 py-3 flex items-center gap-3 ${t.done ? 'opacity-50' : ''}`}>
@@ -253,7 +253,7 @@ function Dossiers({ dossiers, rdvs, todos, invoices }: { dossiers: Dossier[]; rd
 
         {linkedInvoices.length > 0 && (
           <div>
-            <p className="text-xs font-medium text-paper/40 uppercase tracking-wide mb-3">Factures liées</p>
+            <p className="font-mono text-[11px] uppercase tracking-[0.08em] text-paper/35 mb-3">Factures liées</p>
             <div className="flex flex-col gap-px bg-accent/10">
               {linkedInvoices.map(inv => {
                 const { net } = computeAmounts(inv)
@@ -284,7 +284,7 @@ function Dossiers({ dossiers, rdvs, todos, invoices }: { dossiers: Dossier[]; rd
     <div className="flex flex-col gap-6">
       <div>
         <p className="text-xs font-medium tracking-[0.2em] uppercase text-paper/40 mb-2">Mes Dossiers</p>
-        <h2 className="font-serif text-2xl text-paper">Suivi de vos missions</h2>
+        <h2 className="font-display text-2xl text-paper">Suivi de vos missions</h2>
       </div>
 
       <div className="flex flex-col gap-px bg-accent/10">
@@ -382,7 +382,7 @@ function Documents({ documents, setDocuments }: { documents: Document[]; setDocu
     <div className="flex flex-col gap-6">
       <div>
         <p className="text-xs font-medium tracking-[0.2em] uppercase text-paper/40 mb-2">Documents</p>
-        <h2 className="font-serif text-2xl text-paper">Gestion documentaire</h2>
+        <h2 className="font-display text-2xl text-paper">Gestion documentaire</h2>
       </div>
 
       <div
@@ -530,7 +530,7 @@ function Rendezvous({ rdvs, setRdvs, todos, setTodos, userId, dossiers }: {
     <div className="flex flex-col gap-6">
       <div>
         <p className="text-xs font-medium tracking-[0.2em] uppercase text-paper/40 mb-2">Agenda</p>
-        <h2 className="font-serif text-2xl text-paper">Planning & Tâches</h2>
+        <h2 className="font-display text-2xl text-paper">Planning & Tâches</h2>
       </div>
 
       {/* Section tabs */}
@@ -561,19 +561,19 @@ function Rendezvous({ rdvs, setRdvs, todos, setTodos, userId, dossiers }: {
               </div>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div className="flex flex-col gap-1.5 sm:col-span-2">
-                  <label className="text-xs font-medium text-paper/40 uppercase tracking-wide">Titre</label>
+                  <label className="font-mono text-[11px] uppercase tracking-[0.08em] text-paper/35">Titre</label>
                   <input type="text" value={rdvForm.title} onChange={e => setRdvForm(f => ({ ...f, title: e.target.value }))} placeholder="Ex: Point sur la levée de fonds" className="border-b border-accent/15 bg-transparent py-2 text-sm text-paper placeholder:text-paper/20 focus:outline-none focus:border-accent transition-colors" />
                 </div>
                 <div className="flex flex-col gap-1.5">
-                  <label className="text-xs font-medium text-paper/40 uppercase tracking-wide">Date</label>
+                  <label className="font-mono text-[11px] uppercase tracking-[0.08em] text-paper/35">Date</label>
                   <input type="date" value={rdvForm.date} onChange={e => setRdvForm(f => ({ ...f, date: e.target.value }))} className="border-b border-accent/15 bg-transparent py-2 text-sm text-paper focus:outline-none focus:border-accent transition-colors" />
                 </div>
                 <div className="flex flex-col gap-1.5">
-                  <label className="text-xs font-medium text-paper/40 uppercase tracking-wide">Heure</label>
+                  <label className="font-mono text-[11px] uppercase tracking-[0.08em] text-paper/35">Heure</label>
                   <input type="time" value={rdvForm.time} onChange={e => setRdvForm(f => ({ ...f, time: e.target.value }))} className="border-b border-accent/15 bg-transparent py-2 text-sm text-paper focus:outline-none focus:border-accent transition-colors" />
                 </div>
                 <div className="flex flex-col gap-1.5">
-                  <label className="text-xs font-medium text-paper/40 uppercase tracking-wide">Type</label>
+                  <label className="font-mono text-[11px] uppercase tracking-[0.08em] text-paper/35">Type</label>
                   <select value={rdvForm.type} onChange={e => setRdvForm(f => ({ ...f, type: e.target.value as Appointment['type'] }))} className="border-b border-accent/15 bg-transparent py-2 text-sm text-paper focus:outline-none focus:border-accent transition-colors">
                     <option value="visio">Visioconférence</option>
                     <option value="presentiel">Présentiel</option>
@@ -581,14 +581,14 @@ function Rendezvous({ rdvs, setRdvs, todos, setTodos, userId, dossiers }: {
                   </select>
                 </div>
                 <div className="flex flex-col gap-1.5">
-                  <label className="text-xs font-medium text-paper/40 uppercase tracking-wide">Dossier <span className="normal-case text-paper/30">(optionnel)</span></label>
+                  <label className="font-mono text-[11px] uppercase tracking-[0.08em] text-paper/35">Dossier <span className="normal-case text-paper/30">(optionnel)</span></label>
                   <select value={rdvForm.dossierId ?? ''} onChange={e => setRdvForm(f => ({ ...f, dossierId: e.target.value || undefined }))} className="border-b border-accent/15 bg-transparent py-2 text-sm text-paper focus:outline-none focus:border-accent transition-colors">
                     <option value="">— Aucun dossier —</option>
                     {dossiers.map(d => <option key={d.id} value={d.id}>{d.titre}</option>)}
                   </select>
                 </div>
                 <div className="flex flex-col gap-1.5">
-                  <label className="text-xs font-medium text-paper/40 uppercase tracking-wide">Notes <span className="normal-case text-paper/30">(optionnel)</span></label>
+                  <label className="font-mono text-[11px] uppercase tracking-[0.08em] text-paper/35">Notes <span className="normal-case text-paper/30">(optionnel)</span></label>
                   <input type="text" value={rdvForm.notes} onChange={e => setRdvForm(f => ({ ...f, notes: e.target.value }))} placeholder="Détails, lieu, lien visio…" className="border-b border-accent/15 bg-transparent py-2 text-sm text-paper placeholder:text-paper/20 focus:outline-none focus:border-accent transition-colors" />
                 </div>
               </div>
@@ -605,7 +605,7 @@ function Rendezvous({ rdvs, setRdvs, todos, setTodos, userId, dossiers }: {
 
           {upcoming.length > 0 && (
             <div>
-              <p className="text-xs font-medium text-paper/40 uppercase tracking-wide mb-3">Prochains rendez-vous</p>
+              <p className="font-mono text-[11px] uppercase tracking-[0.08em] text-paper/35 mb-3">Prochains rendez-vous</p>
               <div className="flex flex-col gap-px bg-accent/10">
                 {upcoming.map(r => (
                   <div key={r.id} className="bg-ink-soft px-5 py-4 flex items-center gap-4 group">
@@ -660,22 +660,22 @@ function Rendezvous({ rdvs, setRdvs, todos, setTodos, userId, dossiers }: {
               </div>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div className="flex flex-col gap-1.5 sm:col-span-2">
-                  <label className="text-xs font-medium text-paper/40 uppercase tracking-wide">Tâche</label>
+                  <label className="font-mono text-[11px] uppercase tracking-[0.08em] text-paper/35">Tâche</label>
                   <input type="text" value={todoForm.title} onChange={e => setTodoForm(f => ({ ...f, title: e.target.value }))} placeholder="Ex: Préparer les statuts" className="border-b border-accent/15 bg-transparent py-2 text-sm text-paper placeholder:text-paper/20 focus:outline-none focus:border-accent transition-colors" />
                 </div>
                 <div className="flex flex-col gap-1.5">
-                  <label className="text-xs font-medium text-paper/40 uppercase tracking-wide">Priorité</label>
+                  <label className="font-mono text-[11px] uppercase tracking-[0.08em] text-paper/35">Priorité</label>
                   <select value={todoForm.priority} onChange={e => setTodoForm(f => ({ ...f, priority: e.target.value as Todo['priority'] }))} className="border-b border-accent/15 bg-transparent py-2 text-sm text-paper focus:outline-none focus:border-accent transition-colors">
                     <option value="normale">Normale</option>
                     <option value="urgente">Urgente</option>
                   </select>
                 </div>
                 <div className="flex flex-col gap-1.5">
-                  <label className="text-xs font-medium text-paper/40 uppercase tracking-wide">Échéance <span className="normal-case text-paper/30">(optionnel)</span></label>
+                  <label className="font-mono text-[11px] uppercase tracking-[0.08em] text-paper/35">Échéance <span className="normal-case text-paper/30">(optionnel)</span></label>
                   <input type="date" value={todoForm.dueDate} onChange={e => setTodoForm(f => ({ ...f, dueDate: e.target.value }))} className="border-b border-accent/15 bg-transparent py-2 text-sm text-paper focus:outline-none focus:border-accent transition-colors" />
                 </div>
                 <div className="flex flex-col gap-1.5 sm:col-span-2">
-                  <label className="text-xs font-medium text-paper/40 uppercase tracking-wide">Dossier <span className="normal-case text-paper/30">(optionnel)</span></label>
+                  <label className="font-mono text-[11px] uppercase tracking-[0.08em] text-paper/35">Dossier <span className="normal-case text-paper/30">(optionnel)</span></label>
                   <select value={todoForm.dossierId ?? ''} onChange={e => setTodoForm(f => ({ ...f, dossierId: e.target.value || undefined }))} className="border-b border-accent/15 bg-transparent py-2 text-sm text-paper focus:outline-none focus:border-accent transition-colors">
                     <option value="">— Aucun dossier —</option>
                     {dossiers.map(d => <option key={d.id} value={d.id}>{d.titre}</option>)}
@@ -731,7 +731,7 @@ function Messagerie({ userId }: { userId: string }) {
     <div className="flex flex-col gap-6">
       <div>
         <p className="text-xs font-medium tracking-[0.2em] uppercase text-paper/40 mb-2">Messagerie</p>
-        <h2 className="font-serif text-2xl text-paper">Échanges sécurisés</h2>
+        <h2 className="font-display text-2xl text-paper">Échanges sécurisés</h2>
       </div>
 
       <div className="border border-accent/10 flex flex-col" style={{ height: '500px' }}>
@@ -825,7 +825,7 @@ export default function DashboardPage() {
       {/* Top bar */}
       <header className="border-b border-accent/10 bg-ink-soft flex items-center justify-between px-6 h-14 sticky top-0 z-40">
         <Link to="/" className="flex flex-col">
-          <span className="font-serif text-base font-semibold text-paper leading-tight">Maître Mokadmi Sami</span>
+          <span className="font-display text-base font-semibold text-paper leading-tight">Maître Mokadmi Sami</span>
           <span className="text-[10px] text-paper/40 tracking-wide">Espace Client</span>
         </Link>
         <div className="flex items-center gap-4">

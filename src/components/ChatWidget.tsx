@@ -148,7 +148,7 @@ export default function ChatWidget() {
     <>
       {/* ── Chat Panel ─────────────────────────────────────────── */}
       {open && (
-        <div className="fixed bottom-20 right-4 sm:right-6 z-50 w-[calc(100vw-2rem)] sm:w-80 max-h-[70vh] flex flex-col shadow-2xl shadow-black/60 border border-white/5">
+        <div className="fixed bottom-20 right-4 sm:right-6 z-50 w-[calc(100vw-2rem)] sm:w-[440px] max-h-[82vh] flex flex-col shadow-2xl shadow-black/60 border border-white/5">
 
           {/* Header */}
           <div className="flex items-center gap-3 px-4 py-3 bg-[#075E54] flex-none">
@@ -174,7 +174,7 @@ export default function ChatWidget() {
               <div key={i} className={`flex ${m.from === 'user' ? 'justify-end' : 'justify-start'}`}>
                 <div className={`max-w-[88%] px-3 py-2 text-xs leading-relaxed whitespace-pre-line ${
                   m.from === 'bot'
-                    ? 'bg-[#111B2E] text-light/80'
+                    ? 'bg-[#111B2E] text-paper/80'
                     : 'bg-[#075E54] text-white'
                 }`}>
                   {m.text}
@@ -188,7 +188,7 @@ export default function ChatWidget() {
                   {[0, 1, 2].map(i => (
                     <span
                       key={i}
-                      className="w-1.5 h-1.5 rounded-full bg-gold/40 animate-bounce"
+                      className="w-1.5 h-1.5 rounded-full bg-accent/40 animate-bounce"
                       style={{ animationDelay: `${i * 0.15}s` }}
                     />
                   ))}
@@ -203,7 +203,7 @@ export default function ChatWidget() {
                   <button
                     key={r}
                     onClick={() => handleReply(r)}
-                    className="text-[11px] border border-gold/25 text-gold/70 hover:bg-gold/10 hover:text-gold px-2.5 py-1 transition-colors"
+                    className="text-[11px] border border-accent/25 text-accent/70 hover:bg-accent/10 hover:text-accent px-2.5 py-1 transition-colors"
                   >
                     {r}
                   </button>
@@ -216,7 +216,7 @@ export default function ChatWidget() {
               <div className="flex flex-col gap-2 pt-1">
                 <button
                   onClick={() => { setOpen(false); scrollTo('booking') }}
-                  className="text-[11px] font-medium bg-gold text-dark-bg px-3 py-2 hover:bg-gold/90 transition-colors text-center"
+                  className="text-[11px] font-medium bg-accent text-paper px-3 py-2 hover:bg-gold/90 transition-colors text-center"
                 >
                   Prendre rendez-vous →
                 </button>
@@ -243,13 +243,13 @@ export default function ChatWidget() {
               onChange={e => setInput(e.target.value)}
               onKeyDown={e => e.key === 'Enter' && handleSend()}
               placeholder="Écrivez votre message…"
-              className="flex-1 bg-transparent text-xs text-light/80 placeholder:text-light/25 focus:outline-none"
+              className="flex-1 bg-transparent text-xs text-paper/80 placeholder:text-paper/25 focus:outline-none"
             />
             <button
               onClick={handleSend}
               disabled={!input.trim() || typing}
               aria-label="Envoyer"
-              className="text-gold/40 hover:text-gold transition-colors disabled:opacity-25"
+              className="text-accent/40 hover:text-accent transition-colors disabled:opacity-25"
             >
               <Send size={14} strokeWidth={1.5} />
             </button>

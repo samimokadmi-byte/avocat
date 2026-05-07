@@ -147,8 +147,40 @@ function Apercu({ dossiers, documents, userName }: { dossiers: Dossier[]; docume
 
 // ─── Dossiers ─────────────────────────────────────────────────────────────────
 
-function Dossiers({ dossiers, rdvs, todos, invoices }: { dossiers: Dossier[]; rdvs: Appointment[]; todos: Todo[]; invoices: Invoice[] }) {
+const DEFAULT_ETAPES_CLIENT = ['Audit initial', 'Structuration', 'Rédaction', 'Validation', 'Clôture']
+
+function Dossiers({ dossiers, setDossiers, rdvs, todos, invoices }: {
+  dossiers: Dossier[]
+  setDossiers: (val: Dossier[] | ((prev: Dossier[]) => Dossier[])) => void
+  rdvs: Appointment[]
+  todos: Todo[]
+  invoices: Invoice[]
+}) {
   const [selected, setSelected] = useState<Dossier | null>(null)
+  const [showForm, setShowForm] = useState(false)
+  const [form, setForm] = useState({
+    titre: '',
+    description: '',
+    etapes: [...DEFAULT_ETAPES_CLIENT],
+  })
+
+  const handleCreate = () => {
+    if (!form.titre.trim()) return
+    const newDossier: Dossier = {
+      id: crypto.randomUUID(),
+      titre: form.titre.trim(),
+      statut: 'attente',
+      dateOuverture: new Date().toISOString().split('T')[0],
+      prochainEcheance: null,
+      description: form.description.trim(),
+      etapes: form.etapes.filter(e => e.trim()).map(label => ({
+        label: label.trim(), statut: 'pending' as const, date: null,
+      })),
+    }
+    setDossiers(prev => [...prev, newDossier])
+    setShowForm(false)
+    setForm({ titre: '', description: '', etapes: [...DEFAULT_ETAPES_CLIENT] })
+  }
 
   if (selected) {
     const linkedRdvs = rdvs
@@ -282,12 +314,99 @@ function Dossiers({ dossiers, rdvs, todos, invoices }: { dossiers: Dossier[]; rd
 
   return (
     <div className="flex flex-col gap-6">
-      <div>
-        <p className="text-xs font-medium tracking-[0.2em] uppercase text-paper/40 mb-2">Mes Dossiers</p>
-        <h2 className="font-display text-2xl text-paper">Suivi de vos missions</h2>
+      <div className="flex items-start justify-between gap-4 flex-wrap">
+        <div>
+          <p className="text-xs font-medium tracking-[0.2em] uppercase text-paper/40 mb-2">Mes Dossiers</p>
+          <h2 className="font-display text-2xl text-paper">Suivi de vos missions</h2>
+        </div>
+        <button
+          onClick={() => setShowForm(v => !v)}
+          className="inline-flex items-center gap-2 bg-accent text-paper text-xs font-medium px-4 py-2.5 hover:bg-accent/90 transition-colors"
+        >
+          <Plus size={13} strokeWidth={2} />
+          Nouveau dossier
+        </button>
       </div>
 
+      {showForm && (
+        <div className="border border-accent/20 bg-ink-soft p-6 flex flex-col gap-4">
+          <div className="flex items-center justify-between mb-1">
+            <p className="text-sm font-medium text-paper">Créer un dossier</p>
+            <button onClick={() => setShowForm(false)} className="text-paper/30 hover:text-paper transition-colors">
+              <X size={14} strokeWidth={1.5} />
+            </button>
+          </div>
+
+          <div className="flex flex-col gap-1.5">
+            <label className="font-mono text-[11px] uppercase tracking-[0.08em] text-paper/35">Titre du dossier *</label>
+            <input
+              type="text" placeholder="Ex : Levée de fonds Série A"
+              value={form.titre} onChange={e => setForm(f => ({ ...f, titre: e.target.value }))}
+              className="border border-paper/15 bg-ink text-paper text-sm px-3 py-2.5 placeholder:text-paper/20 focus:outline-none focus:border-accent transition-colors"
+            />
+          </div>
+
+          <div className="flex flex-col gap-1.5">
+            <label className="font-mono text-[11px] uppercase tracking-[0.08em] text-paper/35">Description</label>
+            <textarea
+              rows={2} placeholder="Contexte ou objectif de la mission…"
+              value={form.description} onChange={e => setForm(f => ({ ...f, description: e.target.value }))}
+              className="border border-paper/15 bg-ink text-paper text-sm px-3 py-2.5 placeholder:text-paper/20 focus:outline-none focus:border-accent transition-colors resize-none"
+            />
+          </div>
+
+          <div className="flex flex-col gap-2">
+            <div className="flex items-center justify-between">
+              <label className="font-mono text-[11px] uppercase tracking-[0.08em] text-paper/35">Étapes</label>
+              <button
+                type="button"
+                onClick={() => setForm(f => ({ ...f, etapes: [...f.etapes, ''] }))}
+                className="inline-flex items-center gap-1 text-accent text-[11px] font-mono hover:text-accent/70 transition-colors"
+              >
+                <Plus size={11} strokeWidth={2} /> Ajouter
+              </button>
+            </div>
+            {form.etapes.map((etape, idx) => (
+              <div key={idx} className="flex items-center gap-2">
+                <span className="font-mono text-[10px] text-paper/25 w-4 flex-none">{idx + 1}.</span>
+                <input
+                  type="text" value={etape}
+                  onChange={ev => setForm(f => {
+                    const etapes = [...f.etapes]
+                    etapes[idx] = ev.target.value
+                    return { ...f, etapes }
+                  })}
+                  className="flex-1 border border-paper/10 bg-ink text-paper text-xs px-2.5 py-1.5 placeholder:text-paper/20 focus:outline-none focus:border-accent/50 transition-colors"
+                />
+                {form.etapes.length > 1 && (
+                  <button
+                    type="button"
+                    onClick={() => setForm(f => ({ ...f, etapes: f.etapes.filter((_, i) => i !== idx) }))}
+                    className="text-paper/20 hover:text-red-400 transition-colors flex-none"
+                  >
+                    <X size={12} strokeWidth={1.5} />
+                  </button>
+                )}
+              </div>
+            ))}
+          </div>
+
+          <button
+            onClick={handleCreate}
+            disabled={!form.titre.trim()}
+            className="self-start bg-accent text-paper text-xs font-medium px-5 py-2.5 hover:bg-accent/90 transition-colors disabled:opacity-40"
+          >
+            Créer le dossier
+          </button>
+        </div>
+      )}
+
       <div className="flex flex-col gap-px bg-accent/10">
+        {dossiers.length === 0 && !showForm && (
+          <div className="px-8 py-12 text-center text-sm text-paper/30 border border-paper/10">
+            Aucun dossier. Cliquez sur "Nouveau dossier" pour commencer.
+          </div>
+        )}
         {dossiers.map(dossier => {
           const rdvCount = rdvs.filter(r => r.dossierId === dossier.id).length
           const todoCount = todos.filter(t => t.dossierId === dossier.id && !t.done).length
@@ -803,7 +922,7 @@ export default function DashboardPage() {
   const [tab, setTab] = useState('apercu')
   const [mobileOpen, setMobileOpen] = useState(false)
 
-  const [dossiers] = useLocalState<Dossier[]>(`avocat_dossiers_${user?.id}`, [])
+  const [dossiers, setDossiers] = useLocalState<Dossier[]>(`avocat_dossiers_${user?.id}`, [])
   const [documents, setDocuments] = useLocalState<Document[]>(`avocat_documents_${user?.id}`, [])
   const [rdvs, setRdvs] = useLocalState<Appointment[]>(`avocat_rdv_${user?.id}`, [])
   const [todos, setTodos] = useLocalState<Todo[]>(`avocat_todos_${user?.id}`, [])
@@ -924,7 +1043,7 @@ export default function DashboardPage() {
         {/* Main content */}
         <main className="flex-1 px-6 md:px-12 py-10 max-w-3xl">
           {tab === 'apercu' && <Apercu dossiers={dossiers} documents={documents} userName={user?.name ?? ''} />}
-          {tab === 'dossiers' && <Dossiers dossiers={dossiers} rdvs={rdvs} todos={todos} invoices={invoices} />}
+          {tab === 'dossiers' && <Dossiers dossiers={dossiers} setDossiers={setDossiers} rdvs={rdvs} todos={todos} invoices={invoices} />}
           {tab === 'documents' && <Documents documents={documents} setDocuments={setDocuments} />}
           {tab === 'rendezvous' && <Rendezvous rdvs={rdvs} setRdvs={setRdvs} todos={todos} setTodos={setTodos} userId={user?.id ?? ''} dossiers={dossiers} />}
           {tab === 'facturation' && (

@@ -1105,6 +1105,8 @@ function DossiersAdmin({ clients, onRefresh }: { clients: ClientData[]; onRefres
     clientId: '',
     titre: '',
     description: '',
+    statut: 'attente' as Dossier['statut'],
+    prochainEcheance: '',
     etapes: [...DEFAULT_ETAPES_ADMIN],
   })
 
@@ -1126,9 +1128,9 @@ function DossiersAdmin({ clients, onRefresh }: { clients: ClientData[]; onRefres
     const newDossier: Dossier = {
       id: crypto.randomUUID(),
       titre: form.titre.trim(),
-      statut: 'attente',
+      statut: form.statut,
       dateOuverture: new Date().toISOString().split('T')[0],
-      prochainEcheance: null,
+      prochainEcheance: form.prochainEcheance || null,
       description: form.description.trim(),
       etapes: form.etapes.filter(e => e.trim()).map(label => ({
         label: label.trim(), statut: 'pending' as const, date: null,
@@ -1137,7 +1139,7 @@ function DossiersAdmin({ clients, onRefresh }: { clients: ClientData[]; onRefres
     const existing: Dossier[] = JSON.parse(localStorage.getItem(`avocat_dossiers_${form.clientId}`) || '[]')
     localStorage.setItem(`avocat_dossiers_${form.clientId}`, JSON.stringify([...existing, newDossier]))
     setShowForm(false)
-    setForm({ clientId: '', titre: '', description: '', etapes: [...DEFAULT_ETAPES_ADMIN] })
+    setForm({ clientId: '', titre: '', description: '', statut: 'attente', prochainEcheance: '', etapes: [...DEFAULT_ETAPES_ADMIN] })
     onRefresh()
   }
 
@@ -1208,12 +1210,46 @@ function DossiersAdmin({ clients, onRefresh }: { clients: ClientData[]; onRefres
             />
           </div>
 
+          {/* Statut + Échéance */}
+          <div className="grid grid-cols-2 gap-4">
+            <div className="flex flex-col gap-1.5">
+              <label className="font-mono text-[11px] uppercase tracking-[0.08em] text-paper/35">Statut initial</label>
+              <select
+                value={form.statut}
+                onChange={e => setForm(f => ({ ...f, statut: e.target.value as Dossier['statut'] }))}
+                className="border border-paper/15 bg-ink text-paper text-sm px-3 py-2.5 focus:outline-none focus:border-accent transition-colors"
+              >
+                <option value="attente">En attente</option>
+                <option value="en_cours">En cours</option>
+                <option value="complete">Clôturé</option>
+              </select>
+            </div>
+            <div className="flex flex-col gap-1.5">
+              <label className="font-mono text-[11px] uppercase tracking-[0.08em] text-paper/35">Prochaine échéance</label>
+              <input
+                type="date"
+                value={form.prochainEcheance}
+                onChange={e => setForm(f => ({ ...f, prochainEcheance: e.target.value }))}
+                className="border border-paper/15 bg-ink text-paper text-sm px-3 py-2.5 focus:outline-none focus:border-accent transition-colors"
+              />
+            </div>
+          </div>
+
           {/* Étapes */}
           <div className="flex flex-col gap-2">
-            <label className="font-mono text-[11px] uppercase tracking-[0.08em] text-paper/35">Étapes</label>
+            <div className="flex items-center justify-between">
+              <label className="font-mono text-[11px] uppercase tracking-[0.08em] text-paper/35">Étapes</label>
+              <button
+                type="button"
+                onClick={() => setForm(f => ({ ...f, etapes: [...f.etapes, ''] }))}
+                className="inline-flex items-center gap-1 text-accent text-[11px] font-mono hover:text-accent/70 transition-colors"
+              >
+                <Plus size={11} strokeWidth={2} /> Ajouter
+              </button>
+            </div>
             {form.etapes.map((etape, idx) => (
               <div key={idx} className="flex items-center gap-2">
-                <span className="font-mono text-[10px] text-paper/25 w-4">{idx + 1}.</span>
+                <span className="font-mono text-[10px] text-paper/25 w-4 flex-none">{idx + 1}.</span>
                 <input
                   type="text" value={etape}
                   onChange={ev => setForm(f => {
@@ -1223,6 +1259,15 @@ function DossiersAdmin({ clients, onRefresh }: { clients: ClientData[]; onRefres
                   })}
                   className="flex-1 border border-paper/10 bg-ink text-paper text-xs px-2.5 py-1.5 placeholder:text-paper/20 focus:outline-none focus:border-accent/50 transition-colors"
                 />
+                {form.etapes.length > 1 && (
+                  <button
+                    type="button"
+                    onClick={() => setForm(f => ({ ...f, etapes: f.etapes.filter((_, i) => i !== idx) }))}
+                    className="text-paper/20 hover:text-red-400 transition-colors flex-none"
+                  >
+                    <X size={12} strokeWidth={1.5} />
+                  </button>
+                )}
               </div>
             ))}
           </div>

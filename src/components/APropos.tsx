@@ -52,13 +52,13 @@ export default function APropos() {
               Un avocat qui pense{' '}
               <span className="italic text-accent">comme un architecte.</span>
             </h2>
-            <p className="text-body text-paper/55 leading-relaxed mb-4">
+            <p className="text-body text-paper/78 leading-relaxed mb-4">
               Maître Mokadmi Sami exerce depuis 24 ans au Barreau de Tunis. Sa singularité : ne jamais
               traiter le droit comme une contrainte, mais comme un levier de construction.
             </p>
-            <p className="text-body text-paper/45 leading-relaxed">
+            <p className="text-body text-paper/68 leading-relaxed">
               Formé au droit des affaires internationales, il a développé une méthode propre —
-              <span className="text-paper/70"> l'ingénierie juridique systémique </span> — qui combine
+              <span className="text-paper/90"> l'ingénierie juridique systémique </span> — qui combine
               structuration capitalistique, optimisation fiscale et anticipation réglementaire IA
               en un seul système cohérent, pensé pour durer.
             </p>
@@ -71,7 +71,7 @@ export default function APropos() {
                 <p className="font-mono text-[11px] uppercase tracking-[0.08em] text-accent mb-1.5">
                   {v.titre}
                 </p>
-                <p className="text-small text-paper/45 leading-relaxed">{v.texte}</p>
+                <p className="text-small text-paper/68 leading-relaxed">{v.texte}</p>
               </div>
             ))}
           </div>
@@ -96,7 +96,7 @@ export default function APropos() {
                 </div>
                 <div>
                   <p className="font-display text-base font-normal text-paper mb-2">{titre}</p>
-                  <p className="text-small text-paper/45 leading-relaxed">{detail}</p>
+                  <p className="text-small text-paper/68 leading-relaxed">{detail}</p>
                 </div>
               </div>
             ))}
@@ -105,11 +105,11 @@ export default function APropos() {
 
         {/* ── Citation ───────────────────────────────────────────────── */}
         <div className="mt-section-sm border-t border-paper/10 pt-12 max-w-2xl">
-          <blockquote className="border-l-2 border-paper/25 pl-8 font-display text-2xl italic text-paper/50 leading-relaxed font-normal">
+          <blockquote className="border-l-2 border-paper/25 pl-8 font-display text-2xl italic text-paper/72 leading-relaxed font-normal">
             "Le droit n'est pas une protection contre le risque — c'est l'art de le structurer
             pour qu'il devienne un avantage compétitif."
           </blockquote>
-          <p className="mt-5 pl-8 font-mono text-[11px] uppercase tracking-[0.08em] text-paper/30">
+          <p className="mt-5 pl-8 font-mono text-[11px] uppercase tracking-[0.08em] text-paper/48">
             Maître Mokadmi Sami
           </p>
         </div>

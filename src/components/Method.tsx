@@ -57,7 +57,7 @@ export default function Method() {
                     {step.duration}
                   </span>
                 </div>
-                <p className="text-body text-paper/45 leading-relaxed max-w-prose-luxury">
+                <p className="text-body text-paper/70 leading-relaxed max-w-prose-luxury">
                   {step.description}
                 </p>
               </div>

@@ -28,10 +28,10 @@ export default function Hero() {
             <span className="italic text-accent">de demain</span>
           </h1>
 
-          <p className="text-subhead text-paper/50 max-w-[38ch] mb-4 font-light leading-relaxed">
+          <p className="text-subhead text-paper/75 max-w-[38ch] mb-4 font-light leading-relaxed">
             La sagesse de 24 ans d'expérience au service de l'innovation de rupture.
           </p>
-          <p className="text-small text-paper/35 max-w-[38ch] mb-10 md:mb-12 leading-relaxed">
+          <p className="text-small text-paper/60 max-w-[38ch] mb-10 md:mb-12 leading-relaxed">
             Ingénierie juridique, fiscalité stratégique et intelligence artificielle — pour les fondateurs
             qui pensent en systèmes, pas en documents.
           </p>

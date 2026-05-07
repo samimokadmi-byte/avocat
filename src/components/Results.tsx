@@ -32,7 +32,7 @@ export default function Results() {
           Des chiffres,{' '}
           <span className="italic text-accent">pas des promesses.</span>
         </h2>
-        <p className="text-body text-paper/45 mb-10 md:mb-16 max-w-prose-luxury leading-relaxed">
+        <p className="text-body text-paper/70 mb-10 md:mb-16 max-w-prose-luxury leading-relaxed">
           Des missions closes, des structures qui tiennent, des systèmes qui continuent de tourner.
         </p>
 
@@ -40,8 +40,8 @@ export default function Results() {
           {stats.map(({ value, label, note }) => (
             <div key={value} className="bg-ink p-6 md:p-10 flex flex-col gap-3">
               <span className="font-display text-stat font-normal text-accent">{value}</span>
-              <span className="text-body font-medium text-paper/80">{label}</span>
-              <span className="font-mono text-[11px] uppercase tracking-[0.06em] text-paper/30 leading-snug">{note}</span>
+              <span className="text-body font-medium text-paper/92">{label}</span>
+              <span className="font-mono text-[11px] uppercase tracking-[0.06em] text-paper/58 leading-snug">{note}</span>
             </div>
           ))}
         </div>

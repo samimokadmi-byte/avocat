@@ -47,9 +47,9 @@ export default {
       fontSize: {
         display: ['clamp(3.5rem, 6vw, 4.875rem)', { lineHeight: '1.05', letterSpacing: '-0.02em' }],
         heading: ['clamp(2.75rem, 5vw, 4rem)',     { lineHeight: '1.1',  letterSpacing: '-0.02em' }],
-        subhead: ['clamp(1.5rem, 2vw, 2rem)',       { lineHeight: '1.3'  }],
-        body:    ['17px',                           { lineHeight: '1.55' }],
-        small:   ['13px',                           { lineHeight: '1.5'  }],
+        subhead: ['clamp(1.5rem, 2vw, 2rem)',       { lineHeight: '1.35' }],
+        body:    ['17px',                           { lineHeight: '1.75' }],
+        small:   ['14px',                           { lineHeight: '1.65' }],
         stat:    ['clamp(2.5rem, 4vw, 4rem)',       { lineHeight: '1',    letterSpacing: '-0.03em' }],
       },
       spacing: {

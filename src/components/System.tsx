@@ -43,7 +43,7 @@ export default function System() {
           Une triple compétence.{' '}
           <span className="italic text-accent">Une architecture globale.</span>
         </h2>
-        <p className="text-body text-paper/45 mb-10 md:mb-16 max-w-prose-luxury leading-relaxed">
+        <p className="text-body text-paper/70 mb-10 md:mb-16 max-w-prose-luxury leading-relaxed">
           Droit des affaires, fiscalité stratégique et ingénierie IA — rarement réunies, jamais aussi bien intégrées.
         </p>
 
@@ -64,7 +64,7 @@ export default function System() {
               <div>
                 <p className="font-mono text-[11px] uppercase tracking-[0.08em] text-paper/35 mb-2">{subtitle}</p>
                 <h3 className="font-display text-xl font-normal text-paper mb-4">{title}</h3>
-                <p className="text-small text-paper/45 leading-relaxed mb-6">{body}</p>
+                <p className="text-small text-paper/70 leading-relaxed mb-6">{body}</p>
                 <div className="flex flex-wrap gap-2">
                   {tags.map(tag => (
                     <span key={tag}

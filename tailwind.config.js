@@ -9,8 +9,8 @@ export default {
       colors: {
         // ── Design system "Éditorial × OS" ──────────────────────────
         ink: {
-          DEFAULT: '#0F172A',
-          soft:    '#1F2937',
+          DEFAULT: '#1E2540',   // navy franc (référence)
+          soft:    '#26304E',   // navy moyen pour les cartes/sections alternées
         },
         text2:   '#475569',
         paper: {
@@ -21,7 +21,7 @@ export default {
           DEFAULT: '#E5DFD0',
           strong:  '#D7CFB7',
         },
-        accent:  '#A47A2C',
+        accent:  '#C0272D',     // rouge cramoisi (référence)
         status: {
           green: '#15803D',
           amber: '#A16207',

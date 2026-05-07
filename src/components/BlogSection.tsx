@@ -43,9 +43,9 @@ export default function BlogSection() {
               <h3 className="font-display text-lg font-normal text-paper leading-snug group-hover:text-accent transition-colors duration-200">
                 {post.title}
               </h3>
-              <p className="text-small text-paper/45 leading-relaxed flex-1">{post.excerpt}</p>
+              <p className="text-small text-paper/70 leading-relaxed flex-1">{post.excerpt}</p>
               <div className="flex items-center justify-between mt-2 pt-4 border-t border-paper/10">
-                <div className="flex items-center gap-1.5 font-mono text-[11px] uppercase tracking-[0.06em] text-paper/25">
+                <div className="flex items-center gap-1.5 font-mono text-[11px] uppercase tracking-[0.06em] text-paper/45">
                   <Calendar size={10} strokeWidth={1.5} />
                   {post.date}
                 </div>

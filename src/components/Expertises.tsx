@@ -61,7 +61,7 @@ export default function Expertises() {
           Une expertise verticale,{' '}
           <span className="italic text-accent">jamais généraliste.</span>
         </h2>
-        <p className="text-body text-paper/45 mb-10 md:mb-16 max-w-prose-luxury">
+        <p className="text-body text-paper/70 mb-10 md:mb-16 max-w-prose-luxury">
           Chaque domaine est traité avec la précision d'un ingénieur et l'autorité de 24 ans de pratique.
         </p>
 
@@ -73,7 +73,7 @@ export default function Expertises() {
                 className="text-paper/30 group-hover:text-accent transition-colors duration-200" />
               <div>
                 <h3 className="font-display text-base font-normal text-paper mb-3">{titre}</h3>
-                <p className="text-small text-paper/45 leading-relaxed mb-5">{description}</p>
+                <p className="text-small text-paper/70 leading-relaxed mb-5">{description}</p>
                 <div className="flex flex-wrap gap-2">
                   {tags.map(tag => (
                     <span key={tag}

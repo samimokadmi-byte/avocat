@@ -28,14 +28,14 @@ export default function Booking() {
               Prenez le contrôle de{' '}
               <span className="italic text-accent">votre architecture juridique.</span>
             </h2>
-            <p className="text-body text-paper/45 leading-relaxed mb-10">
+            <p className="text-body text-paper/70 leading-relaxed mb-10">
               Un premier échange de 90 minutes pour cartographier votre situation, identifier les risques
               et définir les priorités — avec une feuille de route concrète et les premiers workflows identifiés.
             </p>
 
             <ul className="flex flex-col gap-3 mb-10">
               {expertise.map(item => (
-                <li key={item} className="flex items-center gap-3 text-body text-paper/55">
+                <li key={item} className="flex items-center gap-3 text-body text-paper/75">
                   <span className="w-1 h-1 bg-accent rounded-full flex-none" />
                   {item}
                 </li>
@@ -64,7 +64,7 @@ export default function Booking() {
 
           <div className="flex flex-col justify-center">
             <div className="bg-ink-soft border border-paper/10 p-6 md:p-10">
-              <p className="text-body text-paper/45 mb-8 leading-relaxed">
+              <p className="text-body text-paper/70 mb-8 leading-relaxed">
                 Remplissez ce formulaire ou écrivez-nous directement. Nous répondons sous 24h ouvrées.
               </p>
 

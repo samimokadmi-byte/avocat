@@ -41,7 +41,7 @@ export default function CasEtudes() {
           Des problématiques réelles.{' '}
           <span className="italic text-accent">Des solutions mesurables.</span>
         </h2>
-        <p className="text-body text-paper/45 mb-10 md:mb-16 max-w-prose-luxury">
+        <p className="text-body text-paper/70 mb-10 md:mb-16 max-w-prose-luxury">
           Les cas présentés respectent le secret professionnel. Les détails identifiants ont été modifiés.
         </p>
 
@@ -57,12 +57,12 @@ export default function CasEtudes() {
                 </div>
               </div>
               <div>
-                <p className="font-mono text-[11px] uppercase tracking-[0.08em] text-paper/30 mb-3">Problématique</p>
-                <p className="text-body text-paper/50 leading-relaxed">{problematique}</p>
+                <p className="font-mono text-[11px] uppercase tracking-[0.08em] text-paper/45 mb-3">Problématique</p>
+                <p className="text-body text-paper/70 leading-relaxed">{problematique}</p>
               </div>
               <div>
-                <p className="font-mono text-[11px] uppercase tracking-[0.08em] text-paper/30 mb-3">Solution apportée</p>
-                <p className="text-body text-paper/50 leading-relaxed">{solution}</p>
+                <p className="font-mono text-[11px] uppercase tracking-[0.08em] text-paper/45 mb-3">Solution apportée</p>
+                <p className="text-body text-paper/70 leading-relaxed">{solution}</p>
               </div>
             </div>
           ))}

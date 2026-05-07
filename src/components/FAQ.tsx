@@ -55,7 +55,7 @@ function FAQItem({ q, a }: { q: string; a: string }) {
 
       {open && (
         <div className="pb-6">
-          <p className="text-body text-paper/45 leading-relaxed max-w-prose-luxury">{a}</p>
+          <p className="text-body text-paper/70 leading-relaxed max-w-prose-luxury">{a}</p>
         </div>
       )}
     </div>

@@ -72,7 +72,7 @@ function downloadDocument(doc: Document) {
 
 function fileIcon(type: string) {
   if (type.includes('pdf')) return <FileText size={14} strokeWidth={1.25} className="text-red-400 flex-none" />
-  return <FileIcon size={14} strokeWidth={1.25} className="text-light/30 flex-none" />
+  return <FileIcon size={14} strokeWidth={1.25} className="text-paper/30 flex-none" />
 }
 
 // ─── Storage helpers ──────────────────────────────────────────────────────────
@@ -152,41 +152,41 @@ function Overview({ clients }: { clients: ClientData[] }) {
   return (
     <div className="flex flex-col gap-8">
       <div>
-        <p className="text-xs font-medium tracking-[0.2em] uppercase text-light/40 mb-2">Administration</p>
-        <h2 className="font-serif text-2xl text-light">Tableau de bord</h2>
+        <p className="text-xs font-medium tracking-[0.2em] uppercase text-paper/40 mb-2">Administration</p>
+        <h2 className="font-serif text-2xl text-paper">Tableau de bord</h2>
       </div>
 
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-px bg-gold/10">
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-px bg-accent/10">
         {[
           { label: 'Clients actifs', value: clients.length },
           { label: 'Dossiers en cours', value: dossiersActifs },
           { label: 'Dossiers totaux', value: totalDossiers },
           { label: 'Documents reçus', value: `${totalDocs} (${formatSize(totalSize)})` },
         ].map(({ label, value }) => (
-          <div key={label} className="bg-dark-surface p-6">
-            <p className="text-xs text-light/40 uppercase tracking-wide mb-2">{label}</p>
-            <p className="font-serif text-2xl font-bold text-light">{value}</p>
+          <div key={label} className="bg-ink-soft p-6">
+            <p className="text-xs text-paper/40 uppercase tracking-wide mb-2">{label}</p>
+            <p className="font-serif text-2xl font-bold text-paper">{value}</p>
           </div>
         ))}
       </div>
 
       <div>
-        <p className="text-xs font-medium text-light/40 uppercase tracking-wide mb-4">Dossiers actifs</p>
-        <div className="flex flex-col gap-px bg-gold/10">
+        <p className="text-xs font-medium text-paper/40 uppercase tracking-wide mb-4">Dossiers actifs</p>
+        <div className="flex flex-col gap-px bg-accent/10">
           {clients.flatMap(c =>
             c.dossiers.filter(d => d.statut === 'en_cours').map(d => (
-              <div key={d.id} className="bg-dark-surface px-6 py-4 flex items-center gap-4">
-                <FolderOpen size={14} strokeWidth={1.25} className="text-light/30 flex-none" />
+              <div key={d.id} className="bg-ink-soft px-6 py-4 flex items-center gap-4">
+                <FolderOpen size={14} strokeWidth={1.25} className="text-paper/30 flex-none" />
                 <div className="flex-1 min-w-0">
-                  <p className="text-sm font-medium text-light truncate">{d.titre}</p>
-                  <p className="text-xs text-light/40">{c.user.name}{c.user.company ? ` · ${c.user.company}` : ''}</p>
+                  <p className="text-sm font-medium text-paper truncate">{d.titre}</p>
+                  <p className="text-xs text-paper/40">{c.user.name}{c.user.company ? ` · ${c.user.company}` : ''}</p>
                 </div>
                 <StatusBadge statut={d.statut} />
               </div>
             ))
           )}
           {clients.every(c => c.dossiers.every(d => d.statut !== 'en_cours')) && (
-            <div className="bg-dark-surface px-6 py-8 text-center text-sm text-light/30">Aucun dossier en cours.</div>
+            <div className="bg-ink-soft px-6 py-8 text-center text-sm text-paper/30">Aucun dossier en cours.</div>
           )}
         </div>
       </div>
@@ -197,7 +197,7 @@ function Overview({ clients }: { clients: ClientData[] }) {
 // ─── ClientDetail ─────────────────────────────────────────────────────────────
 
 const INV_STATUS_MAP = {
-  brouillon: { label: 'Brouillon',  cls: 'bg-light/5 text-light/40 border-light/15' },
+  brouillon: { label: 'Brouillon',  cls: 'bg-light/5 text-paper/40 border-light/15' },
   envoyee:   { label: 'Envoyée',    cls: 'bg-blue-500/10 text-blue-400 border-blue-500/20' },
   payee:     { label: 'Payée',      cls: 'bg-green-500/10 text-green-400 border-green-500/20' },
   en_retard: { label: 'En retard',  cls: 'bg-red-500/10 text-red-400 border-red-500/20' },
@@ -291,16 +291,16 @@ function ClientDetail({ data, onBack, onRefresh }: {
 
   return (
     <div className="flex flex-col gap-6">
-      <button onClick={onBack} className="flex items-center gap-2 text-xs text-light/40 hover:text-light transition-colors">
+      <button onClick={onBack} className="flex items-center gap-2 text-xs text-paper/40 hover:text-paper transition-colors">
         <ArrowLeft size={12} strokeWidth={1.5} /> Retour aux clients
       </button>
 
-      <div className="border border-gold/10 px-6 py-5 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+      <div className="border border-accent/10 px-6 py-5 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
         <div>
-          <p className="text-sm font-semibold text-light">{data.user.name}</p>
-          <p className="text-xs text-light/40 mt-0.5">{data.user.email}{data.user.company ? ` · ${data.user.company}` : ''}</p>
+          <p className="text-sm font-semibold text-paper">{data.user.name}</p>
+          <p className="text-xs text-paper/40 mt-0.5">{data.user.email}{data.user.company ? ` · ${data.user.company}` : ''}</p>
         </div>
-        <div className="flex gap-3 text-xs text-light/40">
+        <div className="flex gap-3 text-xs text-paper/40">
           <span>{dossiers.length} dossier{dossiers.length > 1 ? 's' : ''}</span>
           <span>·</span>
           <span>{documents.length} document{documents.length > 1 ? 's' : ''}</span>
@@ -310,79 +310,79 @@ function ClientDetail({ data, onBack, onRefresh }: {
       {/* ── Dossiers ── */}
       <div>
         <div className="flex items-center justify-between mb-3">
-          <p className="text-xs font-medium text-light/40 uppercase tracking-wide">Dossiers</p>
+          <p className="text-xs font-medium text-paper/40 uppercase tracking-wide">Dossiers</p>
           <button
             onClick={() => setShowDossierForm(v => !v)}
-            className="flex items-center gap-1.5 text-xs text-light/40 hover:text-light border border-gold/15 hover:border-gold/30 px-3 py-1.5 transition-colors"
+            className="flex items-center gap-1.5 text-xs text-paper/40 hover:text-paper border border-accent/15 hover:border-accent/30 px-3 py-1.5 transition-colors"
           >
             <Plus size={11} strokeWidth={1.5} /> Nouveau dossier
           </button>
         </div>
 
         {showDossierForm && (
-          <div className="border border-gold/15 p-5 mb-3 flex flex-col gap-4">
+          <div className="border border-accent/15 p-5 mb-3 flex flex-col gap-4">
             <div className="flex items-center justify-between">
-              <p className="text-sm font-medium text-light">Créer un dossier</p>
-              <button onClick={() => setShowDossierForm(false)} className="text-light/30 hover:text-light transition-colors">
+              <p className="text-sm font-medium text-paper">Créer un dossier</p>
+              <button onClick={() => setShowDossierForm(false)} className="text-paper/30 hover:text-paper transition-colors">
                 <X size={14} strokeWidth={1.5} />
               </button>
             </div>
             <div className="flex flex-col gap-1.5">
-              <label className="text-xs font-medium text-light/40 uppercase tracking-wide">Titre *</label>
+              <label className="text-xs font-medium text-paper/40 uppercase tracking-wide">Titre *</label>
               <input
                 type="text" value={dossierForm.titre}
                 onChange={e => setDossierForm(f => ({ ...f, titre: e.target.value }))}
                 placeholder="Ex: Levée de fonds Série A"
-                className="border-b border-gold/15 bg-transparent py-2 text-sm text-light placeholder:text-light/20 focus:outline-none focus:border-gold"
+                className="border-b border-accent/15 bg-transparent py-2 text-sm text-paper placeholder:text-paper/20 focus:outline-none focus:border-accent"
               />
             </div>
             <div className="flex flex-col gap-1.5">
-              <label className="text-xs font-medium text-light/40 uppercase tracking-wide">Description</label>
+              <label className="text-xs font-medium text-paper/40 uppercase tracking-wide">Description</label>
               <input
                 type="text" value={dossierForm.description}
                 onChange={e => setDossierForm(f => ({ ...f, description: e.target.value }))}
                 placeholder="Contexte et objectifs du dossier"
-                className="border-b border-gold/15 bg-transparent py-2 text-sm text-light placeholder:text-light/20 focus:outline-none focus:border-gold"
+                className="border-b border-accent/15 bg-transparent py-2 text-sm text-paper placeholder:text-paper/20 focus:outline-none focus:border-accent"
               />
             </div>
             <div className="flex flex-col gap-2">
-              <label className="text-xs font-medium text-light/40 uppercase tracking-wide">Étapes du dossier</label>
+              <label className="text-xs font-medium text-paper/40 uppercase tracking-wide">Étapes du dossier</label>
               {dossierForm.etapes.map((e, i) => (
                 <input
                   key={i} type="text" value={e}
                   onChange={ev => setDossierForm(f => {
                     const etapes = [...f.etapes]; etapes[i] = ev.target.value; return { ...f, etapes }
                   })}
-                  className="border-b border-gold/10 bg-transparent py-1.5 text-sm text-light placeholder:text-light/20 focus:outline-none focus:border-gold"
+                  className="border-b border-accent/10 bg-transparent py-1.5 text-sm text-paper placeholder:text-paper/20 focus:outline-none focus:border-accent"
                 />
               ))}
             </div>
-            <button onClick={createDossier} className="self-start bg-gold text-dark-bg text-xs font-medium px-5 py-2.5 hover:bg-gold/90 transition-colors">
+            <button onClick={createDossier} className="self-start bg-accent text-paper text-xs font-medium px-5 py-2.5 hover:bg-accent/90 transition-colors">
               Créer le dossier
             </button>
           </div>
         )}
 
         {selectedDossier ? (
-          <div className="border border-gold/10 p-6 flex flex-col gap-5">
-            <button onClick={() => setSelectedDossier(null)} className="flex items-center gap-2 text-xs text-light/40 hover:text-light transition-colors">
+          <div className="border border-accent/10 p-6 flex flex-col gap-5">
+            <button onClick={() => setSelectedDossier(null)} className="flex items-center gap-2 text-xs text-paper/40 hover:text-paper transition-colors">
               <ArrowLeft size={12} strokeWidth={1.5} /> Retour à la liste
             </button>
             <div className="flex items-start justify-between gap-3 flex-wrap">
-              <h3 className="font-serif text-lg text-light">{selectedDossier.titre}</h3>
+              <h3 className="font-serif text-lg text-paper">{selectedDossier.titre}</h3>
               <StatusBadge statut={selectedDossier.statut} />
             </div>
             <div className="flex flex-col gap-4">
               {selectedDossier.etapes.map((etape, i) => (
-                <div key={i} className="flex items-start gap-4 pb-4 border-b border-gold/5 last:border-0 last:pb-0">
+                <div key={i} className="flex items-start gap-4 pb-4 border-b border-accent/5 last:border-0 last:pb-0">
                   <div className="flex-none mt-0.5">
-                    {etape.statut === 'done'    && <CheckCircle2 size={18} strokeWidth={1.5} className="text-light" />}
+                    {etape.statut === 'done'    && <CheckCircle2 size={18} strokeWidth={1.5} className="text-paper" />}
                     {etape.statut === 'current' && <Clock size={18} strokeWidth={1.5} className="text-blue-400" />}
-                    {etape.statut === 'pending' && <Circle size={18} strokeWidth={1.5} className="text-light/20" />}
+                    {etape.statut === 'pending' && <Circle size={18} strokeWidth={1.5} className="text-paper/20" />}
                   </div>
                   <div className="flex-1">
-                    <p className={`text-sm font-medium ${etape.statut === 'pending' ? 'text-light/40' : 'text-light'}`}>{etape.label}</p>
-                    {etape.date && <p className="text-xs text-light/40 mt-0.5">{etape.date}</p>}
+                    <p className={`text-sm font-medium ${etape.statut === 'pending' ? 'text-paper/40' : 'text-paper'}`}>{etape.label}</p>
+                    {etape.date && <p className="text-xs text-paper/40 mt-0.5">{etape.date}</p>}
                   </div>
                   <div className="flex gap-1 flex-none">
                     {(['done', 'current', 'pending'] as const).map(s => (
@@ -390,7 +390,7 @@ function ClientDetail({ data, onBack, onRefresh }: {
                         key={s}
                         onClick={() => updateEtape(selectedDossier.id, i, s)}
                         className={`text-[10px] font-medium px-2 py-1 border transition-colors ${
-                          etape.statut === s ? 'bg-gold text-dark-bg border-gold' : 'text-light/40 border-gold/15 hover:border-gold/30'
+                          etape.statut === s ? 'bg-accent text-paper border-accent' : 'text-paper/40 border-accent/15 hover:border-accent/30'
                         }`}
                       >
                         {s === 'done' ? '✓' : s === 'current' ? '⏳' : '○'}
@@ -402,28 +402,28 @@ function ClientDetail({ data, onBack, onRefresh }: {
             </div>
           </div>
         ) : (
-          <div className="flex flex-col gap-px bg-gold/10">
+          <div className="flex flex-col gap-px bg-accent/10">
             {dossiers.length === 0 && (
-              <div className="bg-dark-surface px-6 py-8 text-center text-sm text-light/30">Aucun dossier. Créez-en un ci-dessus.</div>
+              <div className="bg-ink-soft px-6 py-8 text-center text-sm text-paper/30">Aucun dossier. Créez-en un ci-dessus.</div>
             )}
             {dossiers.map(d => (
               <button
                 key={d.id}
                 onClick={() => setSelectedDossier(d)}
-                className="bg-dark-surface px-6 py-4 flex items-center justify-between gap-4 text-left hover:bg-dark-card group transition-colors"
+                className="bg-ink-soft px-6 py-4 flex items-center justify-between gap-4 text-left hover:bg-ink group transition-colors"
               >
                 <div className="flex items-center gap-3 min-w-0">
-                  <FolderOpen size={14} strokeWidth={1.25} className="text-light/30 flex-none" />
+                  <FolderOpen size={14} strokeWidth={1.25} className="text-paper/30 flex-none" />
                   <div className="min-w-0">
-                    <p className="text-sm font-medium text-light truncate">{d.titre}</p>
-                    <p className="text-xs text-light/40 mt-0.5">
+                    <p className="text-sm font-medium text-paper truncate">{d.titre}</p>
+                    <p className="text-xs text-paper/40 mt-0.5">
                       {d.etapes.filter(e => e.statut === 'done').length}/{d.etapes.length} étapes
                     </p>
                   </div>
                 </div>
                 <div className="flex items-center gap-2 flex-none">
                   <StatusBadge statut={d.statut} />
-                  <ChevronRight size={13} strokeWidth={1.5} className="text-light/20 group-hover:text-light/50 transition-colors" />
+                  <ChevronRight size={13} strokeWidth={1.5} className="text-paper/20 group-hover:text-paper/50 transition-colors" />
                 </div>
               </button>
             ))}
@@ -433,29 +433,29 @@ function ClientDetail({ data, onBack, onRefresh }: {
 
       {/* ── Documents ── */}
       <div>
-        <p className="text-xs font-medium text-light/40 uppercase tracking-wide mb-3">Documents ({documents.length})</p>
+        <p className="text-xs font-medium text-paper/40 uppercase tracking-wide mb-3">Documents ({documents.length})</p>
         {documents.length === 0 ? (
-          <div className="border border-gold/10 px-6 py-8 text-center text-sm text-light/30">Aucun document déposé.</div>
+          <div className="border border-accent/10 px-6 py-8 text-center text-sm text-paper/30">Aucun document déposé.</div>
         ) : (
-          <div className="flex flex-col gap-px bg-gold/10">
+          <div className="flex flex-col gap-px bg-accent/10">
             {documents.map(doc => (
-              <div key={doc.id} className="bg-dark-surface px-6 py-4 flex items-center gap-4">
+              <div key={doc.id} className="bg-ink-soft px-6 py-4 flex items-center gap-4">
                 {fileIcon(doc.type)}
                 <div className="flex-1 min-w-0">
-                  <p className="text-sm font-medium text-light truncate">{doc.name}</p>
-                  <p className="text-xs text-light/40 mt-0.5">
+                  <p className="text-sm font-medium text-paper truncate">{doc.name}</p>
+                  <p className="text-xs text-paper/40 mt-0.5">
                     {formatSize(doc.size)} · {new Date(doc.uploadedAt).toLocaleDateString('fr-FR', { day: 'numeric', month: 'short', year: 'numeric' })}
                   </p>
                 </div>
                 <div className="flex items-center gap-2 flex-none">
                   {doc.content ? (
-                    <button onClick={() => downloadDocument(doc)} className="flex items-center gap-1.5 text-xs text-light/50 hover:text-light border border-gold/15 hover:border-gold/30 px-3 py-1.5 transition-colors">
+                    <button onClick={() => downloadDocument(doc)} className="flex items-center gap-1.5 text-xs text-paper/50 hover:text-paper border border-accent/15 hover:border-accent/30 px-3 py-1.5 transition-colors">
                       <Download size={11} strokeWidth={1.5} /> Télécharger
                     </button>
                   ) : (
-                    <span className="flex items-center gap-1 text-xs text-light/30"><AlertCircle size={11} strokeWidth={1.5} /> Indisponible</span>
+                    <span className="flex items-center gap-1 text-xs text-paper/30"><AlertCircle size={11} strokeWidth={1.5} /> Indisponible</span>
                   )}
-                  <button onClick={() => removeDoc(doc.id)} className="text-light/20 hover:text-red-500 transition-colors p-1"><Trash2 size={13} strokeWidth={1.5} /></button>
+                  <button onClick={() => removeDoc(doc.id)} className="text-paper/20 hover:text-red-500 transition-colors p-1"><Trash2 size={13} strokeWidth={1.5} /></button>
                 </div>
               </div>
             ))}
@@ -465,31 +465,31 @@ function ClientDetail({ data, onBack, onRefresh }: {
 
       {/* ── Factures ── */}
       <div>
-        <p className="text-xs font-medium text-light/40 uppercase tracking-wide mb-3">Factures ({clientInvoices.length})</p>
+        <p className="text-xs font-medium text-paper/40 uppercase tracking-wide mb-3">Factures ({clientInvoices.length})</p>
         {clientInvoices.length === 0 ? (
-          <div className="border border-gold/10 px-6 py-8 text-center text-sm text-light/30">Aucune facture pour ce client.</div>
+          <div className="border border-accent/10 px-6 py-8 text-center text-sm text-paper/30">Aucune facture pour ce client.</div>
         ) : (
-          <div className="flex flex-col gap-px bg-gold/10">
+          <div className="flex flex-col gap-px bg-accent/10">
             {[...clientInvoices].sort((a, b) => b.dateEmission.localeCompare(a.dateEmission)).map(inv => {
               const { net } = computeAmounts(inv)
               const { label, cls } = INV_STATUS_MAP[inv.status]
               return (
-                <div key={inv.id} className="bg-dark-surface px-6 py-4 flex items-center gap-4">
-                  <Receipt size={14} strokeWidth={1.25} className="text-light/30 flex-none" />
+                <div key={inv.id} className="bg-ink-soft px-6 py-4 flex items-center gap-4">
+                  <Receipt size={14} strokeWidth={1.25} className="text-paper/30 flex-none" />
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2 flex-wrap mb-0.5">
-                      <p className="text-sm font-semibold text-light font-mono">{inv.number}</p>
+                      <p className="text-sm font-semibold text-paper font-mono">{inv.number}</p>
                       <span className={`text-xs font-medium px-2 py-0.5 border ${cls}`}>{label}</span>
                     </div>
-                    <p className="text-xs text-light/40">
+                    <p className="text-xs text-paper/40">
                       {new Date(inv.dateEmission + 'T12:00:00').toLocaleDateString('fr-FR', { day: 'numeric', month: 'short', year: 'numeric' })}
                       {' — '}
                       {new Date(inv.dateEcheance + 'T12:00:00').toLocaleDateString('fr-FR', { day: 'numeric', month: 'short', year: 'numeric' })}
                     </p>
                   </div>
                   <div className="text-right mr-2 flex-none">
-                    <p className="text-sm font-semibold text-light">{fmtAmount(net, inv.currency)}</p>
-                    <p className="text-[10px] text-light/40">net à payer</p>
+                    <p className="text-sm font-semibold text-paper">{fmtAmount(net, inv.currency)}</p>
+                    <p className="text-[10px] text-paper/40">net à payer</p>
                   </div>
                   <div className="flex gap-1 flex-none">
                     {(['brouillon', 'envoyee', 'payee', 'en_retard'] as const).map(s => (
@@ -502,7 +502,7 @@ function ClientDetail({ data, onBack, onRefresh }: {
                           onRefresh()
                         }}
                         title={INV_STATUS_MAP[s].label}
-                        className={`text-[10px] font-medium px-2 py-1 border transition-colors ${inv.status === s ? 'bg-gold text-dark-bg border-gold' : 'text-light/30 border-gold/10 hover:border-gold/30'}`}
+                        className={`text-[10px] font-medium px-2 py-1 border transition-colors ${inv.status === s ? 'bg-accent text-paper border-accent' : 'text-paper/30 border-accent/10 hover:border-accent/30'}`}
                       >
                         {s === 'brouillon' ? '✎' : s === 'envoyee' ? '✉' : s === 'payee' ? '✓' : '!'}
                       </button>
@@ -515,7 +515,7 @@ function ClientDetail({ data, onBack, onRefresh }: {
                       setClientInvoicesState(updated)
                       onRefresh()
                     }}
-                    className="text-light/20 hover:text-red-500 transition-colors p-1 flex-none"
+                    className="text-paper/20 hover:text-red-500 transition-colors p-1 flex-none"
                   >
                     <Trash2 size={13} strokeWidth={1.5} />
                   </button>
@@ -529,26 +529,26 @@ function ClientDetail({ data, onBack, onRefresh }: {
       {/* ── Messagerie ── */}
       <div>
         <div className="flex items-center gap-2 mb-3">
-          <p className="text-xs font-medium text-light/40 uppercase tracking-wide">Messagerie</p>
+          <p className="text-xs font-medium text-paper/40 uppercase tracking-wide">Messagerie</p>
           {unreadCount > 0 && (
-            <span className="flex items-center justify-center w-4 h-4 bg-gold text-dark-bg text-[10px] font-bold rounded-sm">{unreadCount}</span>
+            <span className="flex items-center justify-center w-4 h-4 bg-accent text-paper text-[10px] font-bold rounded-sm">{unreadCount}</span>
           )}
         </div>
-        <div className="border border-gold/10 flex flex-col" style={{ height: '360px' }}>
+        <div className="border border-accent/10 flex flex-col" style={{ height: '360px' }}>
           <div className="flex-1 overflow-y-auto p-4 flex flex-col gap-2.5">
             {clientMessages.length === 0 && (
               <div className="flex-1 flex items-center justify-center">
-                <p className="text-xs text-light/30 text-center">Aucun message avec ce client.<br />Envoyez un message pour démarrer la conversation.</p>
+                <p className="text-xs text-paper/30 text-center">Aucun message avec ce client.<br />Envoyez un message pour démarrer la conversation.</p>
               </div>
             )}
             {clientMessages.map(msg => (
               <div key={msg.id} className={`flex ${msg.from === 'admin' ? 'justify-end' : 'justify-start'}`}>
-                <div className={`max-w-xs px-3 py-2 ${msg.from === 'admin' ? 'bg-gold text-dark-bg' : 'bg-dark-card border border-gold/10 text-light'}`}>
+                <div className={`max-w-xs px-3 py-2 ${msg.from === 'admin' ? 'bg-accent text-paper' : 'bg-ink border border-accent/10 text-paper'}`}>
                   {msg.from === 'client' && (
-                    <p className="text-[10px] font-medium text-light/40 uppercase mb-0.5">{data.user.name.split(' ')[0]}</p>
+                    <p className="text-[10px] font-medium text-paper/40 uppercase mb-0.5">{data.user.name.split(' ')[0]}</p>
                   )}
                   <p className="text-sm leading-relaxed">{msg.text}</p>
-                  <p className={`text-[10px] mt-0.5 ${msg.from === 'admin' ? 'text-dark-bg/50' : 'text-light/30'}`}>
+                  <p className={`text-[10px] mt-0.5 ${msg.from === 'admin' ? 'text-paper/50' : 'text-paper/30'}`}>
                     {new Date(msg.sentAt).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })}
                     {' · '}
                     {new Date(msg.sentAt).toLocaleDateString('fr-FR', { day: 'numeric', month: 'short' })}
@@ -558,16 +558,16 @@ function ClientDetail({ data, onBack, onRefresh }: {
             ))}
             <div ref={msgEndRef} />
           </div>
-          <div className="border-t border-gold/10 p-3 flex gap-2">
+          <div className="border-t border-accent/10 p-3 flex gap-2">
             <input
               type="text" value={msgInput} onChange={e => setMsgInput(e.target.value)}
               onKeyDown={e => e.key === 'Enter' && sendAdminMessage()}
               placeholder="Répondre au client…"
-              className="flex-1 bg-transparent text-sm text-light placeholder:text-light/20 focus:outline-none"
+              className="flex-1 bg-transparent text-sm text-paper placeholder:text-paper/20 focus:outline-none"
             />
             <button
               onClick={sendAdminMessage} disabled={!msgInput.trim()}
-              className="flex items-center gap-1.5 bg-gold text-dark-bg text-xs font-medium px-3 py-2 hover:bg-gold/90 transition-colors disabled:opacity-30 disabled:cursor-not-allowed"
+              className="flex items-center gap-1.5 bg-accent text-paper text-xs font-medium px-3 py-2 hover:bg-accent/90 transition-colors disabled:opacity-30 disabled:cursor-not-allowed"
             >
               <Send size={11} strokeWidth={1.5} /> Envoyer
             </button>
@@ -596,45 +596,45 @@ function ClientsList({ clients, onSelect }: {
   return (
     <div className="flex flex-col gap-6">
       <div>
-        <p className="text-xs font-medium tracking-[0.2em] uppercase text-light/40 mb-2">Clients</p>
-        <h2 className="font-serif text-2xl text-light">{clients.length} client{clients.length > 1 ? 's' : ''}</h2>
+        <p className="text-xs font-medium tracking-[0.2em] uppercase text-paper/40 mb-2">Clients</p>
+        <h2 className="font-serif text-2xl text-paper">{clients.length} client{clients.length > 1 ? 's' : ''}</h2>
       </div>
 
       <div className="relative">
-        <Search size={14} strokeWidth={1.5} className="absolute left-3 top-1/2 -translate-y-1/2 text-light/30" />
+        <Search size={14} strokeWidth={1.5} className="absolute left-3 top-1/2 -translate-y-1/2 text-paper/30" />
         <input
           type="text" value={search} onChange={e => setSearch(e.target.value)}
           placeholder="Rechercher par nom, email ou société…"
-          className="w-full border border-gold/15 bg-transparent pl-9 pr-4 py-2.5 text-sm text-light placeholder:text-light/20 focus:outline-none focus:border-gold transition-colors"
+          className="w-full border border-accent/15 bg-transparent pl-9 pr-4 py-2.5 text-sm text-paper placeholder:text-paper/20 focus:outline-none focus:border-accent transition-colors"
         />
       </div>
 
       {filtered.length === 0 ? (
-        <p className="text-sm text-light/30 text-center py-8">Aucun client trouvé.</p>
+        <p className="text-sm text-paper/30 text-center py-8">Aucun client trouvé.</p>
       ) : (
-        <div className="flex flex-col gap-px bg-gold/10">
+        <div className="flex flex-col gap-px bg-accent/10">
           {filtered.map(c => (
             <button
               key={c.user.id} onClick={() => onSelect(c)}
-              className="bg-dark-surface px-6 py-5 flex items-center justify-between gap-4 text-left hover:bg-dark-card group transition-colors"
+              className="bg-ink-soft px-6 py-5 flex items-center justify-between gap-4 text-left hover:bg-ink group transition-colors"
             >
               <div className="flex items-center gap-4 min-w-0">
-                <div className="w-8 h-8 bg-dark-card flex items-center justify-center flex-none">
-                  <span className="text-xs font-semibold text-light/50">
+                <div className="w-8 h-8 bg-ink flex items-center justify-center flex-none">
+                  <span className="text-xs font-semibold text-paper/50">
                     {c.user.name.split(' ').map(n => n[0]).slice(0, 2).join('')}
                   </span>
                 </div>
                 <div className="min-w-0">
-                  <p className="text-sm font-medium text-light">{c.user.name}</p>
-                  <p className="text-xs text-light/40 mt-0.5">{c.user.email}{c.user.company ? ` · ${c.user.company}` : ''}</p>
+                  <p className="text-sm font-medium text-paper">{c.user.name}</p>
+                  <p className="text-xs text-paper/40 mt-0.5">{c.user.email}{c.user.company ? ` · ${c.user.company}` : ''}</p>
                 </div>
               </div>
               <div className="flex items-center gap-4 flex-none">
                 <div className="text-right hidden sm:block">
-                  <p className="text-xs text-light/40">{c.dossiers.length} dossier{c.dossiers.length > 1 ? 's' : ''}</p>
-                  <p className="text-xs text-light/30">{c.documents.length} document{c.documents.length > 1 ? 's' : ''}</p>
+                  <p className="text-xs text-paper/40">{c.dossiers.length} dossier{c.dossiers.length > 1 ? 's' : ''}</p>
+                  <p className="text-xs text-paper/30">{c.documents.length} document{c.documents.length > 1 ? 's' : ''}</p>
                 </div>
-                <ChevronRight size={13} strokeWidth={1.5} className="text-light/20 group-hover:text-light/50 transition-colors" />
+                <ChevronRight size={13} strokeWidth={1.5} className="text-paper/20 group-hover:text-paper/50 transition-colors" />
               </div>
             </button>
           ))}
@@ -666,29 +666,29 @@ function AllDocuments({ clients, onRefresh }: { clients: ClientData[]; onRefresh
   return (
     <div className="flex flex-col gap-6">
       <div>
-        <p className="text-xs font-medium tracking-[0.2em] uppercase text-light/40 mb-2">Documents</p>
-        <h2 className="font-serif text-2xl text-light">{allDocs.length} document{allDocs.length > 1 ? 's' : ''}</h2>
+        <p className="text-xs font-medium tracking-[0.2em] uppercase text-paper/40 mb-2">Documents</p>
+        <h2 className="font-serif text-2xl text-paper">{allDocs.length} document{allDocs.length > 1 ? 's' : ''}</h2>
       </div>
 
       <div className="relative">
-        <Search size={14} strokeWidth={1.5} className="absolute left-3 top-1/2 -translate-y-1/2 text-light/30" />
+        <Search size={14} strokeWidth={1.5} className="absolute left-3 top-1/2 -translate-y-1/2 text-paper/30" />
         <input
           type="text" value={search} onChange={e => setSearch(e.target.value)}
           placeholder="Rechercher par nom de fichier ou client…"
-          className="w-full border border-gold/15 bg-transparent pl-9 pr-4 py-2.5 text-sm text-light placeholder:text-light/20 focus:outline-none focus:border-gold transition-colors"
+          className="w-full border border-accent/15 bg-transparent pl-9 pr-4 py-2.5 text-sm text-paper placeholder:text-paper/20 focus:outline-none focus:border-accent transition-colors"
         />
       </div>
 
       {filtered.length === 0 ? (
-        <div className="border border-gold/10 px-6 py-12 text-center text-sm text-light/30">Aucun document reçu.</div>
+        <div className="border border-accent/10 px-6 py-12 text-center text-sm text-paper/30">Aucun document reçu.</div>
       ) : (
-        <div className="flex flex-col gap-px bg-gold/10">
+        <div className="flex flex-col gap-px bg-accent/10">
           {filtered.map(doc => (
-            <div key={`${doc.client.id}-${doc.id}`} className="bg-dark-surface px-6 py-4 flex items-center gap-4">
+            <div key={`${doc.client.id}-${doc.id}`} className="bg-ink-soft px-6 py-4 flex items-center gap-4">
               {fileIcon(doc.type)}
               <div className="flex-1 min-w-0">
-                <p className="text-sm font-medium text-light truncate">{doc.name}</p>
-                <p className="text-xs text-light/40 mt-0.5">
+                <p className="text-sm font-medium text-paper truncate">{doc.name}</p>
+                <p className="text-xs text-paper/40 mt-0.5">
                   <span className="font-medium">{doc.client.name}</span>
                   {doc.client.company ? ` · ${doc.client.company}` : ''} ·{' '}
                   {formatSize(doc.size)} · {new Date(doc.uploadedAt).toLocaleDateString('fr-FR', { day: 'numeric', month: 'short', year: 'numeric' })}
@@ -696,13 +696,13 @@ function AllDocuments({ clients, onRefresh }: { clients: ClientData[]; onRefresh
               </div>
               <div className="flex items-center gap-2 flex-none">
                 {doc.content ? (
-                  <button onClick={() => downloadDocument(doc)} className="flex items-center gap-1.5 text-xs text-light/50 hover:text-light border border-gold/15 hover:border-gold/30 px-3 py-1.5 transition-colors">
+                  <button onClick={() => downloadDocument(doc)} className="flex items-center gap-1.5 text-xs text-paper/50 hover:text-paper border border-accent/15 hover:border-accent/30 px-3 py-1.5 transition-colors">
                     <Download size={11} strokeWidth={1.5} /> Télécharger
                   </button>
                 ) : (
-                  <span className="flex items-center gap-1 text-xs text-light/30"><AlertCircle size={11} strokeWidth={1.5} /> Indisponible</span>
+                  <span className="flex items-center gap-1 text-xs text-paper/30"><AlertCircle size={11} strokeWidth={1.5} /> Indisponible</span>
                 )}
-                <button onClick={() => handleDelete(doc.client.id, doc.id)} className="text-light/20 hover:text-red-500 transition-colors p-1">
+                <button onClick={() => handleDelete(doc.client.id, doc.id)} className="text-paper/20 hover:text-red-500 transition-colors p-1">
                   <Trash2 size={13} strokeWidth={1.5} />
                 </button>
               </div>
@@ -753,38 +753,38 @@ function AllInvoicesAdmin({ clients, onRefresh }: { clients: ClientData[]; onRef
   return (
     <div className="flex flex-col gap-6">
       <div>
-        <p className="text-xs font-medium tracking-[0.2em] uppercase text-light/40 mb-2">Facturation</p>
-        <h2 className="font-serif text-2xl text-light">Notes d'honoraires</h2>
+        <p className="text-xs font-medium tracking-[0.2em] uppercase text-paper/40 mb-2">Facturation</p>
+        <h2 className="font-serif text-2xl text-paper">Notes d'honoraires</h2>
       </div>
 
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-px bg-gold/10">
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-px bg-accent/10">
         {[
           { label: 'Total factures',   value: String(allInvoices.length) },
           { label: 'En attente',       value: String(allInvoices.filter(i => i.status === 'envoyee' || i.status === 'en_retard').length) },
           { label: 'Payées',           value: String(allInvoices.filter(i => i.status === 'payee').length) },
           { label: 'Chiffre encaissé', value: paidNet > 0 ? fmtAmount(paidNet, 'TND') : '—' },
         ].map(({ label, value }) => (
-          <div key={label} className="bg-dark-surface p-6">
-            <p className="text-xs text-light/40 uppercase tracking-wide mb-2">{label}</p>
-            <p className="font-serif text-xl font-bold text-light">{value}</p>
+          <div key={label} className="bg-ink-soft p-6">
+            <p className="text-xs text-paper/40 uppercase tracking-wide mb-2">{label}</p>
+            <p className="font-serif text-xl font-bold text-paper">{value}</p>
           </div>
         ))}
       </div>
 
       <div className="flex flex-col sm:flex-row gap-3">
         <div className="relative flex-1">
-          <Search size={14} strokeWidth={1.5} className="absolute left-3 top-1/2 -translate-y-1/2 text-light/30" />
+          <Search size={14} strokeWidth={1.5} className="absolute left-3 top-1/2 -translate-y-1/2 text-paper/30" />
           <input
             type="text" value={search} onChange={e => setSearch(e.target.value)}
             placeholder="Rechercher par n°, client ou société…"
-            className="w-full border border-gold/15 bg-transparent pl-9 pr-4 py-2.5 text-sm text-light placeholder:text-light/20 focus:outline-none focus:border-gold transition-colors"
+            className="w-full border border-accent/15 bg-transparent pl-9 pr-4 py-2.5 text-sm text-paper placeholder:text-paper/20 focus:outline-none focus:border-accent transition-colors"
           />
         </div>
         <div className="flex gap-1 flex-wrap">
           {(['all', 'brouillon', 'envoyee', 'payee', 'en_retard'] as const).map(s => (
             <button
               key={s} onClick={() => setFilterStatus(s)}
-              className={`text-xs font-medium px-3 py-1.5 border transition-colors ${filterStatus === s ? 'bg-gold text-dark-bg border-gold' : 'text-light/40 border-gold/15 hover:border-gold/30'}`}
+              className={`text-xs font-medium px-3 py-1.5 border transition-colors ${filterStatus === s ? 'bg-accent text-paper border-accent' : 'text-paper/40 border-accent/15 hover:border-accent/30'}`}
             >
               {s === 'all' ? 'Toutes' : INV_STATUS_MAP[s].label}
             </button>
@@ -793,29 +793,29 @@ function AllInvoicesAdmin({ clients, onRefresh }: { clients: ClientData[]; onRef
       </div>
 
       {filtered.length > 0 && (
-        <p className="text-xs text-light/40">
-          {filtered.length} facture{filtered.length > 1 ? 's' : ''} · Total net : <span className="font-medium text-light">{fmtAmount(totalNet, 'TND')}</span>
+        <p className="text-xs text-paper/40">
+          {filtered.length} facture{filtered.length > 1 ? 's' : ''} · Total net : <span className="font-medium text-paper">{fmtAmount(totalNet, 'TND')}</span>
         </p>
       )}
 
       {filtered.length === 0 ? (
-        <div className="border border-gold/10 px-6 py-12 text-center text-sm text-light/30">Aucune facture trouvée.</div>
+        <div className="border border-accent/10 px-6 py-12 text-center text-sm text-paper/30">Aucune facture trouvée.</div>
       ) : (
-        <div className="flex flex-col gap-px bg-gold/10">
+        <div className="flex flex-col gap-px bg-accent/10">
           {filtered.map(inv => {
             const { net } = computeAmounts(inv)
             const { label, cls } = INV_STATUS_MAP[inv.status]
             const sym = CURRENCIES[inv.currency]?.symbol ?? inv.currency
             return (
-              <div key={inv.id} className="bg-dark-surface px-6 py-4 flex items-center gap-4">
+              <div key={inv.id} className="bg-ink-soft px-6 py-4 flex items-center gap-4">
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-2 flex-wrap mb-0.5">
-                    <p className="text-sm font-semibold text-light font-mono">{inv.number}</p>
+                    <p className="text-sm font-semibold text-paper font-mono">{inv.number}</p>
                     <span className={`text-xs font-medium px-2 py-0.5 border ${cls}`}>{label}</span>
-                    <span className="text-[10px] text-light/30 border border-gold/10 px-1.5 py-0.5">{sym}</span>
+                    <span className="text-[10px] text-paper/30 border border-accent/10 px-1.5 py-0.5">{sym}</span>
                   </div>
-                  <p className="text-xs text-light/40">
-                    <span className="font-medium text-light/60">{inv.clientName}</span>
+                  <p className="text-xs text-paper/40">
+                    <span className="font-medium text-paper/60">{inv.clientName}</span>
                     {inv.clientCompany ? ` · ${inv.clientCompany}` : ''} ·{' '}
                     {new Date(inv.dateEmission + 'T12:00:00').toLocaleDateString('fr-FR', { day: 'numeric', month: 'short', year: 'numeric' })}
                     {' — échéance '}
@@ -823,20 +823,20 @@ function AllInvoicesAdmin({ clients, onRefresh }: { clients: ClientData[]; onRef
                   </p>
                 </div>
                 <div className="flex-none text-right mr-2">
-                  <p className="text-sm font-semibold text-light">{fmtAmount(net, inv.currency)}</p>
-                  <p className="text-[10px] text-light/40">net à payer</p>
+                  <p className="text-sm font-semibold text-paper">{fmtAmount(net, inv.currency)}</p>
+                  <p className="text-[10px] text-paper/40">net à payer</p>
                 </div>
                 <div className="flex gap-1 flex-none">
                   {(['brouillon', 'envoyee', 'payee', 'en_retard'] as const).map(s => (
                     <button
                       key={s} onClick={() => updateStatus(inv, s)} title={INV_STATUS_MAP[s].label}
-                      className={`text-[10px] font-medium px-2 py-1 border transition-colors ${inv.status === s ? 'bg-gold text-dark-bg border-gold' : 'text-light/30 border-gold/10 hover:border-gold/30'}`}
+                      className={`text-[10px] font-medium px-2 py-1 border transition-colors ${inv.status === s ? 'bg-accent text-paper border-accent' : 'text-paper/30 border-accent/10 hover:border-accent/30'}`}
                     >
                       {s === 'brouillon' ? '✎' : s === 'envoyee' ? '✉' : s === 'payee' ? '✓' : '!'}
                     </button>
                   ))}
                 </div>
-                <button onClick={() => deleteInvoice(inv)} className="text-light/20 hover:text-red-500 transition-colors p-1 flex-none">
+                <button onClick={() => deleteInvoice(inv)} className="text-paper/20 hover:text-red-500 transition-colors p-1 flex-none">
                   <Trash2 size={13} strokeWidth={1.5} />
                 </button>
               </div>
@@ -940,14 +940,14 @@ function AgendaAdmin({ clients, onRefresh }: { clients: ClientData[]; onRefresh:
   return (
     <div className="flex flex-col gap-6">
       <div>
-        <p className="text-xs font-medium tracking-[0.2em] uppercase text-light/40 mb-2">Agenda</p>
-        <h2 className="font-serif text-2xl text-light">Planning & Tâches</h2>
+        <p className="text-xs font-medium tracking-[0.2em] uppercase text-paper/40 mb-2">Agenda</p>
+        <h2 className="font-serif text-2xl text-paper">Planning & Tâches</h2>
       </div>
 
-      <div className="flex gap-1 border-b border-gold/10 pb-0">
+      <div className="flex gap-1 border-b border-accent/10 pb-0">
         {(['rdv', 'todo'] as const).map(s => (
           <button key={s} onClick={() => setActiveSection(s)}
-            className={`text-sm font-medium px-4 py-2 border-b-2 transition-colors ${activeSection === s ? 'border-gold text-light' : 'border-transparent text-light/40 hover:text-light'}`}>
+            className={`text-sm font-medium px-4 py-2 border-b-2 transition-colors ${activeSection === s ? 'border-accent text-paper' : 'border-transparent text-paper/40 hover:text-paper'}`}>
             {s === 'rdv' ? `Rendez-vous (${allRdvs.length})` : `To-Do (${allTodos.filter(t => !t.done).length} en cours)`}
           </button>
         ))}
@@ -958,73 +958,73 @@ function AgendaAdmin({ clients, onRefresh }: { clients: ClientData[]; onRefresh:
         <>
           <div className="flex justify-end">
             <button onClick={() => setShowRdvForm(v => !v)}
-              className="flex items-center gap-2 bg-gold text-dark-bg text-xs font-medium px-4 py-2.5 hover:bg-gold/90 transition-colors">
+              className="flex items-center gap-2 bg-accent text-paper text-xs font-medium px-4 py-2.5 hover:bg-accent/90 transition-colors">
               <Plus size={13} strokeWidth={1.5} /> Nouveau RDV
             </button>
           </div>
 
           {showRdvForm && (
-            <div className="border border-gold/15 p-6 flex flex-col gap-4">
+            <div className="border border-accent/15 p-6 flex flex-col gap-4">
               <div className="flex items-center justify-between">
-                <p className="text-sm font-medium text-light">Créer un rendez-vous</p>
-                <button onClick={() => setShowRdvForm(false)} className="text-light/30 hover:text-light transition-colors"><X size={14} strokeWidth={1.5} /></button>
+                <p className="text-sm font-medium text-paper">Créer un rendez-vous</p>
+                <button onClick={() => setShowRdvForm(false)} className="text-paper/30 hover:text-paper transition-colors"><X size={14} strokeWidth={1.5} /></button>
               </div>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div className="flex flex-col gap-1.5 sm:col-span-2">
-                  <label className="text-xs font-medium text-light/40 uppercase tracking-wide">Client</label>
-                  <select value={rdvForm.clientId} onChange={e => setRdvForm(f => ({ ...f, clientId: e.target.value }))} className="border-b border-gold/15 bg-transparent py-2 text-sm text-light focus:outline-none focus:border-gold transition-colors">
+                  <label className="text-xs font-medium text-paper/40 uppercase tracking-wide">Client</label>
+                  <select value={rdvForm.clientId} onChange={e => setRdvForm(f => ({ ...f, clientId: e.target.value }))} className="border-b border-accent/15 bg-transparent py-2 text-sm text-paper focus:outline-none focus:border-accent transition-colors">
                     {clients.map(c => <option key={c.user.id} value={c.user.id}>{c.user.name}{c.user.company ? ` — ${c.user.company}` : ''}</option>)}
                   </select>
                 </div>
                 <div className="flex flex-col gap-1.5 sm:col-span-2">
-                  <label className="text-xs font-medium text-light/40 uppercase tracking-wide">Titre</label>
-                  <input type="text" value={rdvForm.title} onChange={e => setRdvForm(f => ({ ...f, title: e.target.value }))} placeholder="Ex: Point d'avancement Série A" className="border-b border-gold/15 bg-transparent py-2 text-sm text-light placeholder:text-light/20 focus:outline-none focus:border-gold" />
+                  <label className="text-xs font-medium text-paper/40 uppercase tracking-wide">Titre</label>
+                  <input type="text" value={rdvForm.title} onChange={e => setRdvForm(f => ({ ...f, title: e.target.value }))} placeholder="Ex: Point d'avancement Série A" className="border-b border-accent/15 bg-transparent py-2 text-sm text-paper placeholder:text-paper/20 focus:outline-none focus:border-accent" />
                 </div>
                 <div className="flex flex-col gap-1.5">
-                  <label className="text-xs font-medium text-light/40 uppercase tracking-wide">Date</label>
-                  <input type="date" value={rdvForm.date} onChange={e => setRdvForm(f => ({ ...f, date: e.target.value }))} className="border-b border-gold/15 bg-transparent py-2 text-sm text-light focus:outline-none focus:border-gold" />
+                  <label className="text-xs font-medium text-paper/40 uppercase tracking-wide">Date</label>
+                  <input type="date" value={rdvForm.date} onChange={e => setRdvForm(f => ({ ...f, date: e.target.value }))} className="border-b border-accent/15 bg-transparent py-2 text-sm text-paper focus:outline-none focus:border-accent" />
                 </div>
                 <div className="flex flex-col gap-1.5">
-                  <label className="text-xs font-medium text-light/40 uppercase tracking-wide">Heure</label>
-                  <input type="time" value={rdvForm.time} onChange={e => setRdvForm(f => ({ ...f, time: e.target.value }))} className="border-b border-gold/15 bg-transparent py-2 text-sm text-light focus:outline-none focus:border-gold" />
+                  <label className="text-xs font-medium text-paper/40 uppercase tracking-wide">Heure</label>
+                  <input type="time" value={rdvForm.time} onChange={e => setRdvForm(f => ({ ...f, time: e.target.value }))} className="border-b border-accent/15 bg-transparent py-2 text-sm text-paper focus:outline-none focus:border-accent" />
                 </div>
                 <div className="flex flex-col gap-1.5">
-                  <label className="text-xs font-medium text-light/40 uppercase tracking-wide">Type</label>
-                  <select value={rdvForm.type} onChange={e => setRdvForm(f => ({ ...f, type: e.target.value as Appointment['type'] }))} className="border-b border-gold/15 bg-transparent py-2 text-sm text-light focus:outline-none focus:border-gold">
+                  <label className="text-xs font-medium text-paper/40 uppercase tracking-wide">Type</label>
+                  <select value={rdvForm.type} onChange={e => setRdvForm(f => ({ ...f, type: e.target.value as Appointment['type'] }))} className="border-b border-accent/15 bg-transparent py-2 text-sm text-paper focus:outline-none focus:border-accent">
                     <option value="visio">Visioconférence</option>
                     <option value="presentiel">Présentiel</option>
                     <option value="telephone">Téléphone</option>
                   </select>
                 </div>
                 <div className="flex flex-col gap-1.5">
-                  <label className="text-xs font-medium text-light/40 uppercase tracking-wide">Notes</label>
-                  <input type="text" value={rdvForm.notes} onChange={e => setRdvForm(f => ({ ...f, notes: e.target.value }))} placeholder="Optionnel" className="border-b border-gold/15 bg-transparent py-2 text-sm text-light placeholder:text-light/20 focus:outline-none focus:border-gold" />
+                  <label className="text-xs font-medium text-paper/40 uppercase tracking-wide">Notes</label>
+                  <input type="text" value={rdvForm.notes} onChange={e => setRdvForm(f => ({ ...f, notes: e.target.value }))} placeholder="Optionnel" className="border-b border-accent/15 bg-transparent py-2 text-sm text-paper placeholder:text-paper/20 focus:outline-none focus:border-accent" />
                 </div>
               </div>
-              <button onClick={handleCreateRdv} className="self-start bg-gold text-dark-bg text-xs font-medium px-5 py-2.5 hover:bg-gold/90 transition-colors">Créer le rendez-vous</button>
+              <button onClick={handleCreateRdv} className="self-start bg-accent text-paper text-xs font-medium px-5 py-2.5 hover:bg-accent/90 transition-colors">Créer le rendez-vous</button>
             </div>
           )}
 
           <CalendarView appointments={allRdvs} selectedDate={selectedDate} onSelectDate={date => { setSelectedDate(date); setRdvForm(f => ({ ...f, date })) }} />
 
           <div>
-            <p className="text-xs font-medium text-light/40 uppercase tracking-wide mb-3">Tous les rendez-vous</p>
+            <p className="text-xs font-medium text-paper/40 uppercase tracking-wide mb-3">Tous les rendez-vous</p>
             {allRdvs.length === 0 ? (
-              <div className="border border-gold/10 px-6 py-8 text-center text-sm text-light/30">Aucun rendez-vous planifié.</div>
+              <div className="border border-accent/10 px-6 py-8 text-center text-sm text-paper/30">Aucun rendez-vous planifié.</div>
             ) : (
-              <div className="flex flex-col gap-px bg-gold/10">
+              <div className="flex flex-col gap-px bg-accent/10">
                 {[...allRdvs].sort((a, b) => a.date.localeCompare(b.date)).map(rdv => (
-                  <div key={rdv.id} className="bg-dark-surface px-6 py-4 flex items-center gap-4">
+                  <div key={rdv.id} className="bg-ink-soft px-6 py-4 flex items-center gap-4">
                     <div className="flex-none text-center w-10">
-                      <p className="text-xs font-bold text-light">{new Date(rdv.date + 'T12:00:00').toLocaleDateString('fr-FR', { day: 'numeric' })}</p>
-                      <p className="text-[10px] text-light/40 uppercase">{new Date(rdv.date + 'T12:00:00').toLocaleDateString('fr-FR', { month: 'short' })}</p>
+                      <p className="text-xs font-bold text-paper">{new Date(rdv.date + 'T12:00:00').toLocaleDateString('fr-FR', { day: 'numeric' })}</p>
+                      <p className="text-[10px] text-paper/40 uppercase">{new Date(rdv.date + 'T12:00:00').toLocaleDateString('fr-FR', { month: 'short' })}</p>
                     </div>
-                    <div className="w-px h-8 bg-gold/10 flex-none" />
+                    <div className="w-px h-8 bg-accent/10 flex-none" />
                     <div className="flex-1 min-w-0">
-                      <p className="text-sm font-medium text-light truncate">{rdv.title}</p>
-                      <p className="text-xs text-light/40 mt-0.5">{rdv.clientName} · {rdv.time} · {rdv.type === 'visio' ? 'Visio' : rdv.type === 'presentiel' ? 'Présentiel' : 'Tél.'}</p>
+                      <p className="text-sm font-medium text-paper truncate">{rdv.title}</p>
+                      <p className="text-xs text-paper/40 mt-0.5">{rdv.clientName} · {rdv.time} · {rdv.type === 'visio' ? 'Visio' : rdv.type === 'presentiel' ? 'Présentiel' : 'Tél.'}</p>
                     </div>
-                    <button onClick={() => handleDeleteRdv(rdv)} className="flex-none text-light/20 hover:text-red-500 transition-colors p-1"><Trash2 size={13} strokeWidth={1.5} /></button>
+                    <button onClick={() => handleDeleteRdv(rdv)} className="flex-none text-paper/20 hover:text-red-500 transition-colors p-1"><Trash2 size={13} strokeWidth={1.5} /></button>
                   </div>
                 ))}
               </div>
@@ -1038,43 +1038,43 @@ function AgendaAdmin({ clients, onRefresh }: { clients: ClientData[]; onRefresh:
         <>
           <div className="flex justify-end">
             <button onClick={() => { setEditTodoId(null); setTodoForm(f => ({ ...f, title: '', dueDate: '' })); setShowTodoForm(v => !v) }}
-              className="flex items-center gap-2 bg-gold text-dark-bg text-xs font-medium px-4 py-2.5 hover:bg-gold/90 transition-colors">
+              className="flex items-center gap-2 bg-accent text-paper text-xs font-medium px-4 py-2.5 hover:bg-accent/90 transition-colors">
               <Plus size={13} strokeWidth={1.5} /> Nouvelle tâche
             </button>
           </div>
 
           {showTodoForm && (
-            <div className="border border-gold/15 p-6 flex flex-col gap-4">
+            <div className="border border-accent/15 p-6 flex flex-col gap-4">
               <div className="flex items-center justify-between">
-                <p className="text-sm font-medium text-light">{editTodoId ? 'Modifier la tâche' : 'Assigner une tâche'}</p>
-                <button onClick={() => { setShowTodoForm(false); setEditTodoId(null) }} className="text-light/30 hover:text-light transition-colors"><X size={14} strokeWidth={1.5} /></button>
+                <p className="text-sm font-medium text-paper">{editTodoId ? 'Modifier la tâche' : 'Assigner une tâche'}</p>
+                <button onClick={() => { setShowTodoForm(false); setEditTodoId(null) }} className="text-paper/30 hover:text-paper transition-colors"><X size={14} strokeWidth={1.5} /></button>
               </div>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 {!editTodoId && (
                   <div className="flex flex-col gap-1.5 sm:col-span-2">
-                    <label className="text-xs font-medium text-light/40 uppercase tracking-wide">Client</label>
-                    <select value={todoForm.clientId} onChange={e => setTodoForm(f => ({ ...f, clientId: e.target.value }))} className="border-b border-gold/15 bg-transparent py-2 text-sm text-light focus:outline-none focus:border-gold">
+                    <label className="text-xs font-medium text-paper/40 uppercase tracking-wide">Client</label>
+                    <select value={todoForm.clientId} onChange={e => setTodoForm(f => ({ ...f, clientId: e.target.value }))} className="border-b border-accent/15 bg-transparent py-2 text-sm text-paper focus:outline-none focus:border-accent">
                       {clients.map(c => <option key={c.user.id} value={c.user.id}>{c.user.name}{c.user.company ? ` — ${c.user.company}` : ''}</option>)}
                     </select>
                   </div>
                 )}
                 <div className="flex flex-col gap-1.5 sm:col-span-2">
-                  <label className="text-xs font-medium text-light/40 uppercase tracking-wide">Tâche</label>
-                  <input type="text" value={todoForm.title} onChange={e => setTodoForm(f => ({ ...f, title: e.target.value }))} placeholder="Ex: Envoyer les statuts mis à jour" className="border-b border-gold/15 bg-transparent py-2 text-sm text-light placeholder:text-light/20 focus:outline-none focus:border-gold" />
+                  <label className="text-xs font-medium text-paper/40 uppercase tracking-wide">Tâche</label>
+                  <input type="text" value={todoForm.title} onChange={e => setTodoForm(f => ({ ...f, title: e.target.value }))} placeholder="Ex: Envoyer les statuts mis à jour" className="border-b border-accent/15 bg-transparent py-2 text-sm text-paper placeholder:text-paper/20 focus:outline-none focus:border-accent" />
                 </div>
                 <div className="flex flex-col gap-1.5">
-                  <label className="text-xs font-medium text-light/40 uppercase tracking-wide">Priorité</label>
-                  <select value={todoForm.priority} onChange={e => setTodoForm(f => ({ ...f, priority: e.target.value as Todo['priority'] }))} className="border-b border-gold/15 bg-transparent py-2 text-sm text-light focus:outline-none focus:border-gold">
+                  <label className="text-xs font-medium text-paper/40 uppercase tracking-wide">Priorité</label>
+                  <select value={todoForm.priority} onChange={e => setTodoForm(f => ({ ...f, priority: e.target.value as Todo['priority'] }))} className="border-b border-accent/15 bg-transparent py-2 text-sm text-paper focus:outline-none focus:border-accent">
                     <option value="normale">Normale</option>
                     <option value="urgente">Urgente</option>
                   </select>
                 </div>
                 <div className="flex flex-col gap-1.5">
-                  <label className="text-xs font-medium text-light/40 uppercase tracking-wide">Échéance <span className="normal-case text-light/30">(optionnel)</span></label>
-                  <input type="date" value={todoForm.dueDate} onChange={e => setTodoForm(f => ({ ...f, dueDate: e.target.value }))} className="border-b border-gold/15 bg-transparent py-2 text-sm text-light focus:outline-none focus:border-gold" />
+                  <label className="text-xs font-medium text-paper/40 uppercase tracking-wide">Échéance <span className="normal-case text-paper/30">(optionnel)</span></label>
+                  <input type="date" value={todoForm.dueDate} onChange={e => setTodoForm(f => ({ ...f, dueDate: e.target.value }))} className="border-b border-accent/15 bg-transparent py-2 text-sm text-paper focus:outline-none focus:border-accent" />
                 </div>
               </div>
-              <button onClick={handleSaveTodo} className="self-start bg-gold text-dark-bg text-xs font-medium px-5 py-2.5 hover:bg-gold/90 transition-colors">
+              <button onClick={handleSaveTodo} className="self-start bg-accent text-paper text-xs font-medium px-5 py-2.5 hover:bg-accent/90 transition-colors">
                 {editTodoId ? 'Enregistrer' : 'Assigner la tâche'}
               </button>
             </div>
@@ -1135,30 +1135,30 @@ function MessagerieAdmin({ clients, onRefresh }: { clients: ClientData[]; onRefr
   if (selectedClient) {
     return (
       <div className="flex flex-col gap-6">
-        <button onClick={() => setSelectedClientId(null)} className="flex items-center gap-2 text-xs text-light/40 hover:text-light transition-colors">
+        <button onClick={() => setSelectedClientId(null)} className="flex items-center gap-2 text-xs text-paper/40 hover:text-paper transition-colors">
           <ArrowLeft size={12} strokeWidth={1.5} /> Retour aux conversations
         </button>
         <div>
-          <p className="text-xs text-light/40 uppercase tracking-wide mb-1">Messagerie</p>
-          <h2 className="font-serif text-xl text-light">{selectedClient.user.name}</h2>
-          {selectedClient.user.company && <p className="text-xs text-light/40">{selectedClient.user.company}</p>}
+          <p className="text-xs text-paper/40 uppercase tracking-wide mb-1">Messagerie</p>
+          <h2 className="font-serif text-xl text-paper">{selectedClient.user.name}</h2>
+          {selectedClient.user.company && <p className="text-xs text-paper/40">{selectedClient.user.company}</p>}
         </div>
-        <div className="border border-gold/10 flex flex-col" style={{ height: '500px' }}>
+        <div className="border border-accent/10 flex flex-col" style={{ height: '500px' }}>
           <div className="flex-1 overflow-y-auto p-6 flex flex-col gap-3">
             {messages.length === 0 && (
               <div className="flex-1 flex flex-col items-center justify-center gap-2 text-center">
-                <MessageSquare size={24} strokeWidth={1.25} className="text-light/20" />
-                <p className="text-xs text-light/40">Aucun message pour le moment.</p>
+                <MessageSquare size={24} strokeWidth={1.25} className="text-paper/20" />
+                <p className="text-xs text-paper/40">Aucun message pour le moment.</p>
               </div>
             )}
             {messages.map(msg => (
               <div key={msg.id} className={`flex ${msg.from === 'admin' ? 'justify-end' : 'justify-start'}`}>
-                <div className={`max-w-sm px-4 py-2.5 ${msg.from === 'admin' ? 'bg-gold text-dark-bg' : 'bg-dark-surface border border-gold/10 text-light'}`}>
+                <div className={`max-w-sm px-4 py-2.5 ${msg.from === 'admin' ? 'bg-accent text-paper' : 'bg-ink-soft border border-accent/10 text-paper'}`}>
                   {msg.from === 'client' && (
-                    <p className="text-[10px] font-medium text-light/40 uppercase mb-0.5">{selectedClient.user.name.split(' ')[0]}</p>
+                    <p className="text-[10px] font-medium text-paper/40 uppercase mb-0.5">{selectedClient.user.name.split(' ')[0]}</p>
                   )}
                   <p className="text-sm leading-relaxed">{msg.text}</p>
-                  <p className={`text-[10px] mt-0.5 ${msg.from === 'admin' ? 'text-dark-bg/50' : 'text-light/30'}`}>
+                  <p className={`text-[10px] mt-0.5 ${msg.from === 'admin' ? 'text-paper/50' : 'text-paper/30'}`}>
                     {new Date(msg.sentAt).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })}
                     {' · '}
                     {new Date(msg.sentAt).toLocaleDateString('fr-FR', { day: 'numeric', month: 'short' })}
@@ -1168,15 +1168,15 @@ function MessagerieAdmin({ clients, onRefresh }: { clients: ClientData[]; onRefr
             ))}
             <div ref={endRef} />
           </div>
-          <div className="border-t border-gold/10 p-4 flex gap-3">
+          <div className="border-t border-accent/10 p-4 flex gap-3">
             <input
               type="text" value={msgInput} onChange={e => setMsgInput(e.target.value)}
               onKeyDown={e => e.key === 'Enter' && sendMessage()}
               placeholder="Message au client…"
-              className="flex-1 bg-transparent text-sm text-light placeholder:text-light/20 focus:outline-none"
+              className="flex-1 bg-transparent text-sm text-paper placeholder:text-paper/20 focus:outline-none"
             />
             <button onClick={sendMessage} disabled={!msgInput.trim()}
-              className="flex items-center gap-1.5 bg-gold text-dark-bg text-xs font-medium px-4 py-2 hover:bg-gold/90 transition-colors disabled:opacity-30 disabled:cursor-not-allowed">
+              className="flex items-center gap-1.5 bg-accent text-paper text-xs font-medium px-4 py-2 hover:bg-accent/90 transition-colors disabled:opacity-30 disabled:cursor-not-allowed">
               <Send size={12} strokeWidth={1.5} /> Envoyer
             </button>
           </div>
@@ -1188,37 +1188,37 @@ function MessagerieAdmin({ clients, onRefresh }: { clients: ClientData[]; onRefr
   return (
     <div className="flex flex-col gap-6">
       <div>
-        <p className="text-xs font-medium tracking-[0.2em] uppercase text-light/40 mb-2">Messagerie</p>
-        <h2 className="font-serif text-2xl text-light">Conversations clients</h2>
+        <p className="text-xs font-medium tracking-[0.2em] uppercase text-paper/40 mb-2">Messagerie</p>
+        <h2 className="font-serif text-2xl text-paper">Conversations clients</h2>
       </div>
       {clients.length === 0 ? (
-        <div className="border border-gold/10 px-6 py-12 text-center text-sm text-light/30">Aucun client enregistré.</div>
+        <div className="border border-accent/10 px-6 py-12 text-center text-sm text-paper/30">Aucun client enregistré.</div>
       ) : (
-        <div className="flex flex-col gap-px bg-gold/10">
+        <div className="flex flex-col gap-px bg-accent/10">
           {clients.map(c => {
             const unread = unreadFor(c.user.id)
             const msgs = getMessagesForClient(c.user.id)
             const last = msgs[msgs.length - 1]
             return (
               <button key={c.user.id} onClick={() => openConversation(c.user.id)}
-                className="bg-dark-surface px-6 py-4 flex items-center justify-between gap-4 text-left hover:bg-dark-card group transition-colors">
+                className="bg-ink-soft px-6 py-4 flex items-center justify-between gap-4 text-left hover:bg-ink group transition-colors">
                 <div className="flex items-center gap-3 min-w-0">
                   <div className="relative flex-none">
-                    <div className="w-8 h-8 bg-dark-card flex items-center justify-center">
-                      <span className="text-xs font-semibold text-light/50">
+                    <div className="w-8 h-8 bg-ink flex items-center justify-center">
+                      <span className="text-xs font-semibold text-paper/50">
                         {c.user.name.split(' ').map(n => n[0]).slice(0, 2).join('')}
                       </span>
                     </div>
                     {unread > 0 && (
-                      <span className="absolute -top-1 -right-1 flex items-center justify-center w-4 h-4 bg-gold text-dark-bg text-[10px] font-bold rounded-sm">{unread}</span>
+                      <span className="absolute -top-1 -right-1 flex items-center justify-center w-4 h-4 bg-accent text-paper text-[10px] font-bold rounded-sm">{unread}</span>
                     )}
                   </div>
                   <div className="min-w-0">
-                    <p className="text-sm font-medium text-light">{c.user.name}</p>
-                    <p className="text-xs text-light/40 truncate">{last ? (last.from === 'admin' ? 'Vous : ' : '') + last.text : 'Aucun message'}</p>
+                    <p className="text-sm font-medium text-paper">{c.user.name}</p>
+                    <p className="text-xs text-paper/40 truncate">{last ? (last.from === 'admin' ? 'Vous : ' : '') + last.text : 'Aucun message'}</p>
                   </div>
                 </div>
-                <ChevronRight size={13} strokeWidth={1.5} className="text-light/20 group-hover:text-light/50 transition-colors flex-none" />
+                <ChevronRight size={13} strokeWidth={1.5} className="text-paper/20 group-hover:text-paper/50 transition-colors flex-none" />
               </button>
             )
           })}
@@ -1269,9 +1269,9 @@ export default function AdminPage() {
   }
 
   return (
-    <div className="min-h-screen bg-dark-bg flex flex-col">
+    <div className="min-h-screen bg-ink flex flex-col">
       {/* Header */}
-      <header className="border-b border-gold/10 bg-dark-surface flex items-center justify-between px-6 h-14 sticky top-0 z-40">
+      <header className="border-b border-accent/10 bg-ink-soft flex items-center justify-between px-6 h-14 sticky top-0 z-40">
         <Link to="/" className="flex flex-col">
           <span className="font-serif text-base font-semibold text-white leading-tight">Maître Mokadmi Sami</span>
           <span className="text-[10px] text-white/40 tracking-wide uppercase">Administration</span>
@@ -1288,27 +1288,27 @@ export default function AdminPage() {
 
       <div className="flex flex-1">
         {/* Sidebar */}
-        <aside className="hidden md:flex flex-col w-56 border-r border-gold/10 pt-8 pb-6 px-4 sticky top-14 h-[calc(100vh-3.5rem)]">
+        <aside className="hidden md:flex flex-col w-56 border-r border-accent/10 pt-8 pb-6 px-4 sticky top-14 h-[calc(100vh-3.5rem)]">
           <nav className="flex flex-col gap-1">
             {navItems.map(({ id, label, icon: Icon }) => {
               const isMsg = id === 'messagerie'
               return (
                 <button
                   key={id} onClick={() => changeTab(id)}
-                  className={`flex items-center gap-3 px-4 py-2.5 text-sm font-medium transition-colors text-left ${tab === id ? 'bg-gold text-dark-bg' : 'text-light/50 hover:text-light hover:bg-dark-card'}`}
+                  className={`flex items-center gap-3 px-4 py-2.5 text-sm font-medium transition-colors text-left ${tab === id ? 'bg-accent text-paper' : 'text-paper/50 hover:text-paper hover:bg-ink'}`}
                 >
                   <Icon size={15} strokeWidth={1.25} />
                   {label}
                   {isMsg && totalUnread > 0 && (
-                    <span className={`ml-auto flex items-center justify-center w-4 h-4 text-[10px] font-bold rounded-sm ${tab === id ? 'bg-dark-bg text-gold' : 'bg-gold text-dark-bg'}`}>{totalUnread}</span>
+                    <span className={`ml-auto flex items-center justify-center w-4 h-4 text-[10px] font-bold rounded-sm ${tab === id ? 'bg-ink text-accent' : 'bg-accent text-paper'}`}>{totalUnread}</span>
                   )}
                 </button>
               )
             })}
           </nav>
 
-          <div className="mt-auto border-t border-gold/10 pt-4">
-            <Link to="/dashboard" className="flex items-center gap-2 px-4 py-2 text-xs text-light/40 hover:text-light transition-colors">
+          <div className="mt-auto border-t border-accent/10 pt-4">
+            <Link to="/dashboard" className="flex items-center gap-2 px-4 py-2 text-xs text-paper/40 hover:text-paper transition-colors">
               Vue client →
             </Link>
           </div>
@@ -1316,16 +1316,16 @@ export default function AdminPage() {
 
         {/* Mobile menu */}
         {mobileOpen && (
-          <div className="md:hidden fixed inset-0 top-14 z-30 bg-dark-surface border-t border-gold/10 p-6 flex flex-col gap-2">
+          <div className="md:hidden fixed inset-0 top-14 z-30 bg-ink-soft border-t border-accent/10 p-6 flex flex-col gap-2">
             {navItems.map(({ id, label, icon: Icon }) => (
               <button
                 key={id} onClick={() => changeTab(id)}
-                className={`flex items-center gap-3 px-4 py-3 text-sm font-medium transition-colors text-left ${tab === id ? 'bg-gold text-dark-bg' : 'text-light/60 hover:text-light hover:bg-dark-card'}`}
+                className={`flex items-center gap-3 px-4 py-3 text-sm font-medium transition-colors text-left ${tab === id ? 'bg-accent text-paper' : 'text-paper/60 hover:text-paper hover:bg-ink'}`}
               >
                 <Icon size={15} strokeWidth={1.25} />
                 {label}
                 {id === 'messagerie' && totalUnread > 0 && (
-                  <span className="ml-auto flex items-center justify-center w-4 h-4 bg-gold text-dark-bg text-[10px] font-bold rounded-sm">{totalUnread}</span>
+                  <span className="ml-auto flex items-center justify-center w-4 h-4 bg-accent text-paper text-[10px] font-bold rounded-sm">{totalUnread}</span>
                 )}
               </button>
             ))}

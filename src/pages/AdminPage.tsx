@@ -194,6 +194,9 @@ function ClientDetail({
   const [selectedDossier, setSelectedDossier] = useState<Dossier | null>(null)
   const [clientInvoices, setClientInvoicesState] = useState<Invoice[]>(() => getInvoicesForClient(data.user.id))
 
+  const [showNewDossierForm, setShowNewDossierForm] = useState(false)
+  const [newDossierForm, setNewDossierForm] = useState({ titre: '', description: '' })
+
   const updateEtape = (dossierId: string, etapeIdx: number, newStatut: Etape['statut']) => {
     const updated = dossiers.map(d => {
       if (d.id !== dossierId) return d
@@ -205,6 +208,25 @@ function ClientDetail({
     setDossiersState(updated)
     saveDossiers(data.user.id, updated)
     if (selectedDossier) setSelectedDossier(updated.find(d => d.id === selectedDossier.id) ?? null)
+    onRefresh()
+  }
+
+  const createDossier = () => {
+    if (!newDossierForm.titre) return
+    const newDossier: Dossier = {
+      id: crypto.randomUUID(),
+      titre: newDossierForm.titre,
+      description: newDossierForm.description,
+      statut: 'attente',
+      dateOuverture: new Date().toISOString().split('T')[0],
+      prochainEcheance: null,
+      etapes: [{ label: 'Ouverture du dossier', statut: 'done', date: new Date().toLocaleDateString('fr-FR', { day: 'numeric', month: 'short', year: 'numeric' }) }]
+    }
+    const updated = [...dossiers, newDossier]
+    setDossiersState(updated)
+    saveDossiers(data.user.id, updated)
+    setNewDossierForm({ titre: '', description: '' })
+    setShowNewDossierForm(false)
     onRefresh()
   }
 
@@ -234,7 +256,39 @@ function ClientDetail({
 
       {/* Dossiers */}
       <div>
-        <p className="text-xs font-medium text-light/40 uppercase tracking-wide mb-3">Dossiers</p>
+        <div className="flex items-center justify-between mb-3">
+          <p className="text-xs font-medium text-light/40 uppercase tracking-wide">Dossiers</p>
+          {!selectedDossier && (
+            <button
+              onClick={() => setShowNewDossierForm(!showNewDossierForm)}
+              className="flex items-center gap-1.5 text-xs text-gold hover:text-gold/80 transition-colors"
+            >
+              <Plus size={12} strokeWidth={1.5} /> Nouveau dossier
+            </button>
+          )}
+        </div>
+
+        {showNewDossierForm && !selectedDossier && (
+          <div className="border border-gold/15 p-6 flex flex-col gap-4 mb-4">
+            <div className="flex items-center justify-between">
+              <p className="text-sm font-medium text-light">Créer un dossier</p>
+              <button onClick={() => setShowNewDossierForm(false)} className="text-light/30 hover:text-light transition-colors"><X size={14} strokeWidth={1.5} /></button>
+            </div>
+            <div className="flex flex-col gap-1.5">
+              <label className="text-xs font-medium text-light/40 uppercase tracking-wide">Titre</label>
+              <input type="text" value={newDossierForm.titre} onChange={e => setNewDossierForm(f => ({ ...f, titre: e.target.value }))} placeholder="Nom du dossier" className="border-b border-gold/15 bg-transparent py-2 text-sm text-light focus:outline-none focus:border-gold transition-colors" />
+            </div>
+            <div className="flex flex-col gap-1.5">
+              <label className="text-xs font-medium text-light/40 uppercase tracking-wide">Description</label>
+              <input type="text" value={newDossierForm.description} onChange={e => setNewDossierForm(f => ({ ...f, description: e.target.value }))} placeholder="Description (optionnelle)" className="border-b border-gold/15 bg-transparent py-2 text-sm text-light focus:outline-none focus:border-gold transition-colors" />
+            </div>
+            <div className="flex gap-3 mt-2">
+              <button onClick={createDossier} className="bg-gold text-dark-bg text-xs font-medium px-4 py-2 hover:bg-gold/90 transition-colors">Créer</button>
+              <button onClick={() => setShowNewDossierForm(false)} className="text-xs text-light/40 hover:text-light transition-colors">Annuler</button>
+            </div>
+          </div>
+        )}
+
         {selectedDossier ? (
           <div className="border border-gold/10 p-6 flex flex-col gap-5">
             <button onClick={() => setSelectedDossier(null)} className="flex items-center gap-2 text-xs text-light/40 hover:text-light transition-colors">

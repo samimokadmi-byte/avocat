@@ -1,11 +1,14 @@
 import { useState, useEffect, useRef } from 'react'
-import { X, Send, Bot, Sparkles } from 'lucide-react'
+import { X, Send, Bot, Sparkles, CalendarDays } from 'lucide-react'
+import { useAuth } from '../contexts/AuthContext'
+import { Appointment } from './CalendarView'
 
 interface Message {
   id: string
   text: string
   sender: 'bot' | 'user'
   timestamp: Date
+  isAppointmentForm?: boolean
 }
 
 const INITIAL_MESSAGES: Message[] = [
@@ -54,6 +57,11 @@ export default function AssistantIA() {
   const [inputValue, setInputValue] = useState('')
   const [isTyping, setIsTyping] = useState(false)
   const scrollRef = useRef<HTMLDivElement>(null)
+  const { user } = useAuth()
+
+  // Appointment form state
+  const [rdvDate, setRdvDate] = useState('')
+  const [rdvTime, setRdvTime] = useState('10:00')
 
   useEffect(() => {
     if (scrollRef.current) {
@@ -77,6 +85,21 @@ export default function AssistantIA() {
 
     // Simulate natural delay
     setTimeout(() => {
+      const isRdvIntent = ['rdv', 'rendez-vous', 'rendez vous', 'prendre rdv', 'appointment', 'réserver'].some(k => inputValue.toLowerCase().includes(k))
+
+      if (isRdvIntent && user?.role === 'client') {
+        const botMessage: Message = {
+          id: (Date.now() + 1).toString(),
+          text: "Je peux vous aider à planifier un rendez-vous. Veuillez choisir une date et une heure ci-dessous :",
+          sender: 'bot',
+          timestamp: new Date(),
+          isAppointmentForm: true
+        }
+        setMessages(prev => [...prev, botMessage])
+        setIsTyping(false)
+        return
+      }
+
       const botResponse = findResponse(inputValue)
       const botMessage: Message = {
         id: (Date.now() + 1).toString(),
@@ -87,6 +110,33 @@ export default function AssistantIA() {
       setMessages(prev => [...prev, botMessage])
       setIsTyping(false)
     }, 1000)
+  }
+
+  const handleBookAppointment = () => {
+    if (!rdvDate || !user) return
+
+    const rdvs: Appointment[] = JSON.parse(localStorage.getItem(`avocat_rdv_${user.id}`) || '[]')
+    const newRdv: Appointment = {
+      id: crypto.randomUUID(),
+      title: 'Rendez-vous (via Assistant IA)',
+      date: rdvDate,
+      time: rdvTime,
+      type: 'visio',
+      notes: 'Demande depuis l\'assistant IA',
+      clientId: user.id
+    }
+
+    rdvs.push(newRdv)
+    localStorage.setItem(`avocat_rdv_${user.id}`, JSON.stringify(rdvs))
+
+    const confirmationMsg: Message = {
+      id: Date.now().toString(),
+      text: `Parfait, votre rendez-vous est confirmé pour le ${new Date(rdvDate).toLocaleDateString('fr-FR')} à ${rdvTime}. Vous le retrouverez dans votre agenda.`,
+      sender: 'bot',
+      timestamp: new Date()
+    }
+
+    setMessages(prev => prev.filter(m => !m.isAppointmentForm).concat(confirmationMsg))
   }
 
   const findResponse = (input: string): string => {
@@ -142,7 +192,7 @@ export default function AssistantIA() {
             {messages.map((msg) => (
               <div
                 key={msg.id}
-                className={`flex ${msg.sender === 'user' ? 'justify-end' : 'justify-start'}`}
+                className={`flex ${msg.sender === 'user' ? 'justify-end' : 'justify-start'} flex-col ${msg.sender === 'user' ? 'items-end' : 'items-start'}`}
               >
                 <div className={`max-w-[80%] p-3 text-sm leading-relaxed ${
                   msg.sender === 'user'
@@ -151,6 +201,16 @@ export default function AssistantIA() {
                 }`}>
                   {msg.text}
                 </div>
+                {msg.isAppointmentForm && (
+                  <div className="mt-2 w-full max-w-[80%] bg-dark-surface border border-gold/20 p-3 flex flex-col gap-3">
+                    <p className="text-xs text-light/60 flex items-center gap-1.5 font-medium"><CalendarDays size={14}/> Planifier un RDV</p>
+                    <div className="flex flex-col gap-1.5">
+                      <input type="date" value={rdvDate} onChange={e => setRdvDate(e.target.value)} min={new Date().toISOString().split('T')[0]} className="bg-dark-bg border border-gold/10 px-3 py-1.5 text-sm text-light focus:outline-none focus:border-gold" />
+                      <input type="time" value={rdvTime} onChange={e => setRdvTime(e.target.value)} className="bg-dark-bg border border-gold/10 px-3 py-1.5 text-sm text-light focus:outline-none focus:border-gold" />
+                    </div>
+                    <button onClick={handleBookAppointment} disabled={!rdvDate} className="bg-gold text-dark-bg text-xs font-bold py-2 hover:bg-gold/90 transition-colors disabled:opacity-50">Confirmer le RDV</button>
+                  </div>
+                )}
               </div>
             ))}
             {isTyping && (

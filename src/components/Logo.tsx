@@ -1,12 +1,12 @@
 interface LogoProps {
   size?: number
   className?: string
-  /** 'light' = paper (sur fond sombre) · 'brand' = cramoisi (sur fond clair) */
+  /** 'light' = paper (sur fond sombre) · 'brand' = vert forêt (sur fond clair) */
   variant?: 'light' | 'brand'
 }
 
 export default function Logo({ size = 160, className = '', variant = 'light' }: LogoProps) {
-  const c = variant === 'brand' ? '#C0272D' : '#FAF8F2'
+  const c = variant === 'brand' ? '#1C3528' : '#F4F3EE'
 
   // Proportions : 200 × 275 (portrait)
   const W = 200, H = 275

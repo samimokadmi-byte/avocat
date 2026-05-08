@@ -9,34 +9,34 @@ export default {
       colors: {
         // ── Design system "Éditorial × OS" ──────────────────────────
         ink: {
-          DEFAULT: '#1E2540',   // navy franc (référence)
-          soft:    '#26304E',   // navy moyen pour les cartes/sections alternées
+          DEFAULT: '#1C3528',   // vert forêt profond (Equitas)
+          soft:    '#264637',   // vert forêt moyen pour les cartes/sections alternées
         },
-        text2:   '#475569',
+        text2:   '#4A6355',
         paper: {
-          DEFAULT: '#FAF8F2',
-          2:       '#F0EBDB',
+          DEFAULT: '#F4F3EE',
+          2:       '#E8E4DB',
         },
         hairline: {
-          DEFAULT: '#E5DFD0',
-          strong:  '#D7CFB7',
+          DEFAULT: '#D8D4C8',
+          strong:  '#C8C2B4',
         },
-        accent:  '#C0272D',     // rouge cramoisi (référence)
+        accent:  '#C49A58',     // doré ambré (Equitas CTA)
         status: {
           green: '#15803D',
           amber: '#A16207',
           red:   '#B91C1C',
         },
         // ── Legacy tokens (dashboard / auth — inchangés) ─────────────
-        offwhite: '#FDFCFB',
-        navy:     '#0A192F',
-        gold:     '#C9A96E',
+        offwhite: '#F4F3EE',
+        navy:     '#1C3528',
+        gold:     '#C49A58',
         dark: {
-          bg:      '#070C18',
-          surface: '#0C1220',
-          card:    '#111B2E',
+          bg:      '#0F1E16',
+          surface: '#172A1F',
+          card:    '#1C3528',
         },
-        light: '#E8EDF5',
+        light: '#D8E4DC',
       },
       fontFamily: {
         display: ['"Fraunces"', '"EB Garamond"', 'Georgia', 'serif'],

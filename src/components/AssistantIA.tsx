@@ -102,11 +102,11 @@ export default function AssistantIA() {
   }
 
   return (
-    <div className="fixed bottom-6 right-24 z-50">
+    <div className="fixed bottom-6 right-6 sm:right-24 z-50 flex flex-col items-end">
       {/* Toggle Button */}
       <button
         onClick={() => setIsOpen(!isOpen)}
-        className={`w-14 h-14 flex items-center justify-center shadow-lg transition-all duration-300 ${
+        className={`w-12 h-12 sm:w-14 sm:h-14 flex items-center justify-center shadow-lg transition-all duration-300 ${
           isOpen ? 'bg-gold rotate-90' : 'bg-dark-surface border border-gold/30 hover:border-gold'
         }`}
       >
@@ -122,7 +122,7 @@ export default function AssistantIA() {
 
       {/* Chat Window */}
       {isOpen && (
-        <div className="absolute bottom-20 right-0 w-[350px] sm:w-[400px] h-[500px] bg-dark-bg border border-gold/20 shadow-2xl flex flex-col overflow-hidden animate-in fade-in slide-in-from-bottom-4 duration-300">
+        <div className="absolute bottom-16 sm:bottom-20 right-0 sm:-right-4 w-[calc(100vw-3rem)] sm:w-[400px] max-w-[400px] h-[60vh] sm:h-[500px] bg-dark-bg border border-gold/20 shadow-2xl flex flex-col overflow-hidden animate-in fade-in slide-in-from-bottom-4 duration-300">
           {/* Header */}
           <div className="bg-dark-surface border-b border-gold/10 p-4 flex items-center gap-3">
             <div className="w-10 h-10 bg-gold/10 flex items-center justify-center border border-gold/20">

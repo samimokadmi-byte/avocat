@@ -73,8 +73,6 @@ function LandingPage() {
         <FAQ />
         <Booking />
       </main>
-      <WhatsAppButton />
-      <AssistantIA />
     </div>
   )
 }
@@ -124,6 +122,8 @@ export default function App() {
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
       </Suspense>
+      <WhatsAppButton />
+      <AssistantIA />
       </ErrorBoundary>
     </>
   )

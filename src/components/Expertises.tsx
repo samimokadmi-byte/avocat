@@ -61,11 +61,11 @@ export default function Expertises() {
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-px bg-gold/10">
         {secteurs.map(({ icon: Icon, titre, description, tags }) => (
           <div key={titre}
-            className="bg-dark-surface p-10 flex flex-col gap-5 group hover:bg-dark-card transition-colors duration-300">
+            className="bg-dark-surface p-8 sm:p-10 flex flex-col gap-5 group hover:bg-dark-card transition-colors duration-300">
             <Icon size={20} strokeWidth={1.25}
               className="text-gold/50 group-hover:text-gold transition-colors duration-300" />
             <div>
-              <h3 className="font-serif text-base font-semibold text-light mb-3">{titre}</h3>
+              <h3 className="font-serif text-base sm:text-lg font-semibold text-light mb-3">{titre}</h3>
               <p className="text-sm text-light/50 leading-relaxed mb-5">{description}</p>
               <div className="flex flex-wrap gap-2">
                 {tags.map(tag => (

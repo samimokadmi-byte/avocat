@@ -5,7 +5,7 @@
 export default function WhatsAppButton() {
   const phone   = '21629784651'
   const message = encodeURIComponent(
-    'Bonjour Maître Mokadmi,\n\nJe souhaite vous contacter concernant une question juridique.'
+    "Bonjour Maître Mokadmi, je viens de consulter votre site et j'aimerais échanger avec vous sur un projet stratégique. Seriez-vous disponible pour un court échange ?"
   )
   const url = `https://wa.me/${phone}?text=${message}`
 

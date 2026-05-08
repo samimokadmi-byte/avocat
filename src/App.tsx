@@ -38,6 +38,7 @@ import BlogSection from './components/BlogSection'
 import FAQ from './components/FAQ'
 import Booking from './components/Booking'
 import WhatsAppButton from './components/WhatsAppButton'
+import AssistantIA from './components/AssistantIA'
 
 // ── Heavy routes — loaded only when the user navigates to them ───────────────
 // Each lazy() call becomes a separate JS chunk in the build output.
@@ -73,6 +74,7 @@ function LandingPage() {
         <Booking />
       </main>
       <WhatsAppButton />
+      <AssistantIA />
     </div>
   )
 }

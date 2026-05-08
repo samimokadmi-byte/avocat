@@ -693,15 +693,26 @@ function Messagerie() {
         <p className="text-xs font-medium tracking-[0.2em] uppercase text-light/40 mb-2">Messagerie</p>
         <h2 className="font-serif text-2xl text-light">Échanges sécurisés</h2>
       </div>
-      <div className="border border-gold/10 px-8 py-12 flex flex-col items-center text-center gap-3">
-        <MessageSquare size={28} strokeWidth={1.25} className="text-light/20" />
-        <p className="text-sm font-medium text-light">Messagerie en cours d'activation</p>
-        <p className="text-xs text-light/40 max-w-xs leading-relaxed">
-          Pour toute question urgente, contactez le cabinet directement à{' '}
-          <a href="mailto:office@mokadmi.lawyer" className="text-light underline">
+      <div className="border border-gold/10 px-8 py-12 flex flex-col items-center text-center gap-6">
+        <div className="w-16 h-16 bg-gold/10 flex items-center justify-center rounded-full">
+          <MessageSquare size={28} strokeWidth={1.25} className="text-gold" />
+        </div>
+        <div className="space-y-2">
+          <p className="text-sm font-medium text-light">Besoin d'une réponse immédiate ?</p>
+          <p className="text-xs text-light/40 max-w-xs mx-auto leading-relaxed">
+            Utilisez notre Assistant IA (en bas à droite) pour vos questions d'ordre général,
+            ou contactez directement Maître Mokadmi pour vos dossiers en cours.
+          </p>
+        </div>
+        <div className="flex flex-col gap-3 w-full max-w-xs">
+          <a
+            href="mailto:office@mokadmi.lawyer"
+            className="flex items-center justify-center gap-2 bg-dark-card border border-gold/20 py-3 text-xs font-medium text-light hover:border-gold transition-colors"
+          >
             office@mokadmi.lawyer
           </a>
-        </p>
+          <p className="text-[10px] text-light/20 uppercase tracking-widest">Réponse sous 24h ouvrées</p>
+        </div>
       </div>
     </div>
   )

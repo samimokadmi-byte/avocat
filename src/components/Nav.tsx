@@ -26,7 +26,7 @@ export default function Nav() {
   return (
     <>
       {/* ── Utility bar ──────────────────────────────────────────────── */}
-      <div className="fixed top-0 left-0 right-0 z-50 h-8 border-b border-wine/30 flex items-center" style={{ background: 'linear-gradient(90deg, #1C3528 0%, #221008 50%, #1C3528 100%)' }}>
+      <div className="fixed top-0 left-0 right-0 z-50 h-8 bg-ink-soft border-b border-paper/8 flex items-center">
         <div className="max-w-content mx-auto w-full px-8 flex items-center justify-between">
           <span className="font-mono text-[11px] uppercase tracking-[0.08em] text-paper/35">
             Cabinet Mokadmi Sami — Barreau de Tunis — Fondé en 2006
@@ -38,7 +38,7 @@ export default function Nav() {
       </div>
 
       {/* ── Main nav ─────────────────────────────────────────────────── */}
-      <header className={`fixed top-8 left-0 right-0 z-50 border-b border-wine/20 transition-all duration-300 ${
+      <header className={`fixed top-8 left-0 right-0 z-50 border-b border-paper/10 transition-all duration-300 ${
         scrolled ? 'bg-ink/95 backdrop-blur-sm' : 'bg-ink'
       }`}>
         <div className="max-w-content mx-auto px-8 h-16 flex items-center justify-between">

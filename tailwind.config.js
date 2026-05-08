@@ -22,10 +22,6 @@ export default {
           strong:  '#C8C2B4',
         },
         accent:  '#C49A58',     // doré ambré (Equitas CTA)
-        wine: {
-          DEFAULT: '#1E0603',   // bordeaux profond (accent chaleur)
-          soft:    '#4A0C08',   // bordeaux moyen (visible sur fond sombre)
-        },
         status: {
           green: '#15803D',
           amber: '#A16207',

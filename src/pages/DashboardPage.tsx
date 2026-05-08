@@ -127,8 +127,41 @@ function Apercu({ dossiers, documents, userName }: { dossiers: Dossier[]; docume
 
 // ─── Dossiers ─────────────────────────────────────────────────────────────────
 
-function Dossiers({ dossiers, rdvs, todos, invoices }: { dossiers: Dossier[]; rdvs: Appointment[]; todos: Todo[]; invoices: Invoice[] }) {
+function Dossiers({ dossiers, setDossiers, rdvs, todos, invoices }: {
+  dossiers: Dossier[]
+  setDossiers: (d: Dossier[] | ((prev: Dossier[]) => Dossier[])) => void
+  rdvs: Appointment[]
+  todos: Todo[]
+  invoices: Invoice[]
+}) {
   const [selected, setSelected] = useState<Dossier | null>(null)
+  const [showForm, setShowForm] = useState(false)
+  const [form, setForm] = useState({ titre: '', description: '', prochainEcheance: '' })
+  const [formError, setFormError] = useState('')
+
+  const createDossier = () => {
+    if (!form.titre.trim()) { setFormError('Le titre est requis.'); return }
+    const today = new Date()
+    const newDossier: Dossier = {
+      id: crypto.randomUUID(),
+      titre: form.titre.trim(),
+      description: form.description.trim(),
+      statut: 'attente',
+      dateOuverture: today.toISOString().split('T')[0],
+      prochainEcheance: form.prochainEcheance || null,
+      etapes: [
+        {
+          label: 'Ouverture du dossier',
+          statut: 'done',
+          date: today.toLocaleDateString('fr-FR', { day: 'numeric', month: 'short', year: 'numeric' }),
+        },
+      ],
+    }
+    setDossiers((prev: Dossier[]) => [...prev, newDossier])
+    setForm({ titre: '', description: '', prochainEcheance: '' })
+    setFormError('')
+    setShowForm(false)
+  }
 
   if (selected) {
     const linkedRdvs = rdvs
@@ -262,12 +295,77 @@ function Dossiers({ dossiers, rdvs, todos, invoices }: { dossiers: Dossier[]; rd
 
   return (
     <div className="flex flex-col gap-6">
-      <div>
-        <p className="text-xs font-medium tracking-[0.2em] uppercase text-light/40 mb-2">Mes Dossiers</p>
-        <h2 className="font-serif text-2xl text-light">Suivi de vos missions</h2>
+      <div className="flex items-end justify-between gap-4">
+        <div>
+          <p className="text-xs font-medium tracking-[0.2em] uppercase text-light/40 mb-2">Mes Dossiers</p>
+          <h2 className="font-serif text-2xl text-light">Suivi de vos missions</h2>
+        </div>
+        <button
+          onClick={() => { setShowForm(v => !v); setFormError('') }}
+          className="flex items-center gap-2 bg-gold text-dark-bg text-xs font-medium px-4 py-2.5 hover:bg-gold/90 transition-colors flex-none"
+        >
+          <Plus size={13} strokeWidth={1.5} />
+          Nouveau dossier
+        </button>
       </div>
 
-      <div className="flex flex-col gap-px bg-gold/10">
+      {showForm && (
+        <div className="border border-gold/15 p-6 flex flex-col gap-4">
+          <div className="flex items-center justify-between">
+            <p className="text-sm font-medium text-light">Nouveau dossier</p>
+            <button onClick={() => { setShowForm(false); setFormError('') }} className="text-light/30 hover:text-light transition-colors">
+              <X size={14} strokeWidth={1.5} />
+            </button>
+          </div>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div className="flex flex-col gap-1.5 sm:col-span-2">
+              <label className="text-xs font-medium text-light/40 uppercase tracking-wide">Titre <span className="text-red-500">*</span></label>
+              <input
+                type="text"
+                value={form.titre}
+                onChange={e => { setForm(f => ({ ...f, titre: e.target.value })); setFormError('') }}
+                placeholder="Ex : Levée de fonds Série A"
+                className="border-b border-gold/15 bg-transparent py-2 text-sm text-light placeholder:text-light/20 focus:outline-none focus:border-gold transition-colors"
+              />
+            </div>
+            <div className="flex flex-col gap-1.5 sm:col-span-2">
+              <label className="text-xs font-medium text-light/40 uppercase tracking-wide">Description <span className="normal-case text-light/30">(optionnel)</span></label>
+              <input
+                type="text"
+                value={form.description}
+                onChange={e => setForm(f => ({ ...f, description: e.target.value }))}
+                placeholder="Résumé de la mission"
+                className="border-b border-gold/15 bg-transparent py-2 text-sm text-light placeholder:text-light/20 focus:outline-none focus:border-gold transition-colors"
+              />
+            </div>
+            <div className="flex flex-col gap-1.5">
+              <label className="text-xs font-medium text-light/40 uppercase tracking-wide">Prochaine échéance <span className="normal-case text-light/30">(optionnel)</span></label>
+              <input
+                type="date"
+                value={form.prochainEcheance}
+                min={new Date().toISOString().split('T')[0]}
+                onChange={e => setForm(f => ({ ...f, prochainEcheance: e.target.value }))}
+                className="border-b border-gold/15 bg-transparent py-2 text-sm text-light focus:outline-none focus:border-gold transition-colors"
+              />
+            </div>
+          </div>
+          {formError && <p className="text-xs text-red-400">{formError}</p>}
+          <div className="flex gap-3 mt-1">
+            <button onClick={createDossier} className="bg-gold text-dark-bg text-xs font-medium px-5 py-2.5 hover:bg-gold/90 transition-colors">
+              Créer
+            </button>
+            <button onClick={() => { setShowForm(false); setFormError('') }} className="text-xs text-light/40 hover:text-light transition-colors px-3">
+              Annuler
+            </button>
+          </div>
+        </div>
+      )}
+
+      {dossiers.length === 0 && !showForm && (
+        <p className="text-sm text-light/30 text-center py-8">Aucun dossier pour le moment. Créez-en un ci-dessus.</p>
+      )}
+
+      {dossiers.length > 0 && <div className="flex flex-col gap-px bg-gold/10">
         {dossiers.map(dossier => {
           const rdvCount = rdvs.filter(r => r.dossierId === dossier.id).length
           const todoCount = todos.filter(t => t.dossierId === dossier.id && !t.done).length
@@ -310,7 +408,7 @@ function Dossiers({ dossiers, rdvs, todos, invoices }: { dossiers: Dossier[]; rd
             </button>
           )
         })}
-      </div>
+      </div>}
     </div>
   )
 }
@@ -740,7 +838,7 @@ export default function DashboardPage() {
   const [tab, setTab] = useState('apercu')
   const [mobileOpen, setMobileOpen] = useState(false)
 
-  const [dossiers] = useLocalState<Dossier[]>(STORAGE_KEYS.dossiers(user?.id ?? ''), [])
+  const [dossiers, setDossiers] = useLocalState<Dossier[]>(STORAGE_KEYS.dossiers(user?.id ?? ''), [])
   const [documents, setDocuments, docStorageError] = useLocalState<Document[]>(STORAGE_KEYS.documents(user?.id ?? ''), [])
   const [rdvs, setRdvs] = useLocalState<Appointment[]>(STORAGE_KEYS.rdvs(user?.id ?? ''), [])
   const [todos, setTodos] = useLocalState<Todo[]>(STORAGE_KEYS.todos(user?.id ?? ''), [])
@@ -849,7 +947,7 @@ export default function DashboardPage() {
         {/* Main content */}
         <main className="flex-1 px-6 md:px-12 py-10 max-w-3xl">
           {tab === 'apercu' && <Apercu dossiers={dossiers} documents={documents} userName={user?.name ?? ''} />}
-          {tab === 'dossiers' && <Dossiers dossiers={dossiers} rdvs={rdvs} todos={todos} invoices={invoices} />}
+          {tab === 'dossiers' && <Dossiers dossiers={dossiers} setDossiers={setDossiers} rdvs={rdvs} todos={todos} invoices={invoices} />}
           {tab === 'documents' && (
             <ErrorBoundary>
               <Documents documents={documents} setDocuments={setDocuments} storageError={docStorageError} />

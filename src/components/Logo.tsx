@@ -6,7 +6,8 @@ interface LogoProps {
 }
 
 export default function Logo({ size = 160, className = '', variant = 'light' }: LogoProps) {
-  const c = variant === 'brand' ? '#1C3528' : '#F4F3EE'
+  const c    = variant === 'brand' ? '#1C3528' : '#F4F3EE'
+  const wine = variant === 'brand' ? '#4A0C08' : '#6B1610'
 
   // Proportions : 200 × 275 (portrait)
   const W = 200, H = 275
@@ -20,13 +21,14 @@ export default function Logo({ size = 160, className = '', variant = 'light' }: 
       aria-label="Mokadmi.lawyer — Ingénieurie Juridique"
       className={className}
     >
-      {/* ── Oval border ───────────────────────────────────────── */}
+      {/* ── Oval border — bordeaux profond ───────────────────── */}
       <ellipse
         cx="100" cy="108"
         rx="63" ry="92"
         fill="none"
-        stroke={c}
-        strokeWidth="1.4"
+        stroke={wine}
+        strokeWidth="1.6"
+        opacity="0.85"
       />
 
       {/* ── S — haut, calligraphique ──────────────────────────── */}

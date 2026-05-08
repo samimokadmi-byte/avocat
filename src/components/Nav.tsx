@@ -81,13 +81,15 @@ export default function Nav() {
       </div>
 
       {/* Mobile menu */}
-      {open && (
-        <div className="md:hidden bg-dark-bg/98 backdrop-blur-sm border-b border-gold/10 px-6 py-6 flex flex-col gap-4">
+      <div className={`md:hidden absolute top-full left-0 right-0 bg-dark-bg/98 backdrop-blur-sm border-b border-gold/10 overflow-hidden transition-all duration-300 ease-in-out ${
+        open ? 'max-h-[500px] opacity-100 py-6 px-6' : 'max-h-0 opacity-0 py-0 px-6'
+      }`}>
+        <div className="flex flex-col gap-4">
           {links.map(l => (
             <button
               key={l.id}
               onClick={() => { scrollTo(l.id); setOpen(false) }}
-              className="text-sm font-medium text-left text-light/50 hover:text-gold transition-colors py-1"
+              className="text-base font-medium text-left text-light/50 hover:text-gold transition-colors py-2"
             >
               {l.label}
             </button>
@@ -96,18 +98,18 @@ export default function Nav() {
           <Link
             to="/login"
             onClick={() => setOpen(false)}
-            className="text-sm text-light/30 hover:text-light/60 transition-colors"
+            className="text-base text-light/30 hover:text-light/60 transition-colors py-2"
           >
             Espace client
           </Link>
           <button
             onClick={() => { scrollTo('booking'); setOpen(false) }}
-            className="text-sm font-medium bg-gold text-dark-bg px-4 py-2.5 text-center hover:bg-gold/90 transition-colors"
+            className="text-base font-medium bg-gold text-dark-bg px-4 py-4 text-center hover:bg-gold/90 transition-colors mt-2"
           >
             Prendre rendez-vous
           </button>
         </div>
-      )}
+      </div>
     </header>
   )
 }

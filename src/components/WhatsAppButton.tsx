@@ -5,7 +5,7 @@
 export default function WhatsAppButton() {
   const phone   = '21629784651'
   const message = encodeURIComponent(
-    'Bonjour Maître Mokadmi,\n\nJe souhaite vous contacter concernant une question juridique.'
+    "Bonjour Maître Mokadmi, je viens de consulter votre site et j'aimerais échanger avec vous sur un projet stratégique. Seriez-vous disponible pour un court échange ?"
   )
   const url = `https://wa.me/${phone}?text=${message}`
 
@@ -15,7 +15,7 @@ export default function WhatsAppButton() {
       target="_blank"
       rel="noopener noreferrer"
       aria-label="Nous contacter sur WhatsApp"
-      className="fixed bottom-6 right-6 z-50 group flex items-center gap-3"
+      className="fixed bottom-20 sm:bottom-6 right-6 z-50 group flex items-center gap-3"
     >
       {/* Tooltip */}
       <span className="

@@ -40,7 +40,7 @@ export default function CasEtudes() {
 
       <div className="flex flex-col gap-px bg-gold/10">
         {cas.map(({ secteur, problematique, solution, impact }) => (
-          <div key={secteur} className="bg-dark-surface p-10 grid grid-cols-1 md:grid-cols-3 gap-10">
+          <div key={secteur} className="bg-dark-surface p-8 sm:p-10 grid grid-cols-1 md:grid-cols-3 gap-8 sm:gap-10">
             <div className="flex flex-col justify-between gap-6">
               <div>
                 <p className="text-xs font-medium uppercase tracking-[0.15em] text-gold/50 mb-3">{secteur}</p>

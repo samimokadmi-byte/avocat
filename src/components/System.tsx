@@ -43,7 +43,7 @@ export default function System() {
       <div className="grid grid-cols-1 md:grid-cols-3 gap-px bg-gold/10">
         {pillars.map(({ icon: Icon, number, title, subtitle, body, tags }) => (
           <div key={title}
-            className="bg-dark-surface p-10 flex flex-col gap-6 group hover:bg-dark-card transition-colors duration-300">
+            className="bg-dark-surface p-8 sm:p-10 flex flex-col gap-6 group hover:bg-dark-card transition-colors duration-300">
             <div className="flex items-start justify-between">
               <Icon size={22} strokeWidth={1.25}
                 className="text-gold/50 group-hover:text-gold transition-colors duration-300" />

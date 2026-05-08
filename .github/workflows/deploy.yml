@@ -4,6 +4,7 @@ on:
   push:
     branches:
       - "claude/luxury-landing-page-OGmMm"
+      - "feature/*"
       - main
   workflow_dispatch:
 

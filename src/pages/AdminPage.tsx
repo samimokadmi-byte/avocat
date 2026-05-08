@@ -11,24 +11,10 @@ import {
   CalendarDays, Plus, X, Receipt
 } from 'lucide-react'
 import { Invoice, computeAmounts, fmtAmount, CURRENCIES } from '../components/BillingModule'
+import { STORAGE_KEYS } from '../constants/storageKeys'
+import type { Etape, Dossier } from '../types'
 
 // ─── Types ────────────────────────────────────────────────────────────────────
-
-interface Etape {
-  label: string
-  statut: 'done' | 'current' | 'pending'
-  date: string | null
-}
-
-interface Dossier {
-  id: string
-  titre: string
-  statut: 'en_cours' | 'complete' | 'attente'
-  dateOuverture: string
-  prochainEcheance: string | null
-  description: string
-  etapes: Etape[]
-}
 
 interface ClientData {
   user: User
@@ -71,58 +57,60 @@ function fileIcon(type: string) {
 
 function getAllClients(): ClientData[] {
   const accounts: Record<string, { password: string; user: User }> = JSON.parse(
-    localStorage.getItem('avocat_accounts') || '{}'
+    localStorage.getItem(STORAGE_KEYS.accounts) || '{}'
   )
   return Object.values(accounts)
     .filter(a => a.user.role === 'client')
     .map(a => ({
       user: a.user,
-      dossiers: JSON.parse(localStorage.getItem(`avocat_dossiers_${a.user.id}`) || '[]'),
-      documents: JSON.parse(localStorage.getItem(`avocat_documents_${a.user.id}`) || '[]'),
+      dossiers: JSON.parse(localStorage.getItem(STORAGE_KEYS.dossiers(a.user.id)) || '[]'),
+      documents: JSON.parse(localStorage.getItem(STORAGE_KEYS.documents(a.user.id)) || '[]'),
     }))
 }
 
 function saveDossiers(userId: string, dossiers: Dossier[]) {
-  localStorage.setItem(`avocat_dossiers_${userId}`, JSON.stringify(dossiers))
+  localStorage.setItem(STORAGE_KEYS.dossiers(userId), JSON.stringify(dossiers))
 }
 
 function deleteDocument(userId: string, docId: string) {
-  const docs: Document[] = JSON.parse(localStorage.getItem(`avocat_documents_${userId}`) || '[]')
-  localStorage.setItem(`avocat_documents_${userId}`, JSON.stringify(docs.filter(d => d.id !== docId)))
+  const docs: Document[] = JSON.parse(localStorage.getItem(STORAGE_KEYS.documents(userId)) || '[]')
+  localStorage.setItem(STORAGE_KEYS.documents(userId), JSON.stringify(docs.filter(d => d.id !== docId)))
 }
 
 function getAllRdvs(): (Appointment & { clientName: string })[] {
-  const accounts: Record<string, { password: string; user: User }> = JSON.parse(localStorage.getItem('avocat_accounts') || '{}')
+  const accounts: Record<string, { password: string; user: User }> = JSON.parse(
+    localStorage.getItem(STORAGE_KEYS.accounts) || '{}'
+  )
   return Object.values(accounts)
     .filter(a => a.user.role === 'client')
     .flatMap(a => {
-      const rdvs: Appointment[] = JSON.parse(localStorage.getItem(`avocat_rdv_${a.user.id}`) || '[]')
+      const rdvs: Appointment[] = JSON.parse(localStorage.getItem(STORAGE_KEYS.rdvs(a.user.id)) || '[]')
       return rdvs.map(r => ({ ...r, clientName: a.user.name }))
     })
 }
 
 function saveRdvForClient(clientId: string, rdvs: Appointment[]) {
-  localStorage.setItem(`avocat_rdv_${clientId}`, JSON.stringify(rdvs))
+  localStorage.setItem(STORAGE_KEYS.rdvs(clientId), JSON.stringify(rdvs))
 }
 
 function getRdvsForClient(clientId: string): Appointment[] {
-  return JSON.parse(localStorage.getItem(`avocat_rdv_${clientId}`) || '[]')
+  return JSON.parse(localStorage.getItem(STORAGE_KEYS.rdvs(clientId)) || '[]')
 }
 
 function getTodosForClient(clientId: string): Todo[] {
-  return JSON.parse(localStorage.getItem(`avocat_todos_${clientId}`) || '[]')
+  return JSON.parse(localStorage.getItem(STORAGE_KEYS.todos(clientId)) || '[]')
 }
 
 function saveTodosForClient(clientId: string, todos: Todo[]) {
-  localStorage.setItem(`avocat_todos_${clientId}`, JSON.stringify(todos))
+  localStorage.setItem(STORAGE_KEYS.todos(clientId), JSON.stringify(todos))
 }
 
 function getInvoicesForClient(clientId: string): Invoice[] {
-  return JSON.parse(localStorage.getItem(`avocat_invoices_${clientId}`) || '[]')
+  return JSON.parse(localStorage.getItem(STORAGE_KEYS.invoices(clientId)) || '[]')
 }
 
 function saveInvoicesForClient(clientId: string, invoices: Invoice[]) {
-  localStorage.setItem(`avocat_invoices_${clientId}`, JSON.stringify(invoices))
+  localStorage.setItem(STORAGE_KEYS.invoices(clientId), JSON.stringify(invoices))
 }
 
 // ─── Vue d'ensemble ───────────────────────────────────────────────────────────

@@ -2,6 +2,8 @@ import { useState, useEffect, useRef } from 'react'
 import { X, Send, Bot, Sparkles, CalendarDays } from 'lucide-react'
 import { useAuth } from '../contexts/AuthContext'
 import { Appointment } from './CalendarView'
+import { KNOWLEDGE_BASE, FALLBACK_RESPONSE } from '../data/knowledgeBase'
+import { STORAGE_KEYS } from '../constants/storageKeys'
 
 interface Message {
   id: string
@@ -17,37 +19,6 @@ const INITIAL_MESSAGES: Message[] = [
     text: "Bonjour, je suis l'Assistant Numérique du cabinet. Comment puis-je vous éclairer sur notre approche d'Architecture Juridique aujourd'hui ?",
     sender: 'bot',
     timestamp: new Date()
-  }
-]
-
-const KNOWLEDGE_BASE = [
-  {
-    keywords: ['expertise', 'services', 'faites', 'domaine', 'compétence'],
-    response: "Nous intervenons sur trois piliers majeurs : l'Ingénierie Juridique (levées de fonds, pactes), la Stratégie Fiscale Avancée (optimisation, holdings) et l'Architecture IA (automatisation de workflows, conformité IA Act)."
-  },
-  {
-    keywords: ['levée', 'fonds', 'seed', 'série', 'investisseur', 'equity'],
-    response: "Nous structurons des levées de fonds du Seed à la Série B. Notre approche consiste à construire des systèmes robustes (Term sheets, Cap tables) qui résistent aux exigences des fonds de VC les plus rigoureux."
-  },
-  {
-    keywords: ['ia', 'intelligence artificielle', 'algorithme', 'ia act', 'automatisation'],
-    response: "L'IA est au cœur de notre cabinet. Nous conseillons sur la conformité IA Act et intégrons l'IA pour automatiser vos processus juridiques (due diligence augmentée, smart contracts)."
-  },
-  {
-    keywords: ['fiscal', 'impôt', 'holding', 'optimisation', 'exit', 'bsa', 'bspce'],
-    response: "Nous concevons des architectures fiscales globales : holdings patrimoniales, schémas d'incitation (BSPCE) et optimisation lors de l'exit pour minimiser les frictions fiscales."
-  },
-  {
-    keywords: ['contact', 'rendez-vous', 'rdv', 'parler', 'appel', 'téléphone', 'email'],
-    response: "Vous pouvez prendre rendez-vous pour un Diagnostic Stratégique de 90 minutes via le bouton 'Consultation' en haut de page, ou nous contacter directement à office@mokadmi.lawyer."
-  },
-  {
-    keywords: ['prix', 'tarif', 'honoraires', 'coût', 'combien'],
-    response: "Nos interventions se font généralement au forfait pour garantir une totale transparence. Le diagnostic initial de 90 minutes est facturé 350 € HT (imputable sur mission)."
-  },
-  {
-    keywords: ['expérience', 'ancienneté', 'qui est', 'mokadmi', 'sami'],
-    response: "Maître Mokadmi Sami est l'Architecte Juridique du cabinet, fort de 24 ans d'expérience en droit des affaires et ingénierie stratégique entre Tunis et Paris."
   }
 ]
 
@@ -115,19 +86,19 @@ export default function AssistantIA() {
   const handleBookAppointment = () => {
     if (!rdvDate || !user) return
 
-    const rdvs: Appointment[] = JSON.parse(localStorage.getItem(`avocat_rdv_${user.id}`) || '[]')
+    const rdvs: Appointment[] = JSON.parse(localStorage.getItem(STORAGE_KEYS.rdvs(user.id)) || '[]')
     const newRdv: Appointment = {
       id: crypto.randomUUID(),
       title: 'Rendez-vous (via Assistant IA)',
       date: rdvDate,
       time: rdvTime,
       type: 'visio',
-      notes: 'Demande depuis l\'assistant IA',
+      notes: "Demande depuis l'assistant IA",
       clientId: user.id
     }
 
     rdvs.push(newRdv)
-    localStorage.setItem(`avocat_rdv_${user.id}`, JSON.stringify(rdvs))
+    localStorage.setItem(STORAGE_KEYS.rdvs(user.id), JSON.stringify(rdvs))
 
     const confirmationMsg: Message = {
       id: Date.now().toString(),
@@ -141,14 +112,12 @@ export default function AssistantIA() {
 
   const findResponse = (input: string): string => {
     const lowInput = input.toLowerCase()
-
     for (const entry of KNOWLEDGE_BASE) {
       if (entry.keywords.some(k => lowInput.includes(k))) {
         return entry.response
       }
     }
-
-    return "C'est une excellente question. Pour vous apporter une réponse précise et adaptée à votre architecture spécifique, je vous suggère d'en discuter directement avec Maître Mokadmi lors d'un diagnostic stratégique."
+    return FALLBACK_RESPONSE
   }
 
   return (

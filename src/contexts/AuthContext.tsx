@@ -1,5 +1,6 @@
 import { createContext, useContext, useState, useEffect, ReactNode } from 'react'
 import { hashPassword, verifyPassword } from '../utils/crypto'
+import { STORAGE_KEYS } from '../constants/storageKeys'
 
 export interface User {
   id: string
@@ -23,15 +24,15 @@ interface StoredAccount {
 
 const AuthContext = createContext<AuthContextType | null>(null)
 
-const ADMIN_EMAIL = 'admin@cabinet.fr'
-const ADMIN_PASSWORD = 'Admin2024!'
+const ADMIN_EMAIL = import.meta.env.VITE_ADMIN_EMAIL ?? 'admin@cabinet.fr'
+const ADMIN_PASSWORD = import.meta.env.VITE_ADMIN_PASSWORD ?? 'Admin2024!'
 
 /**
  * Ensures the admin account exists in localStorage with a hashed password.
  * Migrates legacy plaintext passwords on first run.
  */
 async function ensureAdmin() {
-  const raw = localStorage.getItem('avocat_accounts') || '{}'
+  const raw = localStorage.getItem(STORAGE_KEYS.accounts) || '{}'
   const accounts: Record<string, StoredAccount | { password: string; user: User }> = JSON.parse(raw)
 
   // Migrate any legacy plaintext accounts to hashed
@@ -51,7 +52,7 @@ async function ensureAdmin() {
     migrated = true
   }
 
-  if (migrated) localStorage.setItem('avocat_accounts', JSON.stringify(accounts))
+  if (migrated) localStorage.setItem(STORAGE_KEYS.accounts, JSON.stringify(accounts))
 }
 
 export function AuthProvider({ children }: { children: ReactNode }) {
@@ -67,7 +68,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const login = async (email: string, password: string) => {
     if (!email || !password) return { ok: false, error: 'Champs requis.' }
     const accounts: Record<string, StoredAccount> = JSON.parse(
-      localStorage.getItem('avocat_accounts') || '{}'
+      localStorage.getItem(STORAGE_KEYS.accounts) || '{}'
     )
     const account = accounts[email.toLowerCase()]
     if (!account) return { ok: false, error: 'Aucun compte trouvé pour cet email.' }
@@ -82,13 +83,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const signup = async (name: string, email: string, password: string, company?: string) => {
     if (!name || !email || !password) return { ok: false, error: 'Champs requis.' }
     const accounts: Record<string, StoredAccount> = JSON.parse(
-      localStorage.getItem('avocat_accounts') || '{}'
+      localStorage.getItem(STORAGE_KEYS.accounts) || '{}'
     )
     if (accounts[email.toLowerCase()]) return { ok: false, error: 'Un compte existe déjà pour cet email.' }
 
     const newUser: User = { id: crypto.randomUUID(), name, email: email.toLowerCase(), company, role: 'client' }
     accounts[email.toLowerCase()] = { passwordHash: await hashPassword(password, email.toLowerCase()), user: newUser }
-    localStorage.setItem('avocat_accounts', JSON.stringify(accounts))
+    localStorage.setItem(STORAGE_KEYS.accounts, JSON.stringify(accounts))
     seedDemoData(newUser.id)
     setUser(newUser)
     return { ok: true }
@@ -168,8 +169,8 @@ function seedDemoData(userId: string) {
     { id: crypto.randomUUID(), title: 'Transmettre les 3 dernières liasses fiscales', done: true, priority: 'normale', clientId: userId, createdAt: today.toISOString() },
   ]
 
-  localStorage.setItem(`avocat_dossiers_${userId}`, JSON.stringify(dossiers))
-  localStorage.setItem(`avocat_documents_${userId}`, JSON.stringify([]))
-  localStorage.setItem(`avocat_rdv_${userId}`, JSON.stringify(rdvs))
-  localStorage.setItem(`avocat_todos_${userId}`, JSON.stringify(todos))
+  localStorage.setItem(STORAGE_KEYS.dossiers(userId), JSON.stringify(dossiers))
+  localStorage.setItem(STORAGE_KEYS.documents(userId), JSON.stringify([]))
+  localStorage.setItem(STORAGE_KEYS.rdvs(userId), JSON.stringify(rdvs))
+  localStorage.setItem(STORAGE_KEYS.todos(userId), JSON.stringify(todos))
 }

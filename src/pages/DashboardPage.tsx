@@ -10,24 +10,9 @@ import CalendarView, { Appointment } from '../components/CalendarView'
 import TodoList, { Todo } from '../components/TodoList'
 import { useReminders } from '../hooks/useReminders'
 import BillingModule, { Invoice, computeAmounts, fmtAmount } from '../components/BillingModule'
-
-// ─── Types ───────────────────────────────────────────────────────────────────
-
-interface Etape {
-  label: string
-  statut: 'done' | 'current' | 'pending'
-  date: string | null
-}
-
-interface Dossier {
-  id: string
-  titre: string
-  statut: 'en_cours' | 'complete' | 'attente'
-  dateOuverture: string
-  prochainEcheance: string | null
-  description: string
-  etapes: Etape[]
-}
+import ErrorBoundary from '../components/ErrorBoundary'
+import { STORAGE_KEYS } from '../constants/storageKeys'
+import type { Dossier } from '../types'
 
 export interface Document {
   id: string
@@ -41,19 +26,29 @@ export interface Document {
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
 
-function useLocalState<T>(key: string, fallback: T): [T, (val: T | ((prev: T) => T)) => void] {
+function useLocalState<T>(key: string, fallback: T): [T, (val: T | ((prev: T) => T)) => void, string | null] {
   const [state, setStateRaw] = useState<T>(() => {
     try { return JSON.parse(localStorage.getItem(key) ?? 'null') ?? fallback }
     catch { return fallback }
   })
+  const [storageError, setStorageError] = useState<string | null>(null)
+
   const setState = (val: T | ((prev: T) => T)) => {
     setStateRaw(prev => {
       const next = typeof val === 'function' ? (val as (p: T) => T)(prev) : val
-      localStorage.setItem(key, JSON.stringify(next))
-      return next
+      try {
+        localStorage.setItem(key, JSON.stringify(next))
+        setStorageError(null)
+        return next
+      } catch (e) {
+        if (e instanceof DOMException && (e.name === 'QuotaExceededError' || e.name === 'NS_ERROR_DOM_QUOTA_REACHED')) {
+          setStorageError('Espace de stockage insuffisant. Supprimez des fichiers pour libérer de la place.')
+        }
+        return prev
+      }
     })
   }
-  return [state, setState]
+  return [state, setState, storageError]
 }
 
 function formatSize(bytes: number) {
@@ -322,7 +317,11 @@ function Dossiers({ dossiers, rdvs, todos, invoices }: { dossiers: Dossier[]; rd
 
 // ─── Documents ────────────────────────────────────────────────────────────────
 
-function Documents({ documents, setDocuments }: { documents: Document[]; setDocuments: (d: Document[] | ((prev: Document[]) => Document[])) => void }) {
+function Documents({ documents, setDocuments, storageError }: {
+  documents: Document[]
+  setDocuments: (d: Document[] | ((prev: Document[]) => Document[])) => void
+  storageError?: string | null
+}) {
   const [dragging, setDragging] = useState(false)
   const inputRef = useRef<HTMLInputElement>(null)
 
@@ -369,6 +368,12 @@ function Documents({ documents, setDocuments }: { documents: Document[]; setDocu
         <p className="text-xs font-medium tracking-[0.2em] uppercase text-light/40 mb-2">Documents</p>
         <h2 className="font-serif text-2xl text-light">Gestion documentaire</h2>
       </div>
+
+      {storageError && (
+        <div className="border border-red-500/20 bg-red-500/5 px-5 py-3 flex items-center gap-2">
+          <p className="text-xs text-red-400">{storageError}</p>
+        </div>
+      )}
 
       <div
         onDrop={onDrop}
@@ -735,11 +740,11 @@ export default function DashboardPage() {
   const [tab, setTab] = useState('apercu')
   const [mobileOpen, setMobileOpen] = useState(false)
 
-  const [dossiers] = useLocalState<Dossier[]>(`avocat_dossiers_${user?.id}`, [])
-  const [documents, setDocuments] = useLocalState<Document[]>(`avocat_documents_${user?.id}`, [])
-  const [rdvs, setRdvs] = useLocalState<Appointment[]>(`avocat_rdv_${user?.id}`, [])
-  const [todos, setTodos] = useLocalState<Todo[]>(`avocat_todos_${user?.id}`, [])
-  const [invoices, setInvoices] = useLocalState<Invoice[]>(`avocat_invoices_${user?.id}`, [])
+  const [dossiers] = useLocalState<Dossier[]>(STORAGE_KEYS.dossiers(user?.id ?? ''), [])
+  const [documents, setDocuments, docStorageError] = useLocalState<Document[]>(STORAGE_KEYS.documents(user?.id ?? ''), [])
+  const [rdvs, setRdvs] = useLocalState<Appointment[]>(STORAGE_KEYS.rdvs(user?.id ?? ''), [])
+  const [todos, setTodos] = useLocalState<Todo[]>(STORAGE_KEYS.todos(user?.id ?? ''), [])
+  const [invoices, setInvoices] = useLocalState<Invoice[]>(STORAGE_KEYS.invoices(user?.id ?? ''), [])
 
   const { alerts, dismiss } = useReminders(rdvs, todos)
 
@@ -845,7 +850,11 @@ export default function DashboardPage() {
         <main className="flex-1 px-6 md:px-12 py-10 max-w-3xl">
           {tab === 'apercu' && <Apercu dossiers={dossiers} documents={documents} userName={user?.name ?? ''} />}
           {tab === 'dossiers' && <Dossiers dossiers={dossiers} rdvs={rdvs} todos={todos} invoices={invoices} />}
-          {tab === 'documents' && <Documents documents={documents} setDocuments={setDocuments} />}
+          {tab === 'documents' && (
+            <ErrorBoundary>
+              <Documents documents={documents} setDocuments={setDocuments} storageError={docStorageError} />
+            </ErrorBoundary>
+          )}
           {tab === 'rendezvous' && <Rendezvous rdvs={rdvs} setRdvs={setRdvs} todos={todos} setTodos={setTodos} userId={user?.id ?? ''} dossiers={dossiers} />}
           {tab === 'facturation' && (
             <BillingModule

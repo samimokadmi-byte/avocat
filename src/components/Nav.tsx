@@ -81,7 +81,7 @@ export default function Nav() {
       </div>
 
       {/* Mobile menu */}
-      <div className={`md:hidden absolute top-full left-0 right-0 bg-dark-bg/98 backdrop-blur-sm border-b border-gold/10 overflow-hidden transition-all duration-300 ease-in-out ${
+      <div className={`md:hidden absolute top-full left-0 right-0 bg-dark-bg border-b border-t border-gold/10 overflow-hidden transition-all duration-300 ease-in-out ${
         open ? 'max-h-[500px] opacity-100 py-6 px-6' : 'max-h-0 opacity-0 py-0 px-6'
       }`}>
         <div className="flex flex-col gap-4">

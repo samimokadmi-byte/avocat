@@ -68,7 +68,7 @@ export default function FAQ() {
       <p className="text-xs font-medium tracking-[0.2em] uppercase text-gold/60 mb-4">
         FAQ
       </p>
-      <h2 className="font-serif text-heading text-light mb-16 max-w-xl">
+      <h2 className="font-serif text-heading text-light mb-10 md:mb-16 max-w-xl">
         Questions fréquentes.
       </h2>
 

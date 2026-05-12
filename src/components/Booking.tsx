@@ -87,7 +87,7 @@ export default function Booking() {
   return (
     <section id="booking" className="bg-dark-surface">
       <div className="px-6 py-section max-w-content mx-auto">
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-16 lg:gap-24">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-10 md:gap-16 lg:gap-24">
 
           {/* ── Colonne gauche — infos ───────────────────────────────────── */}
           <div>
@@ -133,7 +133,7 @@ export default function Booking() {
 
           {/* ── Colonne droite — formulaire ─────────────────────────────── */}
           <div className="flex flex-col justify-center">
-            <div className="border border-gold/15 p-10">
+            <div className="border border-gold/15 p-5 sm:p-8 md:p-10">
 
               {/* Succès */}
               {status === 'success' ? (

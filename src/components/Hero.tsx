@@ -52,11 +52,11 @@ export default function Hero() {
           </div>
         </div>
 
-        <div className="grid grid-cols-2 md:flex md:flex-col gap-4 w-full md:w-auto">
+        <div className="grid grid-cols-3 md:flex md:flex-col gap-3 w-full md:w-auto">
           {stats.map(({ value, label }) => (
-            <div key={label} className="border border-gold/15 bg-dark-surface px-4 py-5 sm:px-6 text-center">
-              <p className="font-serif text-3xl font-bold text-gold leading-none mb-1">{value}</p>
-              <p className="text-[10px] sm:text-xs text-light/35 font-medium uppercase tracking-wider leading-tight">{label}</p>
+            <div key={label} className="border border-gold/15 bg-dark-surface px-2 py-4 sm:px-4 sm:py-5 text-center">
+              <p className="font-serif text-xl sm:text-3xl font-bold text-gold leading-none mb-1">{value}</p>
+              <p className="text-[9px] sm:text-[10px] text-light/35 font-medium uppercase tracking-wider leading-tight">{label}</p>
             </div>
           ))}
         </div>

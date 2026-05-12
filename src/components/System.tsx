@@ -36,14 +36,14 @@ export default function System() {
       <h2 className="font-serif text-heading text-light mb-4 max-w-xl">
         Une triple compétence. Une architecture globale.
       </h2>
-      <p className="text-sm text-light/40 mb-16 max-w-prose-luxury leading-relaxed">
+      <p className="text-sm text-light/40 mb-10 md:mb-16 max-w-prose-luxury leading-relaxed">
         Droit des affaires, fiscalité stratégique et ingénierie IA — rarement réunies, jamais aussi bien intégrées.
       </p>
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-px bg-gold/10">
         {pillars.map(({ icon: Icon, number, title, subtitle, body, tags }) => (
           <div key={title}
-            className="bg-dark-surface p-8 sm:p-10 flex flex-col gap-6 group hover:bg-dark-card transition-colors duration-300">
+            className="bg-dark-surface p-5 sm:p-8 md:p-10 flex flex-col gap-6 group hover:bg-dark-card transition-colors duration-300">
             <div className="flex items-start justify-between">
               <Icon size={22} strokeWidth={1.25}
                 className="text-gold/50 group-hover:text-gold transition-colors duration-300" />

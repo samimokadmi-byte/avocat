@@ -364,7 +364,9 @@ function InvoiceForm({ invoice, rdvs, todos, dossiers, userId, onSave, onCancel 
         </button>
 
         {showDetail && (
-          <div className="px-6 pb-6 flex flex-col gap-4">
+          <div className="px-3 sm:px-6 pb-6 flex flex-col gap-4">
+            <div className="overflow-x-auto -mx-3 sm:mx-0">
+            <div className="min-w-[440px] px-3 sm:px-0">
             <div className="flex flex-col gap-px bg-gold/10">
               <div className="bg-dark-card grid grid-cols-[1fr_72px_96px_80px_28px] gap-2 px-4 py-2">
                 {['Description', 'Qté/h', `PU (${sym})`, 'Total', ''].map(h => (
@@ -380,6 +382,8 @@ function InvoiceForm({ invoice, rdvs, todos, dossiers, userId, onSave, onCancel 
                   <button onClick={() => delLine(line.id)} className="text-light/20 hover:text-red-500 transition-colors flex justify-center"><X size={13} strokeWidth={1.5} /></button>
                 </div>
               ))}
+            </div>
+            </div>
             </div>
 
             <div className="flex gap-2 flex-wrap">
@@ -652,7 +656,7 @@ function InvoiceDetail({ invoice, dossiers, userName, userCompany, userEmail, on
         <div className="h-px bg-gold/10" />
 
         {/* Client & Dates */}
-        <div className="grid grid-cols-2 gap-8">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-8">
           <div>
             <p className="text-xs font-medium text-light/40 uppercase tracking-wide mb-2">Facturé à</p>
             <p className="text-sm font-semibold text-light">{userName}</p>
@@ -663,12 +667,12 @@ function InvoiceDetail({ invoice, dossiers, userName, userCompany, userEmail, on
               </p>
             )}
           </div>
-          <div className="flex flex-col gap-1.5 items-end">
-            <div className="flex gap-6 w-full justify-end">
+          <div className="flex flex-col gap-1.5 sm:items-end">
+            <div className="flex gap-4 sm:gap-6 w-full sm:justify-end">
               <p className="text-xs text-light/40">Date d'émission</p>
               <p className="text-xs font-medium text-light">{fmtD(invoice.dateEmission)}</p>
             </div>
-            <div className="flex gap-6 w-full justify-end">
+            <div className="flex gap-4 sm:gap-6 w-full sm:justify-end">
               <p className="text-xs text-light/40">Date d'échéance</p>
               <p className="text-xs font-medium text-light">{fmtD(invoice.dateEcheance)}</p>
             </div>
@@ -676,7 +680,8 @@ function InvoiceDetail({ invoice, dossiers, userName, userCompany, userEmail, on
         </div>
 
         {/* Line items */}
-        <div>
+        <div className="overflow-x-auto -mx-4 sm:mx-0">
+          <div className="min-w-[480px] px-4 sm:px-0">
           <div className="bg-dark-card grid grid-cols-[1fr_64px_96px_96px] gap-4 px-4 py-2.5">
             {['Description', 'Qté / h', `PU HT (${sym})`, `Total HT`].map((h, i) => (
               <p key={h} className={`text-xs font-semibold text-light ${i > 0 ? 'text-right' : ''}`}>{h}</p>
@@ -691,6 +696,7 @@ function InvoiceDetail({ invoice, dossiers, userName, userCompany, userEmail, on
                 <p className="text-sm font-medium text-light text-right">{fmtAmount(lineTotal(l), invoice.currency)}</p>
               </div>
             ))}
+          </div>
           </div>
         </div>
 

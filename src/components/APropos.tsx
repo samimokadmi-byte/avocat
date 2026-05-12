@@ -39,7 +39,7 @@ export default function APropos() {
       <div className="px-6 py-section max-w-content mx-auto">
 
         {/* ── En-tête ────────────────────────────────────────────────── */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-16 mb-section">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-8 md:gap-16 mb-12 md:mb-section">
           <div>
             <p className="text-xs font-medium tracking-[0.2em] uppercase text-gold/60 mb-4">
               À propos
@@ -80,9 +80,9 @@ export default function APropos() {
           <p className="text-xs font-medium tracking-[0.2em] uppercase text-gold/60 mb-10">
             Parcours
           </p>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-px bg-gold/8">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-px bg-gold/8">
             {parcours.map(({ icon: Icon, periode, titre, detail }) => (
-              <div key={titre} className="bg-dark-bg p-8 flex flex-col gap-4">
+              <div key={titre} className="bg-dark-bg p-5 sm:p-8 flex flex-col gap-4">
                 <div className="flex items-center gap-3">
                   <div className="w-8 h-8 border border-gold/20 flex items-center justify-center flex-none">
                     <Icon size={14} strokeWidth={1.5} className="text-gold/70" />
@@ -99,8 +99,8 @@ export default function APropos() {
         </div>
 
         {/* ── Citation ───────────────────────────────────────────────── */}
-        <div className="mt-section-sm border-t border-gold/10 pt-12 max-w-2xl">
-          <blockquote className="font-serif text-xl italic text-light/60 leading-relaxed">
+        <div className="mt-10 md:mt-section-sm border-t border-gold/10 pt-8 md:pt-12 max-w-2xl">
+          <blockquote className="font-serif text-base sm:text-lg md:text-xl italic text-light/60 leading-relaxed">
             "Le droit n'est pas une protection contre le risque — c'est l'art de le structurer
             pour qu'il devienne un avantage compétitif."
           </blockquote>

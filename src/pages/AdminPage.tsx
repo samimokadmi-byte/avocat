@@ -1121,7 +1121,7 @@ export default function AdminPage() {
         )}
 
         {/* Main */}
-        <main className="flex-1 px-6 md:px-12 py-10 max-w-4xl">
+        <main className="flex-1 px-4 sm:px-6 md:px-12 py-6 md:py-10 max-w-4xl pb-6">
           {tab === 'overview' && <Overview clients={clients} />}
           {tab === 'clients' && !selectedClient && (
             <ClientsList clients={clients} onSelect={handleSelectClient} onRefresh={refresh} />

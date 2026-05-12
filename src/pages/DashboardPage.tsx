@@ -850,7 +850,7 @@ export default function DashboardPage() {
         )}
 
         {/* Main content */}
-        <main className="flex-1 px-6 md:px-12 py-10 max-w-3xl">
+        <main className="flex-1 px-4 sm:px-6 md:px-12 py-6 md:py-10 max-w-3xl pb-20 md:pb-10">
           {tab === 'apercu' && <Apercu dossiers={dossiers} documents={documents} userName={user?.name ?? ''} />}
           {tab === 'dossiers' && <Dossiers dossiers={dossiers} rdvs={rdvs} todos={todos} invoices={invoices} />}
           {tab === 'documents' && (
@@ -888,6 +888,22 @@ export default function DashboardPage() {
           {tab === 'messagerie' && <Messagerie />}
         </main>
       </div>
+
+      {/* ── Bottom nav mobile ──────────────────────────────────────────────── */}
+      <nav className="md:hidden fixed bottom-0 left-0 right-0 z-30 bg-dark-surface border-t border-gold/10 flex">
+        {navItems.map(({ id, label, icon: Icon }) => (
+          <button
+            key={id}
+            onClick={() => changeTab(id)}
+            className={`flex-1 flex flex-col items-center justify-center gap-0.5 py-2.5 transition-colors ${
+              tab === id ? 'text-gold' : 'text-light/30 hover:text-light/60'
+            }`}
+          >
+            <Icon size={18} strokeWidth={tab === id ? 2 : 1.25} />
+            <span className="text-[9px] font-medium tracking-wide">{label}</span>
+          </button>
+        ))}
+      </nav>
     </div>
   )
 }

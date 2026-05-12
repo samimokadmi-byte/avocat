@@ -3,11 +3,10 @@ import { MapPin, Clock, Mail, Phone, CheckCircle, AlertCircle, Loader } from 'lu
 import { ArrowRight } from 'lucide-react'
 import Logo from './Logo'
 
-// ── Web3Forms — service d'envoi d'emails sans backend (gratuit, 250/mois) ────
-// 1. Créer un compte sur https://web3forms.com
-// 2. Copier la clé d'accès dans Vercel → Settings → Environment Variables
-//    sous le nom VITE_WEB3FORMS_KEY
-const WEB3FORMS_KEY = import.meta.env.VITE_WEB3FORMS_KEY ?? ''
+// ── Formsubmit.co — zéro config, zéro clé API ─────────────────────────────
+// Les soumissions arrivent directement sur office@mokadmi.lawyer.
+// Première soumission → email de confirmation à valider une seule fois.
+const FORMSUBMIT_URL = 'https://formsubmit.co/ajax/office@mokadmi.lawyer'
 
 const expertise = [
   'Architecture de levée de fonds (Seed à Série B)',
@@ -47,30 +46,31 @@ export default function Booking() {
 
     try {
       const payload = {
-        access_key: WEB3FORMS_KEY,
-        subject: `[Cabinet Mokadmi] Nouvelle demande — ${form.subject || 'Contact général'}`,
-        from_name: form.name,
-        email: form.email,
-        company: form.company || 'Non précisée',
-        sujet: form.subject || 'Non précisé',
-        message: form.message || '(aucun message)',
-        // Redirige la réponse vers office@mokadmi.lawyer
-        replyto: form.email,
+        name:    form.name,
+        email:   form.email,
+        company: form.company  || 'Non précisée',
+        subject: form.subject  || 'Contact général',
+        message: form.message  || '(aucun message)',
+        // Options Formsubmit
+        _subject:    `[Cabinet Mokadmi] ${form.subject || 'Nouvelle demande de contact'}`,
+        _replyto:    form.email,
+        _captcha:    'false',
+        _template:   'table',
       }
 
-      const res = await fetch('https://api.web3forms.com/submit', {
-        method: 'POST',
+      const res = await fetch(FORMSUBMIT_URL, {
+        method:  'POST',
         headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
-        body: JSON.stringify(payload),
+        body:    JSON.stringify(payload),
       })
 
       const data = await res.json()
 
-      if (res.ok && data.success) {
+      if (res.ok && data.success === 'true') {
         setStatus('success')
         setForm(EMPTY_FORM)
       } else {
-        throw new Error(data.message ?? 'Erreur serveur')
+        throw new Error(data.message ?? 'Erreur lors de l\'envoi.')
       }
     } catch (err: unknown) {
       const message = err instanceof Error ? err.message : 'Erreur inconnue'

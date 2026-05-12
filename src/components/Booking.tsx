@@ -3,11 +3,6 @@ import { MapPin, Clock, Mail, Phone, CheckCircle, AlertCircle, Loader } from 'lu
 import { ArrowRight } from 'lucide-react'
 import Logo from './Logo'
 
-// ── Formsubmit.co — zéro config, zéro clé API ─────────────────────────────
-// Les soumissions arrivent directement sur office@mokadmi.lawyer.
-// Première soumission → email de confirmation à valider une seule fois.
-const FORMSUBMIT_URL = 'https://formsubmit.co/ajax/office@mokadmi.lawyer'
-
 const expertise = [
   'Architecture de levée de fonds (Seed à Série B)',
   "Gouvernance fiscale & holdings",
@@ -45,32 +40,25 @@ export default function Booking() {
     setErrorMsg('')
 
     try {
-      const payload = {
-        name:    form.name,
-        email:   form.email,
-        company: form.company  || 'Non précisée',
-        subject: form.subject  || 'Contact général',
-        message: form.message  || '(aucun message)',
-        // Options Formsubmit
-        _subject:    `[Cabinet Mokadmi] ${form.subject || 'Nouvelle demande de contact'}`,
-        _replyto:    form.email,
-        _captcha:    'false',
-        _template:   'table',
-      }
-
-      const res = await fetch(FORMSUBMIT_URL, {
+      const res = await fetch('/api/contact', {
         method:  'POST',
-        headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
-        body:    JSON.stringify(payload),
+        headers: { 'Content-Type': 'application/json' },
+        body:    JSON.stringify({
+          name:    form.name,
+          email:   form.email,
+          company: form.company,
+          subject: form.subject,
+          message: form.message,
+        }),
       })
 
       const data = await res.json()
 
-      if (res.ok && data.success === 'true') {
+      if (res.ok && data.success) {
         setStatus('success')
         setForm(EMPTY_FORM)
       } else {
-        throw new Error(data.message ?? 'Erreur lors de l\'envoi.')
+        throw new Error(data.error ?? 'Erreur lors de l\'envoi.')
       }
     } catch (err: unknown) {
       const message = err instanceof Error ? err.message : 'Erreur inconnue'

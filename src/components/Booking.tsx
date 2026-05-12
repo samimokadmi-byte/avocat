@@ -3,9 +3,6 @@ import { MapPin, Clock, Mail, Phone, CheckCircle, AlertCircle, Loader } from 'lu
 import { ArrowRight } from 'lucide-react'
 import Logo from './Logo'
 
-// ── Make.com Webhook — auto-réponse Gmail selon le sujet ──────────────────
-const MAKE_WEBHOOK = 'https://hook.us2.make.com/uaxmqy4uwpwkptg2d6wipovr1allhvha'
-
 const expertise = [
   'Architecture de levée de fonds (Seed à Série B)',
   "Gouvernance fiscale & holdings",
@@ -43,23 +40,24 @@ export default function Booking() {
     setErrorMsg('')
 
     try {
-      const res = await fetch(MAKE_WEBHOOK, {
+      const res = await fetch('/api/contact', {
         method:  'POST',
         headers: { 'Content-Type': 'application/json' },
-        body:    JSON.stringify({
+        body: JSON.stringify({
           name:    form.name,
           email:   form.email,
-          company: form.company  || '',
-          subject: form.subject  || '',
-          message: form.message  || '',
+          company: form.company,
+          subject: form.subject,
+          message: form.message,
         }),
       })
 
-      if (res.ok) {
+      const data = await res.json()
+      if (res.ok && data.success) {
         setStatus('success')
         setForm(EMPTY_FORM)
       } else {
-        throw new Error('Erreur lors de l\'envoi.')
+        throw new Error(data.error ?? 'Erreur lors de l\'envoi.')
       }
     } catch (err: unknown) {
       const message = err instanceof Error ? err.message : 'Erreur inconnue'

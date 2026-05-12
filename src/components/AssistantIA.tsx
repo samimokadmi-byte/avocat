@@ -152,7 +152,7 @@ export default function AssistantIA() {
   }
 
   return (
-    <div className="fixed bottom-[4.5rem] sm:bottom-6 right-6 sm:right-24 z-50 flex flex-col items-end">
+    <div className="fixed bottom-6 right-[5.5rem] sm:right-24 z-50 flex flex-col items-end">
       {/* Toggle Button */}
       <button
         onClick={() => setIsOpen(!isOpen)}

@@ -2,3 +2,8 @@ node_modules
 dist
 .DS_Store
 .vite/
+
+# Variables d'environnement locales — ne jamais committer
+.env
+.env.local
+.env.*.local

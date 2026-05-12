@@ -23,8 +23,13 @@ interface StoredAccount {
 
 const AuthContext = createContext<AuthContextType | null>(null)
 
-const ADMIN_EMAIL = 'admin@cabinet.fr'
-const ADMIN_PASSWORD = 'Admin2024!'
+// ── Admin credentials — définis via variables d'environnement Vercel ─────────
+// Ne jamais hardcoder ces valeurs dans le code source.
+// Configurer dans Vercel → Project Settings → Environment Variables :
+//   VITE_ADMIN_EMAIL    = votre email admin
+//   VITE_ADMIN_PASSWORD = mot de passe fort (≥16 chars)
+const ADMIN_EMAIL    = import.meta.env.VITE_ADMIN_EMAIL    ?? 'admin@cabinet.fr'
+const ADMIN_PASSWORD = import.meta.env.VITE_ADMIN_PASSWORD ?? ''
 
 /**
  * Ensures the admin account exists in localStorage with a hashed password.

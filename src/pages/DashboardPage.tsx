@@ -10,6 +10,7 @@ import CalendarView, { Appointment } from '../components/CalendarView'
 import TodoList, { Todo } from '../components/TodoList'
 import { useReminders } from '../hooks/useReminders'
 import BillingModule, { Invoice, computeAmounts, fmtAmount } from '../components/BillingModule'
+import { syncOnDocument, syncOnInvoice } from '../utils/dossierSync'
 
 // ─── Types ───────────────────────────────────────────────────────────────────
 
@@ -322,7 +323,12 @@ function Dossiers({ dossiers, rdvs, todos, invoices }: { dossiers: Dossier[]; rd
 
 // ─── Documents ────────────────────────────────────────────────────────────────
 
-function Documents({ documents, setDocuments }: { documents: Document[]; setDocuments: (d: Document[] | ((prev: Document[]) => Document[])) => void }) {
+function Documents({ documents, setDocuments, userId, userName }: {
+  documents: Document[]
+  setDocuments: (d: Document[] | ((prev: Document[]) => Document[])) => void
+  userId: string
+  userName: string
+}) {
   const [dragging, setDragging] = useState(false)
   const inputRef = useRef<HTMLInputElement>(null)
 
@@ -340,6 +346,8 @@ function Documents({ documents, setDocuments }: { documents: Document[]; setDocu
           content: reader.result as string,
         }
         setDocuments((prev: Document[]) => [...prev, doc])
+        // ── Sync automatique dossier ────────────────────────────────────────
+        if (userId && userName) syncOnDocument(userId, userName, f.name)
       }
       reader.readAsDataURL(f)
     })
@@ -845,12 +853,29 @@ export default function DashboardPage() {
         <main className="flex-1 px-6 md:px-12 py-10 max-w-3xl">
           {tab === 'apercu' && <Apercu dossiers={dossiers} documents={documents} userName={user?.name ?? ''} />}
           {tab === 'dossiers' && <Dossiers dossiers={dossiers} rdvs={rdvs} todos={todos} invoices={invoices} />}
-          {tab === 'documents' && <Documents documents={documents} setDocuments={setDocuments} />}
+          {tab === 'documents' && (
+            <Documents
+              documents={documents}
+              setDocuments={setDocuments}
+              userId={user?.id ?? ''}
+              userName={user?.name ?? ''}
+            />
+          )}
           {tab === 'rendezvous' && <Rendezvous rdvs={rdvs} setRdvs={setRdvs} todos={todos} setTodos={setTodos} userId={user?.id ?? ''} dossiers={dossiers} />}
           {tab === 'facturation' && (
             <BillingModule
               invoices={invoices}
-              setInvoices={setInvoices}
+              setInvoices={(val) => {
+                // Sync automatique dossier à chaque nouvelle facture créée
+                const prev = invoices
+                const next = typeof val === 'function' ? val(prev) : val
+                if (next.length > prev.length) {
+                  // Nouvelle facture détectée
+                  const newInv = next.find(n => !prev.some(p => p.id === n.id))
+                  if (newInv && user) syncOnInvoice(user.id, user.name, newInv.number)
+                }
+                setInvoices(val)
+              }}
               rdvs={rdvs}
               todos={todos}
               dossiers={dossiers}

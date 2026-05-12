@@ -11,6 +11,7 @@ import {
   CalendarDays, Plus, X, Receipt
 } from 'lucide-react'
 import { Invoice, computeAmounts, fmtAmount, CURRENCIES } from '../components/BillingModule'
+import { syncOnInvoice, syncOnTodo, syncOnRdv } from '../utils/dossierSync'
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -236,6 +237,18 @@ function ClientDetail({
     onRefresh()
   }
 
+  // ── Sync changement statut facture → auto-crée dossier si nouveau client ──
+  const handleInvoiceStatusChange = (inv: Invoice, status: Invoice['status']) => {
+    const updated = clientInvoices.map(i => i.id === inv.id ? { ...i, status } : i)
+    saveInvoicesForClient(data.user.id, updated)
+    setClientInvoicesState(updated)
+    // Sync : si la facture devient "envoyée" ou "payée", s'assurer que le dossier existe
+    if (status === 'envoyee' || status === 'payee') {
+      syncOnInvoice(data.user.id, data.user.name, inv.number)
+    }
+    onRefresh()
+  }
+
   return (
     <div className="flex flex-col gap-6">
       <button onClick={onBack} className="flex items-center gap-2 text-xs text-light/40 hover:text-light transition-colors">
@@ -437,12 +450,7 @@ function ClientDetail({
                     {(['brouillon', 'envoyee', 'payee', 'en_retard'] as const).map(s => (
                       <button
                         key={s}
-                        onClick={() => {
-                          const updated = clientInvoices.map(i => i.id === inv.id ? { ...i, status: s } : i)
-                          saveInvoicesForClient(data.user.id, updated)
-                          setClientInvoicesState(updated)
-                          onRefresh()
-                        }}
+                        onClick={() => handleInvoiceStatusChange(inv, s)}
                         title={INV_STATUS_MAP[s].label}
                         className={`text-[10px] font-medium px-2 py-1 border transition-colors ${
                           inv.status === s ? 'bg-gold text-dark-bg border-gold' : 'text-light/30 border-gold/10 hover:border-gold/30'
@@ -811,8 +819,11 @@ function AgendaAdmin({ clients, onRefresh }: { clients: ClientData[]; onRefresh:
 
   const handleCreateRdv = () => {
     if (!rdvForm.title || !rdvForm.date || !rdvForm.clientId) return
+    const client = clients.find(c => c.user.id === rdvForm.clientId)
     const newRdv: Appointment = { ...rdvForm, id: crypto.randomUUID() }
     saveRdvForClient(rdvForm.clientId, [...getRdvsForClient(rdvForm.clientId), newRdv])
+    // ── Sync automatique dossier ──────────────────────────────────────────────
+    if (client) syncOnRdv(rdvForm.clientId, client.user.name, rdvForm.title)
     setShowRdvForm(false)
     setRdvForm(f => ({ ...f, title: '', notes: '' }))
     onRefresh()
@@ -825,6 +836,7 @@ function AgendaAdmin({ clients, onRefresh }: { clients: ClientData[]; onRefresh:
 
   const handleCreateTodo = () => {
     if (!todoForm.title || !todoForm.clientId) return
+    const client = clients.find(c => c.user.id === todoForm.clientId)
     const newTodo: Todo = {
       id: crypto.randomUUID(), title: todoForm.title,
       done: false, priority: todoForm.priority,
@@ -832,6 +844,8 @@ function AgendaAdmin({ clients, onRefresh }: { clients: ClientData[]; onRefresh:
       clientId: todoForm.clientId, createdAt: new Date().toISOString(),
     }
     saveTodosForClient(todoForm.clientId, [...getTodosForClient(todoForm.clientId), newTodo])
+    // ── Sync automatique dossier ──────────────────────────────────────────────
+    if (client) syncOnTodo(todoForm.clientId, client.user.name, todoForm.title)
     setShowTodoForm(false)
     setTodoForm(f => ({ ...f, title: '', dueDate: '' }))
     onRefresh()

@@ -1,294 +1,182 @@
-/**
- * Cabinet Mokadmi - Webhook formulaire de contact
- * Google Apps Script (Web App)
- *
- * DEPLOIEMENT :
- * 1. script.google.com -> Nouveau projet -> coller ce code
- * 2. Executer -> testLocal() pour valider
- * 3. Deployer -> Nouvelle version -> Web App
- *    - Executer en tant que : Moi (sami.mokadmi@gmail.com)
- *    - Qui peut acceder : Tout le monde
- * 4. Copier l'URL -> Vercel -> APPS_SCRIPT_URL
- */
+// Cabinet Mokadmi - Webhook formulaire de contact
+// AVANT DE COLLER CE CODE :
+//   1. Ctrl+A dans l'editeur pour tout selectionner
+//   2. Supprimer tout
+//   3. Coller ce code
+//   4. Enregistrer (Ctrl+S)
 
-// ============================================================
-// IDENTITE CABINET
-// ============================================================
-var CABINET_EMAIL   = 'office@mokadmi.lawyer';
-var CABINET_NOM     = 'Maitre Mokadmi Sami';
-var CABINET_TEL     = '+216 29 784 651';
-var CABINET_SITE    = 'www.mokadmi.lawyer';
-var CABINET_ADRESSE = 'Bloc B, Espace Tunis Monplaisir - 1073 Tunis';
+var CABINET_EMAIL = 'office@mokadmi.lawyer';
+var CABINET_NOM   = 'Maitre Mokadmi Sami';
+var CABINET_TEL   = '+216 29 784 651';
+var CABINET_SITE  = 'www.mokadmi.lawyer';
 
-// ============================================================
-// POINT D'ENTREE WEBHOOK
-// ============================================================
 function doPost(e) {
   try {
-    var raw     = e.postData.contents;
-    var data    = JSON.parse(raw);
-    var name    = data.name    || '';
+    var data    = JSON.parse(e.postData.contents);
+    var name    = data.name    || 'Client';
     var email   = data.email   || '';
     var company = data.company || '';
     var subject = data.subject || '';
     var message = data.message || '';
 
-    if (!name || !email) {
-      return buildResponse(false, 'Nom et email requis.');
+    if (!email) {
+      return reponse(false, 'Email manquant.');
     }
 
-    sendNotification(name, email, company, subject, message);
-    sendAutoReply(name, email, subject, message);
+    notifierCabinet(name, email, company, subject, message);
+    repondreClient(name, email, subject, message);
 
-    return buildResponse(true, 'Emails envoyes avec succes.');
-
+    return reponse(true, 'OK');
   } catch (err) {
-    Logger.log('Erreur doPost : ' + err.toString());
-    return buildResponse(false, err.toString());
+    Logger.log(err.toString());
+    return reponse(false, err.toString());
   }
 }
 
-// ============================================================
-// DETECTION DU SUJET
-// NOTE : on evite les accents dans les regex - on passe tout
-// en minuscules et on utilise indexOf() pour les mots accentues
-// ============================================================
-function detectSujet(subject, message) {
-  var t = (subject + ' ' + message).toLowerCase();
+function detecterSujet(subject, message) {
+  var texte = (subject + ' ' + message).toLowerCase();
 
-  // Levee de fonds / BSPCE
-  if (
-    t.indexOf('lev') !== -1 ||
-    t.indexOf('bspce') !== -1 ||
-    t.indexOf('bsa') !== -1 ||
-    t.indexOf('cap table') !== -1 ||
-    t.indexOf('term sheet') !== -1 ||
-    t.indexOf('seed') !== -1 ||
-    t.indexOf('startup') !== -1 ||
-    t.indexOf('fondateur') !== -1
-  ) {
+  if (texte.indexOf('lev') > -1 || texte.indexOf('bspce') > -1 || texte.indexOf('seed') > -1 || texte.indexOf('cap table') > -1 || texte.indexOf('startup') > -1) {
     return {
-      tag:    'Levee de fonds & Ingenierie capitalistique',
-      objet:  'Votre demande - Levee de fonds & BSPCE | Cabinet Mokadmi',
-      intro:  'Votre demande concernant la structuration de votre levee de fonds est entre nos mains.',
-      points: [
-        'Coherence et solidite de votre cap table',
-        'Structure des BSPCE / BSA / stock-options',
-        'Redaction ou audit du pacte d\'associes',
-        'Gouvernance pre-closing et term sheet',
-        'Risques juridiques susceptibles de bloquer un closing'
-      ],
-      delai: 'Notre premiere intervention peut avoir lieu sous 48 a 72h.'
+      objet: 'Votre demande - Levee de fonds & BSPCE | Cabinet Mokadmi',
+      tag: 'Levee de fonds & Ingenierie capitalistique',
+      intro: 'Votre demande concernant la structuration de votre levee de fonds est entre nos mains.',
+      points: 'Cap table | BSPCE & BSA | Pacte d\'associes | Term sheet | Risques juridiques pre-closing',
+      delai: 'Premiere intervention possible sous 48 a 72h.'
     };
   }
 
-  // Fiscalite / Holding
-  if (
-    t.indexOf('fisc') !== -1 ||
-    t.indexOf('holding') !== -1 ||
-    t.indexOf('exit') !== -1 ||
-    t.indexOf('optimis') !== -1 ||
-    t.indexOf('patrimoin') !== -1 ||
-    t.indexOf('tva') !== -1 ||
-    t.indexOf('imposition') !== -1 ||
-    t.indexOf('cession') !== -1
-  ) {
+  if (texte.indexOf('fisc') > -1 || texte.indexOf('holding') > -1 || texte.indexOf('exit') > -1 || texte.indexOf('optimis') > -1 || texte.indexOf('tva') > -1) {
     return {
-      tag:    'Strategie fiscale & Holding',
-      objet:  'Votre demande - Strategie fiscale & Holding | Cabinet Mokadmi',
-      intro:  'Votre demande concernant la strategie fiscale ou la structuration holding est entre nos mains.',
-      points: [
-        'Audit de votre situation fiscale et identification des risques',
-        'Structuration d\'une holding patrimoniale ou operationnelle',
-        'Optimisation a l\'exit : plus-value, reinvestissement, conventions bilaterales'
-      ],
-      delai: 'Nous travaillons exclusivement sur des architectures fiscales perennes et conformes.'
+      objet: 'Votre demande - Strategie fiscale & Holding | Cabinet Mokadmi',
+      tag: 'Strategie fiscale & Holding',
+      intro: 'Votre demande concernant la strategie fiscale ou la structuration holding est entre nos mains.',
+      points: 'Audit fiscal | Holding patrimoniale ou operationnelle | Optimisation a l\'exit | Conventions bilaterales',
+      delai: 'Architectures fiscales perennes et conformes - sans optimisation agressive.'
     };
   }
 
-  // M&A / Acquisition
-  if (
-    t.indexOf('m&a') !== -1 ||
-    t.indexOf('acquisition') !== -1 ||
-    t.indexOf('rachat') !== -1 ||
-    t.indexOf('fusion') !== -1 ||
-    t.indexOf('diligence') !== -1 ||
-    t.indexOf('data room') !== -1 ||
-    t.indexOf('garantie') !== -1
-  ) {
+  if (texte.indexOf('m&a') > -1 || texte.indexOf('acquisition') > -1 || texte.indexOf('fusion') > -1 || texte.indexOf('diligence') > -1) {
     return {
-      tag:    'M&A & Transactions',
-      objet:  'Votre demande - M&A & Transactions | Cabinet Mokadmi',
-      intro:  'Votre demande relative a une operation de M&A est entre nos mains.',
-      points: [
-        'Due diligence juridique augmentee (detection de clauses a risque)',
-        'Structuration de la garantie d\'actif et de passif (GAP)',
-        'Negociation du prix et mecanismes d\'earn-out',
-        'Closing et workflow post-acquisition'
-      ],
-      delai: 'La reactivite est essentielle. Nous revenons vers vous sous 24h ouvrees.'
+      objet: 'Votre demande - M&A & Transactions | Cabinet Mokadmi',
+      tag: 'M&A & Transactions',
+      intro: 'Votre demande relative a une operation de M&A est entre nos mains.',
+      points: 'Due diligence juridique | Garantie actif/passif | Earn-out | Closing',
+      delai: 'Reponse sous 24h ouvrees - la reactivite est essentielle.'
     };
   }
 
-  // IA / Automatisation
-  if (
-    t.indexOf(' ia ') !== -1 ||
-    t.indexOf('intelligence artificielle') !== -1 ||
-    t.indexOf('automati') !== -1 ||
-    t.indexOf('workflow') !== -1 ||
-    t.indexOf('no-code') !== -1 ||
-    t.indexOf('algorithme') !== -1
-  ) {
+  if (texte.indexOf('automati') > -1 || texte.indexOf('workflow') > -1 || texte.indexOf('ia') > -1 || texte.indexOf('algorithme') > -1) {
     return {
-      tag:    'Gouvernance IA & Automatisation juridique',
-      objet:  'Votre demande - Gouvernance IA & Automatisation | Cabinet Mokadmi',
-      intro:  'Votre demande concernant la gouvernance IA ou l\'automatisation juridique est entre nos mains.',
-      points: [
-        'Deploiement de workflows juridiques automatises (no-code et IA)',
-        'Mise en conformite avec l\'IA Act europeen et regulations algorithmiques',
-        'Due diligence augmentee par IA pour contrats et data rooms',
-        'Gouvernance des donnees et propriete intellectuelle des modeles'
-      ],
-      delai: 'C\'est notre domaine de predilection - nous serons particulierement attentifs a votre dossier.'
+      objet: 'Votre demande - Gouvernance IA & Automatisation | Cabinet Mokadmi',
+      tag: 'Gouvernance IA & Automatisation juridique',
+      intro: 'Votre demande concernant la gouvernance IA ou l\'automatisation juridique est entre nos mains.',
+      points: 'Workflows juridiques automatises | IA Act europeen | Due diligence IA | Propriete intellectuelle des modeles',
+      delai: 'Notre domaine de predilection - nous serons particulierement attentifs.'
     };
   }
 
-  // Defaut
   return {
-    tag:    'Demande generale',
-    objet:  'Votre demande a bien ete recue | Cabinet Mokadmi',
-    intro:  'Notre cabinet intervient sur trois expertises complementaires.',
-    points: [
-      'Droit des affaires - levees de fonds, pactes, BSPCE, M&A',
-      'Strategie fiscale - holdings, optimisation a l\'exit, transfrontalier',
-      'Gouvernance IA - automatisation juridique, conformite algorithmique'
-    ],
+    objet: 'Votre demande a bien ete recue | Cabinet Mokadmi',
+    tag: 'Demande generale',
+    intro: 'Notre cabinet intervient sur trois expertises complementaires.',
+    points: 'Droit des affaires & levees de fonds | Strategie fiscale & holdings | Gouvernance IA & automatisation',
     delai: 'Un premier diagnostic de 90 minutes vous permettra de cartographier votre situation.'
   };
 }
 
-// ============================================================
-// EMAIL 1 : NOTIFICATION INTERNE CABINET
-// ============================================================
-function sendNotification(name, email, company, subject, message) {
-  var html = ''
-    + '<div style="font-family:Arial,sans-serif;max-width:520px;border-top:4px solid #C9A96E;padding:24px;background:#fff;">'
-    + '<h2 style="color:#C9A96E;margin:0 0 20px;">Nouvelle demande de contact</h2>'
-    + '<table style="width:100%;border-collapse:collapse;font-size:14px;">'
-    + '<tr><td style="padding:8px 12px;background:#f5f5f5;color:#666;width:90px;border-bottom:1px solid #eee;">Nom</td>'
-    + '<td style="padding:8px 12px;font-weight:bold;border-bottom:1px solid #eee;">' + name + '</td></tr>'
-    + '<tr><td style="padding:8px 12px;background:#f5f5f5;color:#666;border-bottom:1px solid #eee;">Email</td>'
-    + '<td style="padding:8px 12px;border-bottom:1px solid #eee;"><a href="mailto:' + email + '" style="color:#C9A96E;">' + email + '</a></td></tr>'
-    + '<tr><td style="padding:8px 12px;background:#f5f5f5;color:#666;border-bottom:1px solid #eee;">Societe</td>'
-    + '<td style="padding:8px 12px;border-bottom:1px solid #eee;">' + (company ? company : '-') + '</td></tr>'
-    + '<tr><td style="padding:8px 12px;background:#f5f5f5;color:#666;border-bottom:1px solid #eee;">Sujet</td>'
-    + '<td style="padding:8px 12px;border-bottom:1px solid #eee;">' + (subject ? subject : '-') + '</td></tr>'
-    + '<tr><td style="padding:8px 12px;background:#f5f5f5;color:#666;vertical-align:top;">Message</td>'
-    + '<td style="padding:8px 12px;">' + (message ? message : '-') + '</td></tr>'
-    + '</table>'
-    + '<p style="margin:16px 0 0;font-size:12px;color:#999;">Repondre a : <a href="mailto:' + email + '" style="color:#C9A96E;">' + email + '</a></p>'
+function notifierCabinet(name, email, company, subject, message) {
+  var corps = 'Nouvelle demande de contact\n\n'
+    + 'Nom : ' + name + '\n'
+    + 'Email : ' + email + '\n'
+    + 'Societe : ' + (company || '-') + '\n'
+    + 'Sujet : ' + (subject || '-') + '\n'
+    + 'Message : ' + (message || '-') + '\n\n'
+    + 'Repondre a : ' + email;
+
+  var html = '<div style="font-family:Arial,sans-serif;max-width:520px;border-top:4px solid #C9A96E;padding:24px;">'
+    + '<h2 style="color:#C9A96E;margin:0 0 16px;">Nouvelle demande de contact</h2>'
+    + '<p><b>Nom :</b> ' + name + '</p>'
+    + '<p><b>Email :</b> <a href="mailto:' + email + '" style="color:#C9A96E;">' + email + '</a></p>'
+    + '<p><b>Societe :</b> ' + (company || '-') + '</p>'
+    + '<p><b>Sujet :</b> ' + (subject || '-') + '</p>'
+    + '<p><b>Message :</b> ' + (message || '-') + '</p>'
+    + '<hr style="margin:16px 0;border:none;border-top:1px solid #eee;"/>'
+    + '<p style="font-size:12px;color:#999;">Repondre a : <a href="mailto:' + email + '">' + email + '</a></p>'
     + '</div>';
 
   GmailApp.sendEmail(
     CABINET_EMAIL,
-    '[Contact] ' + name + ' - ' + (subject ? subject : 'Demande generale'),
-    'Nouvelle demande de ' + name + ' (' + email + '). Sujet : ' + (subject ? subject : '-'),
+    '[Contact] ' + name + ' - ' + (subject || 'Demande generale'),
+    corps,
     { replyTo: email, htmlBody: html, name: 'Formulaire Site Cabinet Mokadmi' }
   );
 }
 
-// ============================================================
-// EMAIL 2 : AUTO-REPONSE CLIENT
-// ============================================================
-function sendAutoReply(name, email, subject, message) {
-  var s = detectSujet(subject, message);
+function repondreClient(name, email, subject, message) {
+  var s = detecterSujet(subject, message);
 
-  var pointsHtml = '';
-  for (var i = 0; i < s.points.length; i++) {
-    pointsHtml += '<li style="margin-bottom:8px;">' + s.points[i] + '</li>';
-  }
+  var corps = 'Bonjour ' + name + ',\n\n'
+    + s.intro + '\n\n'
+    + 'Points traites : ' + s.points + '\n\n'
+    + s.delai + '\n\n'
+    + 'Reponse personnelle sous 24h ouvrees.\n'
+    + 'Urgence : ' + CABINET_TEL + '\n\n'
+    + 'Confirmer votre rendez-vous : https://' + CABINET_SITE + '/#booking\n\n'
+    + '---\n'
+    + CABINET_NOM + ' - Avocat au Barreau de Tunis\n'
+    + CABINET_EMAIL + ' | ' + CABINET_SITE;
 
-  var msgBlock = '';
-  if (message) {
-    msgBlock = '<div style="background:#111B2E;border-left:3px solid #C9A96E;padding:14px 18px;margin:20px 0;">'
-      + '<p style="margin:0 0 4px;font-size:11px;color:#C9A96E;text-transform:uppercase;letter-spacing:1px;">Votre message</p>'
-      + '<p style="margin:0;font-size:13px;color:rgba(232,237,245,0.6);">' + message + '</p>'
-      + '</div>';
-  }
-
-  var telClean = CABINET_TEL.replace(/ /g, '');
-
-  var html = ''
-    + '<!DOCTYPE html><html><head><meta charset="UTF-8"/></head>'
+  var html = '<!DOCTYPE html><html><head><meta charset="UTF-8"/></head>'
     + '<body style="margin:0;padding:0;background:#070C18;">'
-    + '<table width="100%" cellpadding="0" cellspacing="0" style="background:#070C18;padding:32px 16px;">'
-    + '<tr><td align="center">'
-    + '<table width="600" style="max-width:600px;width:100%;">'
+    + '<div style="max-width:600px;margin:0 auto;">'
 
-    // Bande doree top
-    + '<tr><td style="background:#C9A96E;height:3px;"></td></tr>'
+    + '<div style="background:#C9A96E;height:3px;"></div>'
 
-    // En-tete
-    + '<tr><td style="background:#0C1220;padding:32px 40px;">'
-    + '<p style="margin:0 0 2px;font-family:Georgia,serif;font-size:18px;color:#E8EDF5;font-weight:bold;">' + CABINET_NOM + '</p>'
-    + '<p style="margin:0 0 4px;font-size:10px;color:#C9A96E;letter-spacing:2px;text-transform:uppercase;">' + s.tag + '</p>'
-    + '<hr style="border:none;border-top:1px solid rgba(201,169,110,0.2);margin:16px 0;"/>'
+    + '<div style="background:#0C1220;padding:32px 40px;">'
+    + '<p style="margin:0 0 4px;font-family:Georgia,serif;font-size:18px;color:#E8EDF5;font-weight:bold;">' + CABINET_NOM + '</p>'
+    + '<p style="margin:0 0 20px;font-size:10px;color:#C9A96E;letter-spacing:2px;text-transform:uppercase;">' + s.tag + '</p>'
 
-    // Corps
-    + '<p style="font-size:15px;color:#E8EDF5;font-family:Georgia,serif;line-height:1.6;margin:0 0 6px;">Bonjour ' + name + ',</p>'
+    + '<p style="font-size:15px;color:#E8EDF5;font-family:Georgia,serif;margin:0 0 6px;">Bonjour ' + name + ',</p>'
     + '<p style="font-size:15px;color:#E8EDF5;margin:0 0 20px;">' + s.intro + '</p>'
-    + '<ul style="padding-left:20px;color:rgba(232,237,245,0.7);font-size:14px;line-height:1.8;margin:0 0 16px;">'
-    + pointsHtml
-    + '</ul>'
-    + '<p style="font-size:14px;color:rgba(232,237,245,0.6);margin:0 0 12px;">' + s.delai + '</p>'
-    + msgBlock
-    + '<p style="font-size:14px;color:rgba(232,237,245,0.5);margin:20px 0 28px;">'
-    + 'Nous vous repondrons sous <strong style="color:#C9A96E;">24h ouvrees</strong>. '
-    + 'Urgence : <a href="tel:' + telClean + '" style="color:#C9A96E;text-decoration:none;">' + CABINET_TEL + '</a>'
-    + '</p>'
-    + '<div style="text-align:center;">'
-    + '<a href="https://' + CABINET_SITE + '/#booking" style="display:inline-block;background:#C9A96E;color:#070C18;text-decoration:none;font-size:13px;font-weight:bold;padding:14px 32px;letter-spacing:1px;">CONFIRMER MON RENDEZ-VOUS</a>'
+
+    + '<div style="background:#111B2E;border-left:3px solid #C9A96E;padding:14px 18px;margin:0 0 20px;">'
+    + '<p style="margin:0 0 6px;font-size:11px;color:#C9A96E;text-transform:uppercase;letter-spacing:1px;">Points traites</p>'
+    + '<p style="margin:0;font-size:14px;color:rgba(232,237,245,0.75);line-height:1.8;">' + s.points.split('|').join('<br/>') + '</p>'
     + '</div>'
-    + '</td></tr>'
 
-    // Pied de page
-    + '<tr><td style="background:#050A14;padding:16px 40px;border-top:1px solid rgba(201,169,110,0.15);">'
-    + '<p style="font-size:11px;color:rgba(232,237,245,0.2);text-align:center;margin:0;">'
-    + CABINET_NOM + ' - Avocat au Barreau de Tunis<br/>'
-    + CABINET_ADRESSE + '<br/>'
-    + '<a href="mailto:' + CABINET_EMAIL + '" style="color:rgba(201,169,110,0.4);text-decoration:none;">' + CABINET_EMAIL + '</a>'
-    + ' - '
-    + '<a href="https://' + CABINET_SITE + '" style="color:rgba(201,169,110,0.4);text-decoration:none;">' + CABINET_SITE + '</a>'
-    + '</p></td></tr>'
+    + '<p style="font-size:14px;color:rgba(232,237,245,0.6);margin:0 0 8px;">' + s.delai + '</p>'
+    + '<p style="font-size:14px;color:rgba(232,237,245,0.5);margin:0 0 28px;">Reponse personnelle sous <b style="color:#C9A96E;">24h ouvrees</b>. Urgence : <a href="tel:+21629784651" style="color:#C9A96E;text-decoration:none;">' + CABINET_TEL + '</a></p>'
 
-    // Bande doree bottom
-    + '<tr><td style="background:#C9A96E;height:2px;"></td></tr>'
+    + '<div style="text-align:center;margin:0 0 20px;">'
+    + '<a href="https://' + CABINET_SITE + '/#booking" style="display:inline-block;background:#C9A96E;color:#070C18;text-decoration:none;font-size:13px;font-weight:bold;padding:14px 32px;">CONFIRMER MON RENDEZ-VOUS</a>'
+    + '</div>'
+    + '</div>'
 
-    + '</table></td></tr></table></body></html>';
+    + '<div style="background:#050A14;padding:16px 40px;">'
+    + '<p style="font-size:11px;color:rgba(232,237,245,0.2);text-align:center;margin:0;">' + CABINET_NOM + ' - Avocat au Barreau de Tunis<br/><a href="mailto:' + CABINET_EMAIL + '" style="color:rgba(201,169,110,0.4);text-decoration:none;">' + CABINET_EMAIL + '</a> - <a href="https://' + CABINET_SITE + '" style="color:rgba(201,169,110,0.4);text-decoration:none;">' + CABINET_SITE + '</a></p>'
+    + '</div>'
+
+    + '<div style="background:#C9A96E;height:2px;"></div>'
+    + '</div>'
+    + '</body></html>';
 
   GmailApp.sendEmail(
     email,
     s.objet,
-    'Bonjour ' + name + ', votre demande a bien ete recue. Reponse sous 24h ouvrees. ' + CABINET_TEL,
+    corps,
     { replyTo: CABINET_EMAIL, htmlBody: html, name: CABINET_NOM }
   );
 }
 
-// ============================================================
-// UTILITAIRE REPONSE HTTP
-// ============================================================
-function buildResponse(success, message) {
+function reponse(ok, msg) {
   return ContentService
-    .createTextOutput(JSON.stringify({ success: success, message: message }))
+    .createTextOutput(JSON.stringify({ success: ok, message: msg }))
     .setMimeType(ContentService.MimeType.JSON);
 }
 
-// ============================================================
-// TEST MANUEL (executer depuis l'editeur Apps Script)
-// Selectionner testLocal -> cliquer Executer
-// ============================================================
 function testLocal() {
-  sendNotification('Ahmed Ben Ali', 'sami.mokadmi@gmail.com', 'Tech Startup', 'Levee de fonds Seed 500k', 'Nous cherchons un avocat pour structurer notre levee de fonds.');
-  sendAutoReply('Ahmed Ben Ali', 'sami.mokadmi@gmail.com', 'Levee de fonds Seed 500k', 'Nous cherchons un avocat pour structurer notre levee de fonds.');
-  Logger.log('Test OK - verifier la boite Gmail.');
+  repondreClient('Ahmed Ben Ali', 'sami.mokadmi@gmail.com', 'Levee de fonds Seed', 'On cherche un avocat pour notre levee de fonds de 500k.');
+  notifierCabinet('Ahmed Ben Ali', 'sami.mokadmi@gmail.com', 'Tech Startup', 'Levee de fonds Seed', 'On cherche un avocat pour notre levee de fonds de 500k.');
+  Logger.log('Test termine - verifier Gmail.');
 }

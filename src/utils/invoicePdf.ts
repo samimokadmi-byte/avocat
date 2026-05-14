@@ -16,6 +16,7 @@ const CABINET = {
   telephone:       '+216 29 784 651',
   email:           'office@mokadmi.lawyer',
   site:            'www.mokadmi.lawyer',
+  // Fondé en 2003
   matriculeFiscal: '1234567 A/M/000',   // ← à mettre à jour avec le vrai MF
   barreauTunis:    'Barreau de Tunis',
 }

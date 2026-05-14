@@ -55,7 +55,7 @@ export default function Expertises() {
         Une expertise verticale, jamais généraliste.
       </h2>
       <p className="text-sm text-light/40 mb-16 max-w-prose-luxury">
-        Chaque domaine est traité avec la précision d'un ingénieur et l'autorité de 24 ans de pratique.
+        Chaque domaine est traité avec la précision d'un ingénieur et l'autorité de 23 ans de pratique.
       </p>
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-px bg-gold/10">

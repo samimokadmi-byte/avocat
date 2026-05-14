@@ -65,7 +65,7 @@ export default function VotreChallenge() {
           <div className="max-w-xl">
             <p className="text-xs font-medium text-gold/60 uppercase tracking-wider mb-2">La reponse du cabinet</p>
             <p className="text-sm text-light/65 leading-relaxed">
-              Notre approche combine expertise juridique de 24 ans et architecture IA pour structurer,
+              Notre approche combine expertise juridique de 23 ans et architecture IA pour structurer,
               piloter et securiser vos obligations avec une visibilite totale sur chaque etape.
             </p>
           </div>

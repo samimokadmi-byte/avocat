@@ -82,31 +82,36 @@ export default function Nav() {
 
       {/* Mobile menu */}
       <div className={`md:hidden absolute top-full left-0 right-0 bg-dark-bg border-b border-t border-gold/10 overflow-hidden transition-all duration-300 ease-in-out ${
-        open ? 'max-h-[500px] opacity-100 py-6 px-6' : 'max-h-0 opacity-0 py-0 px-6'
+        open ? 'max-h-[560px] opacity-100 py-6 px-6' : 'max-h-0 opacity-0 py-0 px-6'
       }`}>
-        <div className="flex flex-col gap-4">
+        <div className="flex flex-col gap-1">
           {links.map(l => (
             <button
               key={l.id}
               onClick={() => { scrollTo(l.id); setOpen(false) }}
-              className="text-base font-medium text-left text-light/50 hover:text-gold transition-colors py-2"
+              className="text-base font-medium text-left text-light/70 hover:text-gold transition-colors py-3 border-b border-gold/5 last:border-0"
             >
               {l.label}
             </button>
           ))}
-          <div className="h-px bg-gold/10 my-1" />
+
+          <div className="h-px bg-gold/10 my-3" />
+
           <Link
             to="/login"
             onClick={() => setOpen(false)}
-            className="text-base text-light/30 hover:text-light/60 transition-colors py-2"
+            className="text-sm font-medium text-light/45 hover:text-light/70 transition-colors py-2"
           >
             Espace client
           </Link>
+
+          {/* Bouton Consultation — toujours visible en bas du menu */}
           <button
             onClick={() => { scrollTo('booking'); setOpen(false) }}
-            className="text-base font-medium bg-gold text-dark-bg px-4 py-4 text-center hover:bg-gold/90 transition-colors mt-2"
+            className="flex items-center justify-center gap-2 bg-gold text-dark-bg text-sm font-bold px-4 py-4 hover:bg-gold/90 transition-colors mt-3 w-full"
           >
-            Prendre rendez-vous
+            <Zap size={12} strokeWidth={2} />
+            Consultation — Diagnostic 90 min
           </button>
         </div>
       </div>

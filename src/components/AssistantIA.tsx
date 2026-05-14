@@ -47,7 +47,7 @@ const KNOWLEDGE_BASE = [
   },
   {
     keywords: ['expérience', 'ancienneté', 'qui est', 'mokadmi', 'sami'],
-    response: "Maître Mokadmi Sami est l'Architecte Juridique du cabinet, fort de 24 ans d'expérience en droit des affaires et ingénierie stratégique entre Tunis et Paris."
+    response: "Maître Mokadmi Sami est l'Architecte Juridique du cabinet, fort de 23 ans d'expérience en droit des affaires et ingénierie stratégique entre Tunis et Paris."
   }
 ]
 

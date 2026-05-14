@@ -2,7 +2,7 @@ import { ArrowRight, Zap } from 'lucide-react'
 import { scrollTo } from '../utils/scrollTo'
 
 const stats = [
-  { value: '24',   label: "ans d'expérience" },
+  { value: '23',   label: "ans d'expérience" },
   { value: '97%',  label: 'dossiers finalisés' },
   { value: '3-en-1', label: 'Droit · Fiscal · IA' },
 ]
@@ -18,7 +18,7 @@ export default function Hero() {
           <div className="inline-flex items-center gap-2 border border-gold/20 bg-gold/5 px-3 py-1.5 mb-8">
             <Zap size={10} className="text-gold" strokeWidth={2} />
             <span className="text-xs font-medium text-gold/80 tracking-wide">
-              L'Architecte Juridique · 24 ans d'excellence
+              L'Architecte Juridique · 23 ans d'excellence
             </span>
           </div>
 
@@ -27,7 +27,7 @@ export default function Hero() {
           </h1>
 
           <p className="text-subhead text-light/50 max-w-prose-luxury mb-4 font-light leading-relaxed">
-            La sagesse de 24 ans d'expérience au service de l'innovation de rupture.
+            La sagesse de 23 ans d'expérience au service de l'innovation de rupture.
           </p>
           <p className="text-sm text-light/35 max-w-prose-luxury mb-12 leading-relaxed">
             Ingénierie juridique, fiscalité stratégique et intelligence artificielle — pour les fondateurs

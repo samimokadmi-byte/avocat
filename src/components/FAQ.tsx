@@ -8,7 +8,7 @@ const items = [
   },
   {
     q: "Comment intégrez-vous l'IA dans vos missions juridiques ?",
-    a: "L'IA intervient à plusieurs niveaux : due diligence augmentée (détection automatique de clauses à risque), génération de premiers drafts contractuels, workflows no-code de suivi de closing, et analyse de data rooms. Vous bénéficiez de la puissance analytique de l'IA couplée à 24 ans d'expérience terrain pour valider et affiner chaque résultat.",
+    a: "L'IA intervient à plusieurs niveaux : due diligence augmentée (détection automatique de clauses à risque), génération de premiers drafts contractuels, workflows no-code de suivi de closing, et analyse de data rooms. Vous bénéficiez de la puissance analytique de l'IA couplée à 23 ans d'expérience terrain pour valider et affiner chaque résultat.",
   },
   {
     q: "Quels sont vos honoraires ?",

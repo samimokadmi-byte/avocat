@@ -2,7 +2,7 @@ const stats = [
   {
     value: '24',
     label: "ans d'expérience",
-    note: 'Droit des affaires, fiscalité et IA juridique depuis 2000',
+    note: 'Droit des affaires, fiscalité et IA juridique depuis 2003',
   },
   {
     value: '22%',

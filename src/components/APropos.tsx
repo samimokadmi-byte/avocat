@@ -48,7 +48,7 @@ export default function APropos() {
               Un avocat qui pense comme un architecte.
             </h2>
             <p className="text-sm text-light/50 leading-relaxed mb-4">
-              Maître Mokadmi Sami exerce depuis 24 ans au Barreau de Tunis. Sa singularité : ne jamais
+              Maître Mokadmi Sami exerce depuis 23 ans au Barreau de Tunis. Sa singularité : ne jamais
               traiter le droit comme une contrainte, mais comme un levier de construction.
             </p>
             <p className="text-sm text-light/40 leading-relaxed">

@@ -12,24 +12,50 @@
 
   body {
     font-family: 'Inter', system-ui, sans-serif;
-    font-size: 1rem;
-    line-height: 1.6;
+    font-size: 1.0625rem;   /* 17px — +1px vs 16px d'origine */
+    line-height: 1.7;
+    font-weight: 400;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
   }
 
-  *:focus:not(:focus-visible) {
-    outline: none;
-  }
-
+  *:focus:not(:focus-visible) { outline: none; }
   *:focus-visible {
     outline: 2px solid #C9A96E;
     outline-offset: 3px;
   }
+
+  /* ── Opacité texte : rendre tous les textes secondaires plus lisibles ── */
+  /* Principe : chaque palier /XX monte d'environ 15 points d'opacité      */
+  .text-light\/20 { color: rgb(232 237 245 / 0.38) !important; }
+  .text-light\/25 { color: rgb(232 237 245 / 0.42) !important; }
+  .text-light\/30 { color: rgb(232 237 245 / 0.48) !important; }
+  .text-light\/35 { color: rgb(232 237 245 / 0.54) !important; }
+  .text-light\/40 { color: rgb(232 237 245 / 0.62) !important; }
+  .text-light\/45 { color: rgb(232 237 245 / 0.68) !important; }
+  .text-light\/50 { color: rgb(232 237 245 / 0.72) !important; }
+  .text-light\/55 { color: rgb(232 237 245 / 0.76) !important; }
+  .text-light\/60 { color: rgb(232 237 245 / 0.80) !important; }
+  .text-light\/65 { color: rgb(232 237 245 / 0.84) !important; }
+
+  /* ── Taille de police : bump global de +0.5 sur toutes les classes text- ── */
+  .text-xs   { font-size: 0.8125rem;  line-height: 1.5;  } /* 13px  vs 12px */
+  .text-sm   { font-size: 0.9375rem;  line-height: 1.65; } /* 15px  vs 14px */
+  .text-base { font-size: 1.0625rem;  line-height: 1.7;  } /* 17px  vs 16px */
+  .text-lg   { font-size: 1.1875rem;  line-height: 1.6;  } /* 19px  vs 18px */
+  .text-xl   { font-size: 1.3125rem;  line-height: 1.5;  } /* 21px  vs 20px */
+  .text-2xl  { font-size: 1.625rem;   line-height: 1.4;  } /* 26px  vs 24px */
+  .text-3xl  { font-size: 2rem;       line-height: 1.3;  } /* 32px  vs 30px */
+
+  /* ── Poids : rendre les textes courants légèrement plus gras ── */
+  p, li, td, th, blockquote {
+    font-weight: 400;
+  }
+  /* Labels et textes de navigation : semi-bold pour lisibilité */
+  .text-xs { font-weight: 500; }
 }
 
-/* ── Responsive section spacing ────────────────────────────────────────────── */
-/* py-section = 6rem (96px) sur desktop → réduit à 3rem (48px) sur mobile     */
+/* ── Responsive section spacing ─────────────────────────────────────────── */
 @media (max-width: 767px) {
   .py-section   { padding-top: 3rem !important; padding-bottom: 3rem !important; }
   .pt-section   { padding-top: 3rem !important; }
@@ -39,15 +65,14 @@
   .gap-section  { gap: 2.5rem !important; }
 }
 
-/* ── Touch targets minimum 44px ─────────────────────────────────────────────  */
+/* ── Touch targets minimum 44px ─────────────────────────────────────────── */
 @media (max-width: 767px) {
-  button, a[role="button"] {
-    min-height: 44px;
-  }
+  button, a[role="button"] { min-height: 44px; }
 }
 
-/* ── Prevent horizontal overflow global ─────────────────────────────────────  */
+/* ── Prevent horizontal overflow global ──────────────────────────────────── */
 html, body {
   overflow-x: hidden;
   max-width: 100vw;
 }
+

@@ -1,5 +1,5 @@
-import { useState, useMemo } from 'react'
-import { Link, useNavigate } from 'react-router-dom'
+import { useState, useMemo, useEffect } from 'react'
+import { Link, useNavigate, useLocation } from 'react-router-dom'
 import { useAuth, User } from '../contexts/AuthContext'
 import { Document } from './DashboardPage'
 import CalendarView, { Appointment } from '../components/CalendarView'
@@ -1026,14 +1026,60 @@ const navItems = [
 export default function AdminPage() {
   const { user, logout } = useAuth()
   const navigate = useNavigate()
+  const location = useLocation()
   const [tab, setTab] = useState('overview')
   const [selectedClient, setSelectedClient] = useState<ClientData | null>(null)
   const [mobileOpen, setMobileOpen] = useState(false)
   const [tick, setTick] = useState(0)
+  const [rdvNotif, setRdvNotif] = useState<string | null>(null)
 
   const clients = useMemo(() => getAllClients(), [tick])
-
   const refresh = () => setTick(t => t + 1)
+
+  // ── Magic link : /admin?rdv=BASE64 → crée le RDV automatiquement ──────────
+  useEffect(() => {
+    const params = new URLSearchParams(location.search)
+    const encoded = params.get('rdv')
+    if (!encoded) return
+
+    try {
+      const rdvData = JSON.parse(atob(decodeURIComponent(encoded)))
+      const { name, email, subject, notes, date, time, type } = rdvData
+
+      // Trouver ou simuler le client par email
+      const allAccounts: Record<string, { user: { id: string; name: string; email: string } }> =
+        JSON.parse(localStorage.getItem('avocat_accounts') || '{}')
+
+      const clientEntry = Object.values(allAccounts).find(
+        (a: any) => a.user?.email?.toLowerCase() === email?.toLowerCase() && a.user?.role !== 'admin'
+      ) as { user: { id: string; name: string; email: string } } | undefined
+
+      // Créer un ID client temporaire si pas encore inscrit
+      const clientId = clientEntry?.user?.id ?? `rdv_${btoa(email).replace(/=/g, '')}`
+
+      const newRdv: Appointment = {
+        id:      crypto.randomUUID(),
+        title:   subject || `RDV ${name}`,
+        date,
+        time,
+        type:    (type as Appointment['type']) || 'visio',
+        notes:   notes ? `[${name} — ${email}] ${notes}` : `[${name} — ${email}]`,
+        clientId,
+      }
+
+      const existing = JSON.parse(localStorage.getItem(`avocat_rdv_${clientId}`) || '[]')
+      localStorage.setItem(`avocat_rdv_${clientId}`, JSON.stringify([...existing, newRdv]))
+
+      setRdvNotif(`✓ RDV de ${name} ajouté — ${date} à ${time}`)
+      setTab('agenda')
+      refresh()
+
+      // Nettoyer l'URL
+      navigate('/admin', { replace: true })
+    } catch {
+      // Paramètre invalide — ignorer silencieusement
+    }
+  }, [location.search])
 
   const handleLogout = () => { logout(); navigate('/') }
 
@@ -1050,6 +1096,13 @@ export default function AdminPage() {
 
   return (
     <div className="min-h-screen bg-dark-bg flex flex-col">
+      {/* Notification RDV auto-créé */}
+      {rdvNotif && (
+        <div className="bg-gold/10 border-b border-gold/20 px-6 py-2.5 flex items-center justify-between gap-4">
+          <p className="text-xs font-medium text-gold">{rdvNotif}</p>
+          <button onClick={() => setRdvNotif(null)} className="text-gold/50 hover:text-gold text-xs">✕</button>
+        </div>
+      )}
       {/* Header */}
       <header className="border-b border-gold/10 bg-dark-surface flex items-center justify-between px-6 h-14 sticky top-0 z-40">
         <Link to="/" className="flex flex-col">

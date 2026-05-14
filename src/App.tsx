@@ -47,6 +47,7 @@ const SignupPage   = lazy(() => import('./pages/SignupPage'))
 const DashboardPage = lazy(() => import('./pages/DashboardPage'))
 const AdminPage    = lazy(() => import('./pages/AdminPage'))
 const BlogPage     = lazy(() => import('./pages/BlogPage'))
+const RdvPage      = lazy(() => import('./pages/RdvPage'))
 
 // ── Minimal suspense fallback (avoids layout shift) ──────────────────────────
 function PageLoader() {
@@ -99,6 +100,7 @@ export default function App() {
       <Suspense fallback={<PageLoader />}>
         <Routes>
           <Route path="/"        element={<LandingPage />} />
+          <Route path="/rdv"     element={<RdvPage />} />
           <Route path="/blog"    element={<BlogPage />} />
           <Route path="/login"   element={<LoginPage />} />
           <Route path="/signup"  element={<SignupPage />} />

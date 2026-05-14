@@ -13,6 +13,13 @@ var CABINET_SITE  = 'www.mokadmi.lawyer';
 function doPost(e) {
   try {
     var data    = JSON.parse(e.postData.contents);
+
+    // Router selon l'action
+    if (data.action === 'rdv') {
+      handleRdv(data);
+      return reponse(true, 'RDV envoye.');
+    }
+
     var name    = data.name    || 'Client';
     var email   = data.email   || '';
     var company = data.company || '';
@@ -149,7 +156,7 @@ function repondreClient(name, email, subject, message) {
     + '<p style="font-size:14px;color:rgba(232,237,245,0.5);margin:0 0 28px;">Reponse personnelle sous <b style="color:#C9A96E;">24h ouvrees</b>. Urgence : <a href="tel:+21629784651" style="color:#C9A96E;text-decoration:none;">' + CABINET_TEL + '</a></p>'
 
     + '<div style="text-align:center;margin:0 0 20px;">'
-    + '<a href="https://' + CABINET_SITE + '/#booking" style="display:inline-block;background:#C9A96E;color:#070C18;text-decoration:none;font-size:13px;font-weight:bold;padding:14px 32px;">CONFIRMER MON RENDEZ-VOUS</a>'
+    + '<a href="https://' + CABINET_SITE + '/rdv?name=' + encodeURIComponent(name) + '&email=' + encodeURIComponent(email) + '&subject=' + encodeURIComponent(subject) + '" style="display:inline-block;background:#C9A96E;color:#070C18;text-decoration:none;font-size:13px;font-weight:bold;padding:14px 32px;">CONFIRMER MON RENDEZ-VOUS</a>'
     + '</div>'
     + '</div>'
 
@@ -179,4 +186,101 @@ function testLocal() {
   repondreClient('Ahmed Ben Ali', 'sami.mokadmi@gmail.com', 'Levee de fonds Seed', 'On cherche un avocat pour notre levee de fonds de 500k.');
   notifierCabinet('Ahmed Ben Ali', 'sami.mokadmi@gmail.com', 'Tech Startup', 'Levee de fonds Seed', 'On cherche un avocat pour notre levee de fonds de 500k.');
   Logger.log('Test termine - verifier Gmail.');
+}
+
+// ============================================================
+// GESTION DES RESERVATIONS RDV
+// ============================================================
+
+var SITE_URL = 'https://avocat-navy.vercel.app';
+var TYPE_LABELS = { visio: 'Visioconference', presentiel: 'Presentiel - Tunis', telephone: 'Telephone' };
+
+function handleRdv(data) {
+  var name    = data.name    || '';
+  var email   = data.email   || '';
+  var subject = data.subject || '';
+  var message = data.message || '';
+  var date    = data.date    || '';
+  var time    = data.time    || '';
+  var type    = data.type    || 'visio';
+  var notes   = data.notes   || '';
+
+  var typeLabel = TYPE_LABELS[type] || type;
+  var dateStr   = formatDate(date);
+
+  // Encodage du RDV pour le lien magic admin
+  var rdvData = {
+    name:    name,
+    email:   email,
+    subject: subject,
+    notes:   notes || message,
+    date:    date,
+    time:    time,
+    type:    type
+  };
+  var encoded = Utilities.base64Encode(JSON.stringify(rdvData));
+  var magicLink = SITE_URL + '/admin?rdv=' + encodeURIComponent(encoded);
+
+  // 1. Email confirmation au client
+  var clientHtml = ''
+    + '<div style="font-family:Helvetica,Arial,sans-serif;max-width:600px;margin:0 auto;">'
+    + '<div style="background:#C9A96E;height:3px;"></div>'
+    + '<div style="background:#0C1220;padding:32px 40px;">'
+    + '<p style="margin:0 0 2px;font-family:Georgia,serif;font-size:18px;color:#E8EDF5;font-weight:bold;">' + CABINET_NOM + '</p>'
+    + '<p style="margin:0 0 20px;font-size:10px;color:#C9A96E;letter-spacing:2px;text-transform:uppercase;">Demande de rendez-vous</p>'
+    + '<p style="font-size:15px;color:#E8EDF5;font-family:Georgia,serif;margin:0 0 20px;">Bonjour ' + name + ',</p>'
+    + '<p style="font-size:15px;color:#E8EDF5;margin:0 0 24px;">Votre demande de rendez-vous a bien ete recue. Voici le recapitulatif :</p>'
+    + '<div style="background:#111B2E;border-left:3px solid #C9A96E;padding:18px 20px;margin:0 0 24px;">'
+    + '<p style="margin:0 0 10px;font-size:13px;color:rgba(232,237,245,0.9);"><b style="color:#C9A96E;">Date :</b> ' + dateStr + '</p>'
+    + '<p style="margin:0 0 10px;font-size:13px;color:rgba(232,237,245,0.9);"><b style="color:#C9A96E;">Heure :</b> ' + time + '</p>'
+    + '<p style="margin:0 0 10px;font-size:13px;color:rgba(232,237,245,0.9);"><b style="color:#C9A96E;">Format :</b> ' + typeLabel + '</p>'
+    + (subject ? '<p style="margin:0;font-size:13px;color:rgba(232,237,245,0.9);"><b style="color:#C9A96E;">Sujet :</b> ' + subject + '</p>' : '')
+    + '</div>'
+    + '<p style="font-size:14px;color:rgba(232,237,245,0.5);margin:0 0 28px;">Nous vous confirmerons ce creneau sous <b style="color:#C9A96E;">24h ouvrees</b>. Pour toute urgence : <a href="tel:+21629784651" style="color:#C9A96E;text-decoration:none;">' + CABINET_TEL + '</a></p>'
+    + '</div>'
+    + '<div style="background:#050A14;padding:14px 40px;">'
+    + '<p style="font-size:11px;color:rgba(232,237,245,0.2);text-align:center;margin:0;">' + CABINET_NOM + ' - Avocat au Barreau de Tunis - ' + CABINET_EMAIL + '</p>'
+    + '</div>'
+    + '<div style="background:#C9A96E;height:2px;"></div>'
+    + '</div>';
+
+  GmailApp.sendEmail(
+    email,
+    'Demande de RDV recue - ' + dateStr + ' a ' + time + ' | Cabinet Mokadmi',
+    'Bonjour ' + name + ', votre demande de RDV du ' + dateStr + ' a ' + time + ' a bien ete recue. Confirmation sous 24h. ' + CABINET_TEL,
+    { replyTo: CABINET_EMAIL, htmlBody: clientHtml, name: CABINET_NOM }
+  );
+
+  // 2. Email notification admin avec lien magic
+  var adminHtml = ''
+    + '<div style="font-family:Arial,sans-serif;max-width:560px;border-top:4px solid #C9A96E;padding:24px;background:#fff;">'
+    + '<h2 style="color:#C9A96E;margin:0 0 20px;">Nouvelle demande de RDV</h2>'
+    + '<table style="width:100%;border-collapse:collapse;font-size:14px;">'
+    + '<tr><td style="padding:8px 12px;background:#f5f5f5;color:#666;width:90px;border-bottom:1px solid #eee;">Client</td><td style="padding:8px 12px;font-weight:bold;border-bottom:1px solid #eee;">' + name + '</td></tr>'
+    + '<tr><td style="padding:8px 12px;background:#f5f5f5;color:#666;border-bottom:1px solid #eee;">Email</td><td style="padding:8px 12px;border-bottom:1px solid #eee;"><a href="mailto:' + email + '" style="color:#C9A96E;">' + email + '</a></td></tr>'
+    + '<tr><td style="padding:8px 12px;background:#f5f5f5;color:#666;border-bottom:1px solid #eee;">Date</td><td style="padding:8px 12px;border-bottom:1px solid #eee;">' + dateStr + '</td></tr>'
+    + '<tr><td style="padding:8px 12px;background:#f5f5f5;color:#666;border-bottom:1px solid #eee;">Heure</td><td style="padding:8px 12px;border-bottom:1px solid #eee;">' + time + '</td></tr>'
+    + '<tr><td style="padding:8px 12px;background:#f5f5f5;color:#666;border-bottom:1px solid #eee;">Format</td><td style="padding:8px 12px;border-bottom:1px solid #eee;">' + typeLabel + '</td></tr>'
+    + '<tr><td style="padding:8px 12px;background:#f5f5f5;color:#666;border-bottom:1px solid #eee;">Sujet</td><td style="padding:8px 12px;border-bottom:1px solid #eee;">' + (subject || '-') + '</td></tr>'
+    + '<tr><td style="padding:8px 12px;background:#f5f5f5;color:#666;vertical-align:top;">Notes</td><td style="padding:8px 12px;">' + (notes || message || '-') + '</td></tr>'
+    + '</table>'
+    + '<div style="text-align:center;margin:28px 0;">'
+    + '<a href="' + magicLink + '" style="display:inline-block;background:#C9A96E;color:#070C18;text-decoration:none;font-size:14px;font-weight:bold;padding:14px 32px;">CREER LE RDV DANS LE DASHBOARD</a>'
+    + '</div>'
+    + '<p style="font-size:12px;color:#999;text-align:center;">Cliquez sur le bouton ci-dessus pour ajouter automatiquement ce RDV dans l\'espace admin.</p>'
+    + '</div>';
+
+  GmailApp.sendEmail(
+    CABINET_EMAIL,
+    '[RDV] ' + name + ' - ' + dateStr + ' a ' + time,
+    'Nouvelle demande de RDV de ' + name + ' (' + email + ') pour le ' + dateStr + ' a ' + time + '. Sujet : ' + (subject || '-'),
+    { replyTo: email, htmlBody: adminHtml, name: 'Systeme RDV Cabinet Mokadmi' }
+  );
+}
+
+function formatDate(iso) {
+  if (!iso) return '-';
+  var parts = iso.split('-');
+  var mois = ['janvier','fevrier','mars','avril','mai','juin','juillet','aout','septembre','octobre','novembre','decembre'];
+  return parts[2] + ' ' + mois[parseInt(parts[1]) - 1] + ' ' + parts[0];
 }

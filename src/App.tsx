@@ -1,5 +1,5 @@
 import { lazy, Suspense, Component, ReactNode } from 'react'
-import { Routes, Route, Navigate } from 'react-router-dom'
+import { Routes, Route, Navigate, useLocation } from 'react-router-dom'
 import { useAuth } from './contexts/AuthContext'
 import ScrollToTop from './utils/ScrollToTop'
 
@@ -115,9 +115,12 @@ function AdminRoute({ children }: { children: React.ReactNode }) {
 }
 
 export default function App() {
+  const location = useLocation()
+  // Masquer les boutons flottants dans les espaces authentifiés
+  const hideFloating = location.pathname.startsWith('/dashboard') || location.pathname.startsWith('/admin')
+
   return (
     <>
-      {/* Resets scroll position on every route change (except in-page anchors) */}
       <ScrollToTop />
       <ErrorBoundary>
       <Suspense fallback={<PageLoader />}>
@@ -143,12 +146,11 @@ export default function App() {
               </AdminRoute>
             }
           />
-          {/* Catch-all: redirect unknown hashes to home instead of blank screen */}
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
       </Suspense>
-      <WhatsAppButton />
-      <AssistantIA />
+      {!hideFloating && <WhatsAppButton />}
+      {!hideFloating && <AssistantIA />}
       </ErrorBoundary>
     </>
   )

@@ -4,13 +4,14 @@ import { useAuth } from '../contexts/AuthContext'
 import {
   LayoutDashboard, FolderOpen, FileUp, MessageSquare, LogOut,
   CheckCircle2, Clock, Circle, ChevronRight, Upload, File,
-  FileText, Trash2, Menu, X, Shield, CalendarDays, Plus, Pencil, Bell, Receipt
+  FileText, Trash2, Menu, X, Shield, CalendarDays, Bell, Receipt,
+  Download, CheckSquare
 } from 'lucide-react'
-import CalendarView, { Appointment } from '../components/CalendarView'
-import TodoList, { Todo } from '../components/TodoList'
 import { useReminders } from '../hooks/useReminders'
-import BillingModule, { Invoice, computeAmounts, fmtAmount } from '../components/BillingModule'
-import { syncOnDocument, syncOnInvoice } from '../utils/dossierSync'
+import { Invoice, computeAmounts, fmtAmount, CURRENCIES } from '../components/BillingModule'
+import { syncOnDocument } from '../utils/dossierSync'
+import type { Appointment } from '../components/CalendarView'
+import type { Todo } from '../components/TodoList'
 
 // ─── Types ───────────────────────────────────────────────────────────────────
 
@@ -434,90 +435,163 @@ function Documents({ documents, setDocuments, userId, userName }: {
 
 // ─── Rendez-vous + Todos ──────────────────────────────────────────────────────
 
-function Rendezvous({ rdvs, setRdvs, todos, setTodos, userId, dossiers }: {
+// ─── InvoiceViewer — lecture seule pour le client ────────────────────────────
+function InvoiceViewer({ invoices, userName, userCompany }: {
+  invoices: Invoice[]
+  userName: string
+  userCompany?: string
+}) {
+  const [selected, setSelected] = useState<Invoice | null>(null)
+  const [pdfLoading, setPdfLoading] = useState(false)
+
+  const statusMap: Record<Invoice['status'], { label: string; cls: string }> = {
+    brouillon: { label: 'Brouillon',  cls: 'text-light/40 border-light/15' },
+    envoyee:   { label: 'Envoyée',    cls: 'text-blue-400 border-blue-400/30' },
+    payee:     { label: 'Payée',      cls: 'text-emerald-400 border-emerald-400/30' },
+    en_retard: { label: 'En retard',  cls: 'text-red-400 border-red-400/30' },
+  }
+
+  const handlePdf = async (inv: Invoice) => {
+    setPdfLoading(true)
+    try {
+      const { downloadInvoicePdf } = await import('../utils/invoicePdf')
+      await downloadInvoicePdf(inv, userName, userCompany)
+    } finally {
+      setPdfLoading(false)
+    }
+  }
+
+  if (invoices.length === 0) {
+    return (
+      <div className="flex flex-col gap-6">
+        <div>
+          <p className="text-xs font-medium tracking-[0.2em] uppercase text-light/40 mb-2">Facturation</p>
+          <h2 className="font-serif text-2xl text-light">Mes factures</h2>
+        </div>
+        <div className="border border-gold/10 py-16 flex flex-col items-center gap-3">
+          <Receipt size={28} strokeWidth={1} className="text-light/20" />
+          <p className="text-sm text-light/40 text-center">Aucune facture disponible pour le moment.</p>
+          <p className="text-xs text-light/25 text-center">Les factures émises par le cabinet apparaîtront ici.</p>
+        </div>
+      </div>
+    )
+  }
+
+  const fmtDate = (s: string) => new Date(s + 'T12:00:00').toLocaleDateString('fr-FR', { day: 'numeric', month: 'short', year: 'numeric' })
+
+  return (
+    <div className="flex flex-col gap-6">
+      <div>
+        <p className="text-xs font-medium tracking-[0.2em] uppercase text-light/40 mb-2">Facturation</p>
+        <h2 className="font-serif text-2xl text-light">Mes factures</h2>
+      </div>
+
+      {/* Liste */}
+      <div className="flex flex-col gap-px bg-gold/10">
+        {invoices.map(inv => {
+          const { net } = computeAmounts(inv)
+          const sym = CURRENCIES[inv.currency]?.symbol ?? inv.currency
+          const st  = statusMap[inv.status]
+          return (
+            <div key={inv.id}
+              className="bg-dark-surface px-4 sm:px-6 py-4 flex items-center gap-3 cursor-pointer hover:bg-dark-card transition-colors"
+              onClick={() => setSelected(selected?.id === inv.id ? null : inv)}
+            >
+              <div className="flex-1 min-w-0">
+                <div className="flex items-center gap-2 flex-wrap mb-0.5">
+                  <span className="text-sm font-semibold text-light">{inv.number}</span>
+                  <span className={`text-[10px] font-medium border px-1.5 py-0.5 ${st.cls}`}>{st.label}</span>
+                </div>
+                <p className="text-xs text-light/45">Émise le {fmtDate(inv.dateEmission)} · Échéance {fmtDate(inv.dateEcheance)}</p>
+              </div>
+              <div className="text-right flex-none">
+                <p className="text-sm font-bold text-light">{fmtAmount(net, inv.currency)} {sym}</p>
+                <p className="text-xs text-light/35">Net à payer</p>
+              </div>
+            </div>
+          )
+        })}
+      </div>
+
+      {/* Détail dépliable */}
+      {selected && (() => {
+        const { ht, tva, ttc, retenue, timbre, net } = computeAmounts(selected)
+        const sym = CURRENCIES[selected.currency]?.symbol ?? selected.currency
+        const fmtD = (s: string) => new Date(s + 'T12:00:00').toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric' })
+        return (
+          <div className="border border-gold/15 bg-dark-surface">
+            {/* Header détail */}
+            <div className="px-4 sm:px-6 py-4 border-b border-gold/10 flex items-center justify-between gap-3 flex-wrap">
+              <div>
+                <p className="text-xs text-light/40 mb-0.5">Facture {selected.number}</p>
+                <p className="text-xs text-light/30">{fmtD(selected.dateEmission)} → {fmtD(selected.dateEcheance)}</p>
+              </div>
+              <button
+                onClick={() => handlePdf(selected)}
+                disabled={pdfLoading}
+                className="flex items-center gap-1.5 text-xs font-medium bg-gold text-dark-bg px-3 py-2 hover:bg-gold/90 transition-colors disabled:opacity-50"
+              >
+                <Download size={11} strokeWidth={1.5} />
+                {pdfLoading ? 'Génération…' : 'Télécharger PDF'}
+              </button>
+            </div>
+
+            {/* Lignes */}
+            <div className="overflow-x-auto">
+              <div className="min-w-[400px]">
+                <div className="px-4 sm:px-6 py-2 bg-dark-bg grid grid-cols-[1fr_48px_80px_80px] gap-3">
+                  {['Description', 'Qté', `PU (${sym})`, `Total`].map((h, i) => (
+                    <p key={h} className={`text-[10px] font-semibold text-light/50 uppercase ${i > 0 ? 'text-right' : ''}`}>{h}</p>
+                  ))}
+                </div>
+                {selected.lines.map(l => (
+                  <div key={l.id} className="px-4 sm:px-6 py-3 bg-dark-surface border-t border-gold/8 grid grid-cols-[1fr_48px_80px_80px] gap-3">
+                    <p className="text-sm text-light">{l.description || '—'}</p>
+                    <p className="text-sm text-light/70 text-right">{l.quantity}</p>
+                    <p className="text-sm text-light/70 text-right">{fmtAmount(l.unitPrice, selected.currency)}</p>
+                    <p className="text-sm font-medium text-light text-right">{fmtAmount(l.quantity * l.unitPrice, selected.currency)}</p>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            {/* Totaux */}
+            <div className="px-4 sm:px-6 py-4 border-t border-gold/10 flex flex-col items-end gap-1.5">
+              <div className="flex gap-6 text-sm"><span className="text-light/45">Montant HT</span><span className="text-light font-medium">{fmtAmount(ht, selected.currency)} {sym}</span></div>
+              {selected.tvaRate > 0 && <div className="flex gap-6 text-sm"><span className="text-light/45">TVA ({selected.tvaRate} %)</span><span className="text-light">{fmtAmount(tva, selected.currency)} {sym}</span></div>}
+              <div className="flex gap-6 text-sm font-semibold"><span className="text-light/60">Montant TTC</span><span className="text-light">{fmtAmount(ttc, selected.currency)} {sym}</span></div>
+              {selected.retenueRate > 0 && <div className="flex gap-6 text-sm"><span className="text-light/45">Retenue ({selected.retenueRate} %)</span><span className="text-red-400">– {fmtAmount(retenue, selected.currency)} {sym}</span></div>}
+              {selected.timbreFiscal > 0 && <div className="flex gap-6 text-sm"><span className="text-light/45">Timbre fiscal</span><span className="text-emerald-400">+ {fmtAmount(timbre, selected.currency)} {sym}</span></div>}
+              <div className="flex gap-6 text-base font-bold border-t border-gold/15 pt-2 mt-1">
+                <span className="text-gold">Net à payer</span>
+                <span className="text-light">{fmtAmount(net, selected.currency)} {sym}</span>
+              </div>
+            </div>
+
+            {selected.notes && (
+              <div className="px-4 sm:px-6 pb-4 text-xs text-light/40 border-t border-gold/8 pt-3">{selected.notes}</div>
+            )}
+          </div>
+        )
+      })()}
+    </div>
+  )
+}
+
+// ─── RdvViewer — lecture seule agenda pour le client ─────────────────────────
+function RdvViewer({ rdvs, todos, dossiers }: {
   rdvs: Appointment[]
-  setRdvs: (r: Appointment[] | ((prev: Appointment[]) => Appointment[])) => void
   todos: Todo[]
-  setTodos: (t: Todo[] | ((prev: Todo[]) => Todo[])) => void
-  userId: string
   dossiers: Dossier[]
 }) {
-  const [selectedDate, setSelectedDate] = useState<string | null>(null)
   const [section, setSection] = useState<'rdv' | 'todo'>('rdv')
-
   const dossierMap: Record<string, string> = Object.fromEntries(dossiers.map(d => [d.id, d.titre]))
 
-  // RDV state
-  const [showRdvForm, setShowRdvForm] = useState(false)
-  const [editRdv, setEditRdv] = useState<Appointment | null>(null)
-  const [rdvForm, setRdvForm] = useState({
-    title: '', date: new Date().toISOString().split('T')[0],
-    time: '10:00', type: 'visio' as Appointment['type'], notes: '',
-    dossierId: undefined as string | undefined,
-  })
-
-  // Todo state
-  const [showTodoForm, setShowTodoForm] = useState(false)
-  const [editTodo, setEditTodo] = useState<Todo | null>(null)
-  const [todoForm, setTodoForm] = useState({
-    title: '', priority: 'normale' as Todo['priority'], dueDate: '',
-    dossierId: undefined as string | undefined,
-  })
-
   const upcoming = [...rdvs]
-    .filter(r => r.date >= new Date().toISOString().split('T')[0])
-    .sort((a, b) => a.date.localeCompare(b.date))
+    .sort((a, b) => (a.date + a.time).localeCompare(b.date + b.time))
 
-  // ── RDV actions ──
-  const openNewRdv = () => {
-    setEditRdv(null)
-    setRdvForm({ title: '', date: selectedDate ?? new Date().toISOString().split('T')[0], time: '10:00', type: 'visio', notes: '', dossierId: undefined })
-    setShowRdvForm(true)
-  }
-  const openEditRdv = (r: Appointment) => {
-    setEditRdv(r)
-    setRdvForm({ title: r.title, date: r.date, time: r.time, type: r.type, notes: r.notes ?? '', dossierId: r.dossierId })
-    setShowRdvForm(true)
-  }
-  const saveRdv = () => {
-    if (!rdvForm.title || !rdvForm.date) return
-    if (editRdv) {
-      setRdvs((prev: Appointment[]) => prev.map(r => r.id === editRdv.id ? { ...r, ...rdvForm } : r))
-    } else {
-      const newRdv: Appointment = { id: crypto.randomUUID(), clientId: userId, ...rdvForm }
-      setRdvs((prev: Appointment[]) => [...prev, newRdv])
-    }
-    setShowRdvForm(false)
-    setEditRdv(null)
-  }
-  const deleteRdv = (id: string) => setRdvs((prev: Appointment[]) => prev.filter(r => r.id !== id))
-
-  // ── Todo actions ──
-  const openNewTodo = () => {
-    setEditTodo(null)
-    setTodoForm({ title: '', priority: 'normale', dueDate: '', dossierId: undefined })
-    setShowTodoForm(true)
-  }
-  const openEditTodo = (t: Todo) => {
-    setEditTodo(t)
-    setTodoForm({ title: t.title, priority: t.priority, dueDate: t.dueDate ?? '', dossierId: t.dossierId })
-    setShowTodoForm(true)
-  }
-  const saveTodo = () => {
-    if (!todoForm.title) return
-    if (editTodo) {
-      setTodos((prev: Todo[]) => prev.map(t => t.id === editTodo.id ? { ...t, ...todoForm, dueDate: todoForm.dueDate || undefined } : t))
-    } else {
-      const newTodo: Todo = { id: crypto.randomUUID(), clientId: userId, done: false, createdAt: new Date().toISOString(), ...todoForm, dueDate: todoForm.dueDate || undefined }
-      setTodos((prev: Todo[]) => [...prev, newTodo])
-    }
-    setShowTodoForm(false)
-    setEditTodo(null)
-  }
-  const toggleTodo = (id: string) => setTodos((prev: Todo[]) => prev.map(t => t.id === id ? { ...t, done: !t.done } : t))
-  const deleteTodo = (id: string) => setTodos((prev: Todo[]) => prev.filter(t => t.id !== id))
-
-  const rdvTypeLabel = (t: Appointment['type']) => t === 'visio' ? 'Visioconférence' : t === 'presentiel' ? 'Présentiel' : 'Téléphone'
+  const typeLabel = (t: Appointment['type']) => t === 'visio' ? 'Visioconférence' : t === 'presentiel' ? 'Présentiel' : 'Téléphone'
+  const priorityColor = (p: Todo['priority']) => p === 'urgente' ? 'text-red-400' : p === 'normale' ? 'text-gold/60' : 'text-light/40'
 
   return (
     <div className="flex flex-col gap-6">
@@ -526,173 +600,79 @@ function Rendezvous({ rdvs, setRdvs, todos, setTodos, userId, dossiers }: {
         <h2 className="font-serif text-2xl text-light">Planning & Tâches</h2>
       </div>
 
-      {/* Section tabs */}
       <div className="flex gap-1 border-b border-gold/10">
         {(['rdv', 'todo'] as const).map(s => (
           <button key={s} onClick={() => setSection(s)}
             className={`text-sm font-medium px-4 py-2 border-b-2 transition-colors ${section === s ? 'border-gold text-light' : 'border-transparent text-light/40 hover:text-light'}`}>
-            {s === 'rdv' ? `Rendez-vous (${rdvs.length})` : `Tâches (${todos.filter(t => !t.done).length} en cours)`}
+            {s === 'rdv' ? `Rendez-vous (${rdvs.length})` : `Tâches (${todos.filter(t => !t.done).length} actives)`}
           </button>
         ))}
       </div>
 
-      {/* ── RDV ── */}
       {section === 'rdv' && (
-        <div className="flex flex-col gap-6">
-          <div className="flex justify-end">
-            <button onClick={openNewRdv}
-              className="flex items-center gap-2 bg-gold text-dark-bg text-xs font-medium px-4 py-2.5 hover:bg-gold/90 transition-colors">
-              <Plus size={13} strokeWidth={1.5} /> Ajouter un RDV
-            </button>
+        upcoming.length === 0 ? (
+          <div className="border border-gold/10 py-12 flex flex-col items-center gap-3">
+            <CalendarDays size={24} strokeWidth={1} className="text-light/20" />
+            <p className="text-sm text-light/40 text-center">Aucun rendez-vous planifié.</p>
+            <p className="text-xs text-light/25 text-center">Les RDV fixés avec le cabinet apparaîtront ici.</p>
           </div>
-
-          {showRdvForm && (
-            <div className="border border-gold/15 p-6 flex flex-col gap-4">
-              <div className="flex items-center justify-between">
-                <p className="text-sm font-medium text-light">{editRdv ? 'Modifier le rendez-vous' : 'Nouveau rendez-vous'}</p>
-                <button onClick={() => setShowRdvForm(false)} className="text-light/30 hover:text-light transition-colors"><X size={14} strokeWidth={1.5} /></button>
-              </div>
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <div className="flex flex-col gap-1.5 sm:col-span-2">
-                  <label className="text-xs font-medium text-light/40 uppercase tracking-wide">Titre</label>
-                  <input type="text" value={rdvForm.title} onChange={e => setRdvForm(f => ({ ...f, title: e.target.value }))} placeholder="Ex: Point sur la levée de fonds" className="border-b border-gold/15 bg-transparent py-2 text-sm text-light placeholder:text-light/20 focus:outline-none focus:border-gold transition-colors" />
+        ) : (
+          <div className="flex flex-col gap-px bg-gold/10">
+            {upcoming.map(rdv => (
+              <div key={rdv.id} className="bg-dark-surface px-4 sm:px-6 py-4 flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-4">
+                <div className="flex-none text-center hidden sm:block">
+                  <p className="text-xs font-bold text-gold">{new Date(rdv.date + 'T12:00:00').toLocaleDateString('fr-FR', { day: '2-digit', month: 'short' }).toUpperCase()}</p>
+                  <p className="text-base font-bold text-light">{rdv.time}</p>
                 </div>
-                <div className="flex flex-col gap-1.5">
-                  <label className="text-xs font-medium text-light/40 uppercase tracking-wide">Date</label>
-                  <input type="date" value={rdvForm.date} onChange={e => setRdvForm(f => ({ ...f, date: e.target.value }))} className="border-b border-gold/15 bg-transparent py-2 text-sm text-light focus:outline-none focus:border-gold transition-colors" />
+                <div className="sm:hidden text-xs text-gold font-medium">
+                  {new Date(rdv.date + 'T12:00:00').toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long' })} — {rdv.time}
                 </div>
-                <div className="flex flex-col gap-1.5">
-                  <label className="text-xs font-medium text-light/40 uppercase tracking-wide">Heure</label>
-                  <input type="time" value={rdvForm.time} onChange={e => setRdvForm(f => ({ ...f, time: e.target.value }))} className="border-b border-gold/15 bg-transparent py-2 text-sm text-light focus:outline-none focus:border-gold transition-colors" />
-                </div>
-                <div className="flex flex-col gap-1.5">
-                  <label className="text-xs font-medium text-light/40 uppercase tracking-wide">Type</label>
-                  <select value={rdvForm.type} onChange={e => setRdvForm(f => ({ ...f, type: e.target.value as Appointment['type'] }))} className="border-b border-gold/15 bg-transparent py-2 text-sm text-light focus:outline-none focus:border-gold transition-colors">
-                    <option value="visio">Visioconférence</option>
-                    <option value="presentiel">Présentiel</option>
-                    <option value="telephone">Téléphone</option>
-                  </select>
-                </div>
-                <div className="flex flex-col gap-1.5">
-                  <label className="text-xs font-medium text-light/40 uppercase tracking-wide">Dossier <span className="normal-case text-light/30">(optionnel)</span></label>
-                  <select value={rdvForm.dossierId ?? ''} onChange={e => setRdvForm(f => ({ ...f, dossierId: e.target.value || undefined }))} className="border-b border-gold/15 bg-transparent py-2 text-sm text-light focus:outline-none focus:border-gold transition-colors">
-                    <option value="">— Aucun dossier —</option>
-                    {dossiers.map(d => <option key={d.id} value={d.id}>{d.titre}</option>)}
-                  </select>
-                </div>
-                <div className="flex flex-col gap-1.5">
-                  <label className="text-xs font-medium text-light/40 uppercase tracking-wide">Notes <span className="normal-case text-light/30">(optionnel)</span></label>
-                  <input type="text" value={rdvForm.notes} onChange={e => setRdvForm(f => ({ ...f, notes: e.target.value }))} placeholder="Détails, lieu, lien visio…" className="border-b border-gold/15 bg-transparent py-2 text-sm text-light placeholder:text-light/20 focus:outline-none focus:border-gold transition-colors" />
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm font-medium text-light">{rdv.title}</p>
+                  <p className="text-xs text-light/40">{typeLabel(rdv.type)}{rdv.dossierId && dossierMap[rdv.dossierId] ? ` · ${dossierMap[rdv.dossierId]}` : ''}</p>
+                  {rdv.notes && <p className="text-xs text-light/30 mt-0.5 truncate">{rdv.notes}</p>}
                 </div>
               </div>
-              <div className="flex gap-3 mt-1">
-                <button onClick={saveRdv} className="bg-gold text-dark-bg text-xs font-medium px-5 py-2.5 hover:bg-gold/90 transition-colors">
-                  {editRdv ? 'Enregistrer' : 'Ajouter'}
-                </button>
-                <button onClick={() => setShowRdvForm(false)} className="text-xs text-light/40 hover:text-light transition-colors px-3">Annuler</button>
-              </div>
-            </div>
-          )}
-
-          <CalendarView appointments={rdvs} selectedDate={selectedDate} onSelectDate={d => { setSelectedDate(d); setRdvForm(f => ({ ...f, date: d })) }} />
-
-          {upcoming.length > 0 && (
-            <div>
-              <p className="text-xs font-medium text-light/40 uppercase tracking-wide mb-3">Prochains rendez-vous</p>
-              <div className="flex flex-col gap-px bg-gold/10">
-                {upcoming.map(r => (
-                  <div key={r.id} className="bg-dark-surface px-5 py-4 flex items-center gap-4 group">
-                    <div className="flex-none text-center w-10">
-                      <p className="text-xs font-bold text-light leading-none">{new Date(r.date + 'T12:00:00').toLocaleDateString('fr-FR', { day: 'numeric' })}</p>
-                      <p className="text-[10px] text-light/40 uppercase">{new Date(r.date + 'T12:00:00').toLocaleDateString('fr-FR', { month: 'short' })}</p>
-                    </div>
-                    <div className="w-px h-8 bg-gold/10 flex-none" />
-                    <div className="flex-1 min-w-0">
-                      <p className="text-sm font-medium text-light truncate">{r.title}</p>
-                      <div className="flex items-center gap-2 mt-0.5 flex-wrap">
-                        <span className="text-xs text-light/40">{r.time} · {rdvTypeLabel(r.type)}{r.notes ? ` · ${r.notes}` : ''}</span>
-                        {r.dossierId && dossierMap[r.dossierId] && (
-                          <span className="flex items-center gap-1 text-[10px] text-light/40 border border-gold/10 px-1.5 py-0.5">
-                            <FolderOpen size={9} strokeWidth={1.5} /> {dossierMap[r.dossierId]}
-                          </span>
-                        )}
-                      </div>
-                    </div>
-                    <div className="flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                      <button onClick={() => openEditRdv(r)} className="text-light/30 hover:text-light transition-colors p-1">
-                        <Pencil size={13} strokeWidth={1.5} />
-                      </button>
-                      <button onClick={() => deleteRdv(r.id)} className="text-light/20 hover:text-red-500 transition-colors p-1">
-                        <Trash2 size={13} strokeWidth={1.5} />
-                      </button>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </div>
-          )}
-          {rdvs.length === 0 && <p className="text-sm text-light/30 text-center py-6">Aucun rendez-vous. Ajoutez-en un ci-dessus.</p>}
-        </div>
+            ))}
+          </div>
+        )
       )}
 
-      {/* ── Todos ── */}
       {section === 'todo' && (
-        <div className="flex flex-col gap-4">
-          <div className="flex justify-end">
-            <button onClick={openNewTodo}
-              className="flex items-center gap-2 bg-gold text-dark-bg text-xs font-medium px-4 py-2.5 hover:bg-gold/90 transition-colors">
-              <Plus size={13} strokeWidth={1.5} /> Nouvelle tâche
-            </button>
+        todos.length === 0 ? (
+          <div className="border border-gold/10 py-12 flex flex-col items-center gap-3">
+            <CheckSquare size={24} strokeWidth={1} className="text-light/20" />
+            <p className="text-sm text-light/40 text-center">Aucune tâche assignée.</p>
+            <p className="text-xs text-light/25 text-center">Les tâches assignées par le cabinet apparaîtront ici.</p>
           </div>
-
-          {showTodoForm && (
-            <div className="border border-gold/15 p-6 flex flex-col gap-4">
-              <div className="flex items-center justify-between">
-                <p className="text-sm font-medium text-light">{editTodo ? 'Modifier la tâche' : 'Nouvelle tâche'}</p>
-                <button onClick={() => setShowTodoForm(false)} className="text-light/30 hover:text-light transition-colors"><X size={14} strokeWidth={1.5} /></button>
+        ) : (
+          <div className="flex flex-col gap-px bg-gold/10">
+            {todos.map(todo => (
+              <div key={todo.id} className="bg-dark-surface px-4 sm:px-6 py-3 flex items-center gap-3">
+                <div className={`w-1.5 h-1.5 rounded-full flex-none ${todo.done ? 'bg-emerald-400' : priorityColor(todo.priority).replace('text-', 'bg-')}`} />
+                <div className="flex-1 min-w-0">
+                  <p className={`text-sm ${todo.done ? 'line-through text-light/30' : 'text-light'}`}>{todo.title}</p>
+                  {todo.dueDate && <p className="text-xs text-light/35">Échéance : {new Date(todo.dueDate + 'T12:00:00').toLocaleDateString('fr-FR', { day: 'numeric', month: 'short' })}</p>}
+                </div>
+                <span className={`text-[10px] font-medium ${todo.done ? 'text-emerald-400' : priorityColor(todo.priority)}`}>
+                  {todo.done ? '✓ Fait' : todo.priority}
+                </span>
               </div>
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <div className="flex flex-col gap-1.5 sm:col-span-2">
-                  <label className="text-xs font-medium text-light/40 uppercase tracking-wide">Tâche</label>
-                  <input type="text" value={todoForm.title} onChange={e => setTodoForm(f => ({ ...f, title: e.target.value }))} placeholder="Ex: Préparer les statuts" className="border-b border-gold/15 bg-transparent py-2 text-sm text-light placeholder:text-light/20 focus:outline-none focus:border-gold transition-colors" />
-                </div>
-                <div className="flex flex-col gap-1.5">
-                  <label className="text-xs font-medium text-light/40 uppercase tracking-wide">Priorité</label>
-                  <select value={todoForm.priority} onChange={e => setTodoForm(f => ({ ...f, priority: e.target.value as Todo['priority'] }))} className="border-b border-gold/15 bg-transparent py-2 text-sm text-light focus:outline-none focus:border-gold transition-colors">
-                    <option value="normale">Normale</option>
-                    <option value="urgente">Urgente</option>
-                  </select>
-                </div>
-                <div className="flex flex-col gap-1.5">
-                  <label className="text-xs font-medium text-light/40 uppercase tracking-wide">Échéance <span className="normal-case text-light/30">(optionnel)</span></label>
-                  <input type="date" value={todoForm.dueDate} onChange={e => setTodoForm(f => ({ ...f, dueDate: e.target.value }))} className="border-b border-gold/15 bg-transparent py-2 text-sm text-light focus:outline-none focus:border-gold transition-colors" />
-                </div>
-                <div className="flex flex-col gap-1.5 sm:col-span-2">
-                  <label className="text-xs font-medium text-light/40 uppercase tracking-wide">Dossier <span className="normal-case text-light/30">(optionnel)</span></label>
-                  <select value={todoForm.dossierId ?? ''} onChange={e => setTodoForm(f => ({ ...f, dossierId: e.target.value || undefined }))} className="border-b border-gold/15 bg-transparent py-2 text-sm text-light focus:outline-none focus:border-gold transition-colors">
-                    <option value="">— Aucun dossier —</option>
-                    {dossiers.map(d => <option key={d.id} value={d.id}>{d.titre}</option>)}
-                  </select>
-                </div>
-              </div>
-              <div className="flex gap-3 mt-1">
-                <button onClick={saveTodo} className="bg-gold text-dark-bg text-xs font-medium px-5 py-2.5 hover:bg-gold/90 transition-colors">
-                  {editTodo ? 'Enregistrer' : 'Ajouter'}
-                </button>
-                <button onClick={() => setShowTodoForm(false)} className="text-xs text-light/40 hover:text-light transition-colors px-3">Annuler</button>
-              </div>
-            </div>
-          )}
-
-          <TodoList todos={todos} onToggle={toggleTodo} onDelete={deleteTodo} onEdit={openEditTodo} dossierMap={dossierMap} />
-          {todos.length === 0 && <p className="text-sm text-light/30 text-center py-6">Aucune tâche. Ajoutez-en une ci-dessus.</p>}
-        </div>
+            ))}
+          </div>
+        )
       )}
+
+      {/* CTA vers prise de RDV */}
+      <div className="border border-gold/10 px-4 sm:px-6 py-4 flex flex-col sm:flex-row items-start sm:items-center gap-3">
+        <p className="text-sm text-light/45 flex-1">Besoin de fixer un nouveau rendez-vous ?</p>
+        <a href="/rdv" className="text-xs font-medium text-gold border border-gold/20 px-4 py-2 hover:border-gold/40 hover:bg-gold/5 transition-colors whitespace-nowrap">
+          Prendre RDV →
+        </a>
+      </div>
     </div>
   )
 }
-
-// ─── Messagerie ───────────────────────────────────────────────────────────────
 
 function Messagerie() {
   return (
@@ -745,9 +725,9 @@ export default function DashboardPage() {
 
   const [dossiers] = useLocalState<Dossier[]>(`avocat_dossiers_${user?.id}`, [])
   const [documents, setDocuments] = useLocalState<Document[]>(`avocat_documents_${user?.id}`, [])
-  const [rdvs, setRdvs] = useLocalState<Appointment[]>(`avocat_rdv_${user?.id}`, [])
-  const [todos, setTodos] = useLocalState<Todo[]>(`avocat_todos_${user?.id}`, [])
-  const [invoices, setInvoices] = useLocalState<Invoice[]>(`avocat_invoices_${user?.id}`, [])
+  const [rdvs] = useLocalState<Appointment[]>(`avocat_rdv_${user?.id}`, [])
+  const [todos] = useLocalState<Todo[]>(`avocat_todos_${user?.id}`, [])
+  const [invoices] = useLocalState<Invoice[]>(`avocat_invoices_${user?.id}`, [])
 
   const { alerts, dismiss } = useReminders(rdvs, todos)
 
@@ -861,28 +841,14 @@ export default function DashboardPage() {
               userName={user?.name ?? ''}
             />
           )}
-          {tab === 'rendezvous' && <Rendezvous rdvs={rdvs} setRdvs={setRdvs} todos={todos} setTodos={setTodos} userId={user?.id ?? ''} dossiers={dossiers} />}
+          {tab === 'rendezvous' && (
+            <RdvViewer rdvs={rdvs} todos={todos} dossiers={dossiers} />
+          )}
           {tab === 'facturation' && (
-            <BillingModule
+            <InvoiceViewer
               invoices={invoices}
-              setInvoices={(val) => {
-                // Sync automatique dossier à chaque nouvelle facture créée
-                const prev = invoices
-                const next = typeof val === 'function' ? val(prev) : val
-                if (next.length > prev.length) {
-                  // Nouvelle facture détectée
-                  const newInv = next.find(n => !prev.some(p => p.id === n.id))
-                  if (newInv && user) syncOnInvoice(user.id, user.name, newInv.number)
-                }
-                setInvoices(val)
-              }}
-              rdvs={rdvs}
-              todos={todos}
-              dossiers={dossiers}
-              userId={user?.id ?? ''}
               userName={user?.name ?? ''}
               userCompany={user?.company}
-              userEmail={user?.email}
             />
           )}
           {tab === 'messagerie' && <Messagerie />}
@@ -890,17 +856,17 @@ export default function DashboardPage() {
       </div>
 
       {/* ── Bottom nav mobile ──────────────────────────────────────────────── */}
-      <nav className="md:hidden fixed bottom-0 left-0 right-0 z-30 bg-dark-surface border-t border-gold/10 flex">
+      <nav className="md:hidden fixed bottom-0 left-0 right-0 z-30 bg-dark-surface border-t border-gold/10 flex safe-area-bottom">
         {navItems.map(({ id, label, icon: Icon }) => (
           <button
             key={id}
             onClick={() => changeTab(id)}
-            className={`flex-1 flex flex-col items-center justify-center gap-0.5 py-2.5 transition-colors ${
-              tab === id ? 'text-gold' : 'text-light/30 hover:text-light/60'
+            className={`flex-1 flex flex-col items-center justify-center gap-0.5 py-2 transition-colors min-h-[56px] ${
+              tab === id ? 'text-gold' : 'text-light/40 hover:text-light/60'
             }`}
           >
-            <Icon size={18} strokeWidth={tab === id ? 2 : 1.25} />
-            <span className="text-[9px] font-medium tracking-wide">{label}</span>
+            <Icon size={20} strokeWidth={tab === id ? 2 : 1.25} />
+            <span className="text-[9px] font-medium tracking-wide leading-none mt-0.5">{label}</span>
           </button>
         ))}
       </nav>

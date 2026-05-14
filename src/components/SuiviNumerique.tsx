@@ -28,46 +28,46 @@ const cards = [
 export default function SuiviNumerique() {
   return (
     <section id="suivi" className="px-6 py-section max-w-content mx-auto">
-      <p className="text-xs font-medium tracking-[0.2em] uppercase text-navy/50 mb-4">
+      <p className="text-xs font-medium tracking-[0.2em] uppercase text-gold/60 mb-4">
         Suivi Numérique
       </p>
       <div className="flex flex-col md:flex-row md:items-end md:justify-between gap-6 mb-16">
-        <h2 className="font-serif text-heading text-navy max-w-md">
+        <h2 className="font-serif text-heading text-light max-w-md">
           Votre Dossier en Temps Réel
         </h2>
-        <p className="text-sm text-navy/50 max-w-xs leading-relaxed">
+        <p className="text-sm text-light/45 max-w-xs leading-relaxed">
           Un accès complet et transparent à l'avancement de votre mission, à chaque étape.
         </p>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-px bg-navy/10">
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-px bg-gold/8">
         {cards.map(({ icon: Icon, titre, description, detail }) => (
           <div
             key={titre}
-            className="group bg-offwhite p-10 flex flex-col gap-6 transition-colors duration-200 hover:bg-navy hover:bg-opacity-[0.02]"
+            className="group bg-dark-surface p-5 sm:p-8 md:p-10 flex flex-col gap-6 transition-colors duration-200 hover:bg-navy hover:bg-opacity-[0.02]"
           >
-            <div className="w-10 h-10 border border-navy/15 flex items-center justify-center group-hover:border-navy/30 transition-colors duration-200">
-              <Icon size={18} strokeWidth={1.25} className="text-navy/40 group-hover:text-navy/60 transition-colors duration-200" />
+            <div className="w-10 h-10 border border-gold/15 flex items-center justify-center group-hover:border-gold/30 transition-colors duration-200">
+              <Icon size={18} strokeWidth={1.25} className="text-light/30 group-hover:text-light/55 transition-colors duration-200" />
             </div>
             <div className="flex flex-col gap-3 flex-1">
-              <h3 className="font-serif text-base font-semibold text-navy">{titre}</h3>
-              <p className="text-sm text-navy/60 leading-relaxed flex-1">{description}</p>
-              <p className="text-xs text-navy/30 pt-4 border-t border-navy/10">{detail}</p>
+              <h3 className="font-serif text-base font-semibold text-light">{titre}</h3>
+              <p className="text-sm text-light/50 leading-relaxed flex-1">{description}</p>
+              <p className="text-xs text-gold/35 pt-4 border-t border-gold/10">{detail}</p>
             </div>
           </div>
         ))}
       </div>
 
-      <div className="mt-12 border border-navy/10 p-8 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-6">
+      <div className="mt-12 border border-gold/10 p-8 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-6">
         <div className="flex items-center gap-3">
-          <Lock size={14} strokeWidth={1.25} className="text-navy/30 flex-none" />
-          <p className="text-xs text-navy/50 leading-relaxed">
+          <Lock size={14} strokeWidth={1.25} className="text-light/25 flex-none" />
+          <p className="text-xs text-light/40 leading-relaxed">
             Connexion sécurisée · Chiffrement SSL 256 bits · Données hébergées en France
           </p>
         </div>
         <Link
           to="/login"
-          className="inline-flex items-center gap-3 bg-navy text-offwhite text-sm font-medium px-6 py-3 hover:bg-navy/90 transition-colors duration-200 whitespace-nowrap"
+          className="inline-flex items-center gap-3 bg-gold text-dark-bg text-sm font-medium px-6 py-3 hover:bg-gold/90 transition-colors duration-200 whitespace-nowrap"
         >
           Accéder à l'espace client
           <ArrowRight size={14} strokeWidth={1.5} />

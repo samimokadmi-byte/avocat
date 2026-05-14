@@ -30,10 +30,15 @@ import Nav from './components/Nav'
 import Hero from './components/Hero'
 import APropos from './components/APropos'
 import System from './components/System'
+import VotreChallenge from './components/VotreChallenge'
 import Expertises from './components/Expertises'
 import Method from './components/Method'
 import Results from './components/Results'
+import Testimonials from './components/Testimonials'
 import CasEtudes from './components/CasEtudes'
+import SuiviNumerique from './components/SuiviNumerique'
+import Veille from './components/Veille'
+import ServicesAssocies from './components/ServicesAssocies'
 import BlogSection from './components/BlogSection'
 import FAQ from './components/FAQ'
 import Booking from './components/Booking'
@@ -63,13 +68,31 @@ function LandingPage() {
     <div className="bg-dark-bg text-light font-sans">
       <Nav />
       <main>
+        {/* ── Identité & Positionnement ── */}
         <Hero />
         <APropos />
+
+        {/* ── Problématique & Système ── */}
+        <VotreChallenge />
         <System />
+
+        {/* ── Méthode & Résultats ── */}
         <Method />
         <Results />
+
+        {/* ── Expertises & Témoignages ── */}
         <Expertises />
+        <Testimonials />
+
+        {/* ── Cas d'usage & Suivi numérique ── */}
         <CasEtudes />
+        <SuiviNumerique />
+
+        {/* ── Veille juridique & Services associés ── */}
+        <Veille />
+        <ServicesAssocies />
+
+        {/* ── Blog & FAQ & Contact ── */}
         <BlogSection />
         <FAQ />
         <Booking />

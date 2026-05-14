@@ -27,31 +27,31 @@ const analyses = [
 export default function Veille() {
   return (
     <section id="veille" className="px-6 py-section max-w-content mx-auto">
-      <p className="text-xs font-medium tracking-[0.2em] uppercase text-navy/50 mb-4">
+      <p className="text-xs font-medium tracking-[0.2em] uppercase text-gold/60 mb-4">
         Jurisprudence & Veille
       </p>
       <div className="flex flex-col md:flex-row md:items-end md:justify-between gap-6 mb-16">
-        <h2 className="font-serif text-heading text-navy max-w-xl">
+        <h2 className="font-serif text-heading text-light max-w-xl">
           L'autorité intellectuelle au service de votre stratégie.
         </h2>
-        <p className="text-sm text-navy/50 max-w-xs leading-relaxed">
+        <p className="text-sm text-light/45 max-w-xs leading-relaxed">
           Analyses des décisions récentes qui impactent directement les entreprises Tech et les opérations de capital.
         </p>
       </div>
 
-      <div className="flex flex-col gap-px bg-navy/10">
+      <div className="flex flex-col gap-px bg-gold/8">
         {analyses.map(({ domaine, date, titre, extrait }) => (
-          <div key={titre} className="bg-offwhite p-10 flex flex-col md:flex-row gap-10">
+          <div key={titre} className="bg-dark-surface p-5 sm:p-8 md:p-10 flex flex-col md:flex-row gap-10">
             <div className="flex-none md:w-40">
-              <p className="text-xs font-medium uppercase tracking-[0.15em] text-navy/40 mb-1">{domaine}</p>
-              <p className="text-xs text-navy/30">{date}</p>
+              <p className="text-xs font-medium uppercase tracking-[0.15em] text-gold/50 mb-1">{domaine}</p>
+              <p className="text-xs text-light/25">{date}</p>
             </div>
             <div className="flex-1">
-              <h3 className="font-serif text-base font-semibold text-navy mb-3 leading-snug">{titre}</h3>
-              <p className="text-sm text-navy/60 leading-relaxed mb-5">{extrait}</p>
+              <h3 className="font-serif text-base font-semibold text-light mb-3 leading-snug">{titre}</h3>
+              <p className="text-sm text-light/50 leading-relaxed mb-5">{extrait}</p>
               <a
                 href="#booking"
-                className="inline-flex items-center gap-2 text-xs font-medium text-navy/50 hover:text-navy transition-colors duration-200"
+                className="inline-flex items-center gap-2 text-xs font-medium text-gold/45 hover:text-gold transition-colors duration-200"
               >
                 Discuter de l'impact pour votre structure
                 <ArrowRight size={12} strokeWidth={1.5} />

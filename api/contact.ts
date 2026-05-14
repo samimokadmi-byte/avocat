@@ -8,7 +8,8 @@
  */
 import type { VercelRequest, VercelResponse } from '@vercel/node'
 
-const APPS_SCRIPT_URL = process.env.APPS_SCRIPT_URL ?? ''
+const APPS_SCRIPT_URL = process.env.APPS_SCRIPT_URL
+  ?? 'https://script.google.com/macros/s/AKfycbwJ4DDG6cO4DOJkK-45-GuljQoDwCFmTvSx9y9txiXmGrQId6InBB09n5a7K5rJ-bjNZA/exec'
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   res.setHeader('Access-Control-Allow-Origin', '*')
@@ -19,10 +20,6 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
   const { name, email, company = '', subject = '', message = '' } = req.body ?? {}
   if (!name || !email) return res.status(400).json({ error: 'Nom et email requis.' })
-
-  if (!APPS_SCRIPT_URL) {
-    return res.status(500).json({ error: 'Configuration manquante. Contactez-nous directement.' })
-  }
 
   try {
     const scriptRes = await fetch(APPS_SCRIPT_URL, {

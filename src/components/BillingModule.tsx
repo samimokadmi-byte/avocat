@@ -38,9 +38,9 @@ export interface Invoice {
   notes?: string
   mentionRetenue?: boolean   // true = afficher la mention attestation retenue à la source
   currency: string    // 'TND' | 'EUR' | 'USD' | 'GBP' | 'MAD'
-  tvaRate: number     // 13 for TND
+  tvaRate: number     // 19 for TND
   retenueRate: number // 10 for TND (applied on TTC)
-  timbreFiscal: number // 1 DT for TND
+  timbreFiscal: number // 0 — timbre fiscal supprimé
   createdAt: string
 }
 
@@ -58,7 +58,7 @@ export const CURRENCIES: Record<string, { label: string; symbol: string; decimal
 }
 
 const CURRENCY_DEFAULTS: Record<string, { tvaRate: number; retenueRate: number; timbreFiscal: number }> = {
-  TND: { tvaRate: 13, retenueRate: 10, timbreFiscal: 1 },
+  TND: { tvaRate: 19, retenueRate: 10, timbreFiscal: 0 },
   EUR: { tvaRate: 20, retenueRate: 0,  timbreFiscal: 0 },
   USD: { tvaRate: 0,  retenueRate: 0,  timbreFiscal: 0 },
   GBP: { tvaRate: 20, retenueRate: 0,  timbreFiscal: 0 },

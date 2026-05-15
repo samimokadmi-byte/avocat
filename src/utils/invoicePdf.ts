@@ -1,7 +1,7 @@
 /**
  * invoicePdf.ts — Note d'honoraires Cabinet Mokadmi
  * Papier en-tête blanc professionnel : logo, adresse, MF cabinet
- * Formule fiscale tunisienne : HT × 13% TVA → TTC × 10% retenue
+ * Formule fiscale tunisienne : HT × 19% TVA → TTC × 10% retenue
  */
 
 import jsPDF from 'jspdf'
@@ -37,14 +37,19 @@ const CABINET = {
   barreau:         'Barreau de Tunis — Fondé en 2003',
 }
 
-// ── Palette (fond blanc, accent doré) ─────────────────────────────────────────
-const GOLD    = [180, 145,  80] as [number, number, number]  // doré sobre
+// ── Palette — charte graphique Cabinet Mokadmi (navy #0A192F) ─────────────────
+const NAVY    = [ 10,  25,  47] as [number, number, number]  // #0A192F — bleu marine site
+const NAVYMD  = [ 30,  60, 110] as [number, number, number]  // bleu moyen (accents)
 const DARK    = [ 20,  25,  40] as [number, number, number]  // quasi-noir
 const MID     = [ 80,  80,  80] as [number, number, number]  // gris moyen
 const LIGHT   = [140, 140, 140] as [number, number, number]  // gris clair
 const WHITE   = [255, 255, 255] as [number, number, number]
-const CREAM   = [252, 251, 248] as [number, number, number]  // fond crème léger
-const GOLDLT  = [245, 235, 210] as [number, number, number]  // doré très pâle
+const CREAM   = [242, 245, 251] as [number, number, number]  // bleu-blanc très pâle
+const NAVYLT  = [215, 225, 245] as [number, number, number]  // bleu très pâle (fond lignes)
+
+// Alias sémantiques — permet de remplacer GOLD sans tout réécrire
+const GOLD   = NAVY
+const GOLDLT = NAVYLT
 
 const STATUS_COLORS: Record<string, [number,number,number]> = {
   brouillon: [160, 155, 145],
@@ -85,7 +90,7 @@ async function buildPdfDoc(
   userCompany?: string,
   dossierName?: string,
 ): Promise<{ doc: jsPDF; filename: string }> {
-  const { ht, tva, ttc, retenue, timbre, net } = computeAmounts(invoice)
+  const { ht, tva, ttc, retenue, net } = computeAmounts(invoice)
 
   const clientNom   = invoice.clientName    || userName
   const clientMF    = invoice.clientMF      || ''
@@ -310,9 +315,6 @@ async function buildPdfDoc(
     ...(invoice.retenueRate > 0
       ? [{ label: `Retenue à la source ${invoice.retenueRate} %`, value: `− ${fmtDT(retenue)}`, red: true }]
       : []),
-    ...(invoice.timbreFiscal > 0
-      ? [{ label: 'Timbre fiscal', value: `+ ${fmtDT(timbre)}` }]
-      : []),
   ]
 
   const totW = 88
@@ -416,7 +418,7 @@ async function buildPdfDoc(
     `${CABINET.adresse1}, ${CABINET.adresse2} · Tél : ${CABINET.telephone}`,
     W / 2, footY + 9.5, { align: 'center' }
   )
-  doc.setTextColor(...GOLD)
+  doc.setTextColor(...NAVYMD)
   doc.text(
     `${CABINET.email} · ${CABINET.site} · MF : ${CABINET.matriculeFiscal}`,
     W / 2, footY + 14, { align: 'center' }

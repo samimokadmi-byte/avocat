@@ -733,9 +733,9 @@ function InvoiceFormAdmin({ clients, allInvoices, initialValues, onSave, onCance
   const [mention,      setMention]      = useState(initialValues?.mentionRetenue ?? true)
 
   // ── Taux fixes Tunisie ────────────────────────────────────────────────────
-  const TVA_RATE     = 13
+  const TVA_RATE     = 19
   const RETENUE_RATE = 10
-  const TIMBRE       = 1
+  const TIMBRE       = 0
 
   // ── Calculs dynamiques ────────────────────────────────────────────────────
   const ht = saisieMode === 'ht_direct'
@@ -857,7 +857,6 @@ function InvoiceFormAdmin({ clients, allInvoices, initialValues, onSave, onCance
               { label: `+ TVA (${TVA_RATE} %)`,         value: fmt(tva),     sub: `${fmt(ht)} × ${TVA_RATE} %`,          bold: false, red: false },
               { label: '= Montant TTC',                 value: fmt(ttc),     sub: '',                                    bold: true,  red: false },
               { label: `− Retenue (${RETENUE_RATE} %)`, value: fmt(retenue), sub: `${fmt(ttc)} × ${RETENUE_RATE} %`,     bold: false, red: true  },
-              { label: '+ Timbre fiscal',               value: fmt(TIMBRE),  sub: 'Fixe',                               bold: false, red: false },
             ].map(row => (
               <div key={row.label} className={`flex items-end justify-between gap-2 py-2 border-b border-gold/8 ${row.bold ? 'bg-gold/8 px-2 -mx-2' : ''}`}>
                 <div>

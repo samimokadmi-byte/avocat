@@ -658,26 +658,38 @@ function InvoiceFormAdmin({ clients, allInvoices, onSave, onCancel }: {
   onSave: (inv: Invoice, clientId: string) => void
   onCancel: () => void
 }) {
-  const today = new Date().toISOString().split('T')[0]
-  const echeance30 = new Date(Date.now() + 30 * 86400000).toISOString().split('T')[0]
+  const today       = new Date().toISOString().split('T')[0]
+  const echeance30  = new Date(Date.now() + 30 * 86400000).toISOString().split('T')[0]
 
-  const [clientId,   setClientId]   = useState(clients[0]?.user.id ?? '')
-  const [clientMF,   setClientMF]   = useState('')
-  const [clientAddr, setClientAddr] = useState('')
-  const [number,     setNumber]     = useState(() => nextInvoiceNumber(allInvoices))
-  const [dateE,      setDateE]      = useState(today)
-  const [dateEch,    setDateEch]    = useState(echeance30)
-  const [lines,      setLines]      = useState([{ id: crypto.randomUUID(), description: '', quantity: 1, unitPrice: 0 }])
-  const [notes,      setNotes]      = useState('')
-  const [mention,    setMention]    = useState(true)
+  // ── Mode client : existant (dropdown) ou manuel (saisie libre) ───────────
+  const [clientMode,   setClientMode]   = useState<'existing' | 'manual'>(clients.length > 0 ? 'existing' : 'manual')
+  const [clientId,     setClientId]     = useState(clients[0]?.user.id ?? '')
+  const [clientNom,    setClientNom]    = useState('')   // saisie manuelle
+  const [clientMF,     setClientMF]     = useState('')
+  const [clientAddr,   setClientAddr]   = useState('')
 
-  // Taux fixes Tunisie
+  // ── Mode saisie : montant HT direct ou lignes de prestations ─────────────
+  const [saisieMode,   setSaisieMode]   = useState<'ht_direct' | 'lignes'>('ht_direct')
+  const [htDirect,     setHtDirect]     = useState('')   // montant HT saisi directement
+  const [htLibelle,    setHtLibelle]    = useState('Honoraires professionnels')
+  const [lines,        setLines]        = useState([{ id: crypto.randomUUID(), description: '', quantity: 1, unitPrice: 0 }])
+
+  const [number,       setNumber]       = useState(() => nextInvoiceNumber(allInvoices))
+  const [dateE,        setDateE]        = useState(today)
+  const [dateEch,      setDateEch]      = useState(echeance30)
+  const [notes,        setNotes]        = useState('')
+  const [mention,      setMention]      = useState(true)
+
+  // ── Taux fixes Tunisie ────────────────────────────────────────────────────
   const TVA_RATE     = 13
   const RETENUE_RATE = 10
   const TIMBRE       = 1
 
-  // Calculs dynamiques
-  const ht      = lines.reduce((s, l) => s + l.quantity * l.unitPrice, 0)
+  // ── Calculs dynamiques ────────────────────────────────────────────────────
+  const ht = saisieMode === 'ht_direct'
+    ? parseFloat(htDirect) || 0
+    : lines.reduce((s, l) => s + l.quantity * l.unitPrice, 0)
+
   const tva     = ht * TVA_RATE / 100
   const ttc     = ht + tva
   const retenue = ttc * RETENUE_RATE / 100
@@ -685,151 +697,121 @@ function InvoiceFormAdmin({ clients, allInvoices, onSave, onCancel }: {
 
   const selectedClient = clients.find(c => c.user.id === clientId)
 
+  // Nom effectif du client
+  const effectiveClientName = clientMode === 'existing'
+    ? (selectedClient?.user.name ?? '')
+    : clientNom
+
+  // Lignes effectives
+  const effectiveLines = saisieMode === 'ht_direct'
+    ? [{ id: crypto.randomUUID(), description: htLibelle, quantity: 1, unitPrice: ht }]
+    : lines
+
   const updLine = (id: string, field: string, val: string) =>
     setLines(prev => prev.map(l => l.id === id ? {
       ...l,
-      [field]: field === 'quantity' || field === 'unitPrice' ? parseFloat(val) || 0 : val
+      [field]: field === 'quantity' || field === 'unitPrice' ? parseFloat(val) || 0 : val,
     } : l))
 
   const addLine = () => setLines(prev => [...prev, { id: crypto.randomUUID(), description: '', quantity: 1, unitPrice: 0 }])
   const delLine = (id: string) => setLines(prev => prev.filter(l => l.id !== id))
 
+  const canSave = effectiveClientName.trim() && ht > 0
+
   const handleSave = () => {
-    if (!clientId || lines.every(l => !l.description)) return
+    if (!canSave) return
+    // Pour le mode "existant", clientId est défini ; pour manuel, on génère un ID fictif
+    const finalClientId = clientMode === 'existing' ? clientId : `manual_${crypto.randomUUID().slice(0, 8)}`
     const inv: Invoice = {
-      id: crypto.randomUUID(),
+      id:             crypto.randomUUID(),
       number,
-      clientId,
-      clientName:   selectedClient?.user.name,
-      clientMF:     clientMF || undefined,
-      clientAddress: clientAddr || undefined,
-      status:        'brouillon',
-      dateEmission:  dateE,
-      dateEcheance:  dateEch,
-      lines,
-      linkedRdvIds:  [],
-      linkedTodoIds: [],
-      notes:         notes || undefined,
+      clientId:       finalClientId,
+      clientName:     effectiveClientName,
+      clientMF:       clientMF  || undefined,
+      clientAddress:  clientAddr || undefined,
+      status:         'brouillon',
+      dateEmission:   dateE,
+      dateEcheance:   dateEch,
+      lines:          effectiveLines,
+      linkedRdvIds:   [],
+      linkedTodoIds:  [],
+      notes:          notes || undefined,
       mentionRetenue: mention,
-      currency:      'TND',
-      tvaRate:       TVA_RATE,
-      retenueRate:   RETENUE_RATE,
-      timbreFiscal:  TIMBRE,
-      createdAt:     new Date().toISOString(),
+      currency:       'TND',
+      tvaRate:        TVA_RATE,
+      retenueRate:    RETENUE_RATE,
+      timbreFiscal:   TIMBRE,
+      createdAt:      new Date().toISOString(),
     }
-    onSave(inv, clientId)
+    onSave(inv, finalClientId)
   }
 
-  const inputCls = 'w-full border-b border-gold/15 bg-transparent py-2 text-sm text-light placeholder:text-light/25 focus:outline-none focus:border-gold/50 transition-colors'
-  const labelCls = 'text-[10px] font-medium text-light/40 tracking-widest uppercase block mb-1.5'
-  const fmt = (n: number) => n.toLocaleString('fr-FR', { minimumFractionDigits: 3, maximumFractionDigits: 3 })
+  const inputCls  = 'w-full border-b border-gold/15 bg-transparent py-2 text-sm text-light placeholder:text-light/25 focus:outline-none focus:border-gold/50 transition-colors'
+  const labelCls  = 'text-[10px] font-medium text-light/40 tracking-widest uppercase block mb-1.5'
+  const fmt       = (n: number) => n.toLocaleString('fr-FR', { minimumFractionDigits: 3, maximumFractionDigits: 3 })
 
   return (
-    <div className="flex flex-col gap-8">
-      {/* En-tête */}
+    <div className="flex flex-col gap-6">
+
+      {/* ── En-tête ────────────────────────────────────────────────────────── */}
       <div className="flex items-center justify-between gap-4 flex-wrap">
         <div>
           <p className="text-xs font-medium tracking-[0.2em] uppercase text-gold/60 mb-1">Nouvelle facture</p>
           <h2 className="font-serif text-2xl text-light">Note d'honoraires</h2>
         </div>
         <div className="flex gap-2">
-          <button onClick={onCancel} className="text-xs font-medium text-light/40 border border-gold/15 px-4 py-2 hover:border-gold/30 transition-colors">
+          <button onClick={onCancel}
+            className="text-xs font-medium text-light/40 border border-gold/15 px-4 py-2 hover:border-gold/30 transition-colors">
             Annuler
           </button>
-          <button
-            onClick={handleSave}
-            disabled={!clientId || lines.every(l => !l.description)}
-            className="flex items-center gap-2 text-xs font-medium bg-gold text-dark-bg px-5 py-2 hover:bg-gold/90 transition-colors disabled:opacity-40"
-          >
+          <button onClick={handleSave} disabled={!canSave}
+            className="flex items-center gap-2 text-xs font-medium bg-gold text-dark-bg px-5 py-2 hover:bg-gold/90 transition-colors disabled:opacity-40 disabled:cursor-not-allowed">
             <Receipt size={13} strokeWidth={1.5} /> Enregistrer
           </button>
         </div>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
 
-        {/* ── Colonne gauche : infos générales ─────────────────────────── */}
-        <div className="flex flex-col gap-5">
-          <div className="border border-gold/15 bg-dark-surface p-5">
-            <p className="text-[10px] font-bold text-gold/60 uppercase tracking-widest mb-4">Identité de la facture</p>
-
-            <div className="flex flex-col gap-4">
-              <div>
-                <label className={labelCls}>Numéro *</label>
-                <input type="text" value={number} onChange={e => setNumber(e.target.value)} className={inputCls} />
-              </div>
-              <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <label className={labelCls}>Date d'émission</label>
-                  <input type="date" value={dateE} onChange={e => setDateE(e.target.value)} className={`${inputCls} [color-scheme:dark]`} />
-                </div>
-                <div>
-                  <label className={labelCls}>Date d'échéance</label>
-                  <input type="date" value={dateEch} onChange={e => setDateEch(e.target.value)} className={`${inputCls} [color-scheme:dark]`} />
-                </div>
-              </div>
-            </div>
+        {/* ── Identité de la facture ─────────────────────────────────────── */}
+        <div className="border border-gold/15 bg-dark-surface p-5 flex flex-col gap-4">
+          <p className="text-[10px] font-bold text-gold/60 uppercase tracking-widest">Identité de la facture</p>
+          <div>
+            <label className={labelCls}>Numéro *</label>
+            <input type="text" value={number} onChange={e => setNumber(e.target.value)} className={inputCls} />
           </div>
-
-          <div className="border border-gold/15 bg-dark-surface p-5">
-            <p className="text-[10px] font-bold text-gold/60 uppercase tracking-widest mb-4">Client</p>
-
-            <div className="flex flex-col gap-4">
-              <div>
-                <label className={labelCls}>Sélectionner le client *</label>
-                <select
-                  value={clientId}
-                  onChange={e => setClientId(e.target.value)}
-                  className="w-full border-b border-gold/15 bg-dark-bg py-2 text-sm text-light focus:outline-none focus:border-gold/50 transition-colors"
-                >
-                  {clients.map(c => (
-                    <option key={c.user.id} value={c.user.id}>{c.user.name}{c.user.company ? ` — ${c.user.company}` : ''}</option>
-                  ))}
-                </select>
-              </div>
-              <div>
-                <label className={labelCls}>Matricule fiscal du client</label>
-                <input
-                  type="text" value={clientMF} onChange={e => setClientMF(e.target.value)}
-                  placeholder="Ex : 1234567A/M/000" className={inputCls}
-                />
-              </div>
-              <div>
-                <label className={labelCls}>Adresse du client</label>
-                <input
-                  type="text" value={clientAddr} onChange={e => setClientAddr(e.target.value)}
-                  placeholder="Adresse, ville" className={inputCls}
-                />
-              </div>
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <label className={labelCls}>Date d'émission</label>
+              <input type="date" value={dateE} onChange={e => setDateE(e.target.value)} className={`${inputCls} [color-scheme:dark]`} />
+            </div>
+            <div>
+              <label className={labelCls}>Date d'échéance</label>
+              <input type="date" value={dateEch} onChange={e => setDateEch(e.target.value)} className={`${inputCls} [color-scheme:dark]`} />
             </div>
           </div>
         </div>
 
-        {/* ── Colonne droite : récapitulatif fiscal ─────────────────────── */}
+        {/* ── Récapitulatif fiscal ───────────────────────────────────────── */}
         <div className="border border-gold/20 bg-dark-surface p-5">
-          <p className="text-[10px] font-bold text-gold/60 uppercase tracking-widest mb-5">Calcul fiscal (TND)</p>
-
-          <div className="flex flex-col gap-3">
+          <p className="text-[10px] font-bold text-gold/60 uppercase tracking-widest mb-4">Calcul fiscal (TND)</p>
+          <div className="flex flex-col gap-2.5">
             {[
-              { label: 'Montant HT',              value: fmt(ht),      sub: '' },
-              { label: `+ TVA (${TVA_RATE} %)`,   value: fmt(tva),     sub: `${fmt(ht)} × ${TVA_RATE} %` },
-              { label: '= Montant TTC',            value: fmt(ttc),     sub: '', bold: true },
-              { label: `− Retenue (${RETENUE_RATE} %)`, value: fmt(retenue), sub: `${fmt(ttc)} × ${RETENUE_RATE} %`, red: true },
-              { label: '+ Timbre fiscal',          value: fmt(TIMBRE),  sub: 'Fixe' },
+              { label: 'Montant HT',                   value: fmt(ht),      sub: '',                                    bold: false, red: false },
+              { label: `+ TVA (${TVA_RATE} %)`,         value: fmt(tva),     sub: `${fmt(ht)} × ${TVA_RATE} %`,          bold: false, red: false },
+              { label: '= Montant TTC',                 value: fmt(ttc),     sub: '',                                    bold: true,  red: false },
+              { label: `− Retenue (${RETENUE_RATE} %)`, value: fmt(retenue), sub: `${fmt(ttc)} × ${RETENUE_RATE} %`,     bold: false, red: true  },
+              { label: '+ Timbre fiscal',               value: fmt(TIMBRE),  sub: 'Fixe',                               bold: false, red: false },
             ].map(row => (
-              <div key={row.label} className={`flex items-end justify-between gap-3 py-2.5 border-b border-gold/8 ${row.bold ? 'bg-gold/5 px-2 -mx-2' : ''}`}>
+              <div key={row.label} className={`flex items-end justify-between gap-2 py-2 border-b border-gold/8 ${row.bold ? 'bg-gold/8 px-2 -mx-2' : ''}`}>
                 <div>
-                  <p className={`text-sm ${row.bold ? 'font-semibold text-light' : row.red ? 'text-red-400/80' : 'text-light/60'}`}>{row.label}</p>
+                  <p className={`text-sm ${row.bold ? 'font-semibold text-light' : row.red ? 'text-red-400/80' : 'text-light/55'}`}>{row.label}</p>
                   {row.sub && <p className="text-[10px] text-light/25 mt-0.5">{row.sub}</p>}
                 </div>
-                <p className={`text-sm font-mono font-semibold flex-none ${row.bold ? 'text-light' : row.red ? 'text-red-400/70' : 'text-light/70'}`}>
-                  {row.value} DT
-                </p>
+                <p className={`text-sm font-mono font-semibold flex-none ${row.bold ? 'text-light' : row.red ? 'text-red-400/70' : 'text-light/65'}`}>{row.value} DT</p>
               </div>
             ))}
-
-            {/* Net à payer */}
-            <div className="flex items-center justify-between gap-3 bg-gold px-3 py-3 -mx-1 mt-2">
+            <div className="flex items-center justify-between gap-2 bg-gold px-3 py-2.5 -mx-1 mt-1">
               <p className="text-sm font-bold text-dark-bg">Net à payer</p>
               <p className="text-base font-bold text-dark-bg font-mono">{fmt(net)} DT</p>
             </div>
@@ -837,88 +819,181 @@ function InvoiceFormAdmin({ clients, allInvoices, onSave, onCancel }: {
         </div>
       </div>
 
-      {/* ── Prestations ─────────────────────────────────────────────────────── */}
+      {/* ── Client ─────────────────────────────────────────────────────────── */}
       <div className="border border-gold/15 bg-dark-surface p-5">
-        <div className="flex items-center justify-between mb-4">
-          <p className="text-[10px] font-bold text-gold/60 uppercase tracking-widest">Prestations / Honoraires</p>
-          <button onClick={addLine} className="text-xs font-medium text-gold/60 border border-gold/20 px-3 py-1.5 hover:border-gold/40 hover:text-gold transition-colors flex items-center gap-1.5">
-            <Plus size={11} strokeWidth={1.5} /> Ajouter une ligne
-          </button>
+        <div className="flex items-center justify-between mb-4 flex-wrap gap-3">
+          <p className="text-[10px] font-bold text-gold/60 uppercase tracking-widest">Client</p>
+          {/* Bascule existant / manuel */}
+          <div className="flex gap-1">
+            {(['existing', 'manual'] as const).map(m => (
+              <button key={m} onClick={() => setClientMode(m)}
+                className={`text-xs px-3 py-1.5 border transition-colors ${
+                  clientMode === m ? 'bg-gold text-dark-bg border-gold font-medium' : 'text-light/40 border-gold/15 hover:border-gold/30'
+                }`}>
+                {m === 'existing' ? 'Client enregistré' : 'Saisie manuelle'}
+              </button>
+            ))}
+          </div>
         </div>
 
-        <div className="overflow-x-auto -mx-2">
-          <div className="min-w-[520px] px-2">
-            {/* Header colonnes */}
-            <div className="grid grid-cols-[1fr_64px_100px_28px] gap-2 px-3 py-2 bg-dark-bg mb-1">
-              {['Description', 'Qté', 'PU HT (DT)', ''].map((h, i) => (
-                <p key={h} className={`text-[10px] font-medium text-light/40 uppercase ${i > 0 ? 'text-right' : ''}`}>{h}</p>
-              ))}
-            </div>
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
 
-            {lines.map((line, idx) => (
-              <div key={line.id} className="grid grid-cols-[1fr_64px_100px_28px] gap-2 px-3 py-2 bg-dark-surface border-t border-gold/8 items-center">
-                <input
-                  type="text" value={line.description}
-                  onChange={e => updLine(line.id, 'description', e.target.value)}
-                  placeholder={`Prestation ${idx + 1}`}
-                  className="text-sm text-light bg-transparent border-b border-transparent focus:border-gold/30 py-1 focus:outline-none transition-colors min-w-0"
-                />
-                <input
-                  type="number" min="0" step="0.5" value={line.quantity}
-                  onChange={e => updLine(line.id, 'quantity', e.target.value)}
-                  className="text-sm text-light text-right bg-transparent border-b border-transparent focus:border-gold/30 py-1 focus:outline-none transition-colors"
-                />
-                <input
-                  type="number" min="0" step="1" value={line.unitPrice}
-                  onChange={e => updLine(line.id, 'unitPrice', e.target.value)}
-                  className="text-sm text-light text-right bg-transparent border-b border-transparent focus:border-gold/30 py-1 focus:outline-none transition-colors"
-                />
-                <button
-                  onClick={() => delLine(line.id)}
-                  disabled={lines.length === 1}
-                  className="text-light/20 hover:text-red-500 transition-colors flex justify-center disabled:opacity-20"
-                >
-                  <X size={13} strokeWidth={1.5} />
-                </button>
-              </div>
-            ))}
+          {/* Nom client */}
+          <div>
+            <label className={labelCls}>
+              {clientMode === 'existing' ? 'Client *' : 'Nom du client *'}
+            </label>
+            {clientMode === 'existing' ? (
+              <select value={clientId} onChange={e => setClientId(e.target.value)}
+                className="w-full border-b border-gold/15 bg-dark-bg py-2 text-sm text-light focus:outline-none focus:border-gold/50 transition-colors">
+                {clients.length === 0
+                  ? <option value="">Aucun client enregistré</option>
+                  : clients.map(c => (
+                    <option key={c.user.id} value={c.user.id}>
+                      {c.user.name}{c.user.company ? ` — ${c.user.company}` : ''}
+                    </option>
+                  ))
+                }
+              </select>
+            ) : (
+              <input type="text" value={clientNom} onChange={e => setClientNom(e.target.value)}
+                placeholder="Nom complet ou raison sociale" className={inputCls} />
+            )}
+          </div>
 
-            {/* Sous-total */}
-            <div className="grid grid-cols-[1fr_64px_100px_28px] gap-2 px-3 py-2 bg-dark-bg mt-1">
-              <p className="text-xs text-light/40 col-span-2">Total HT</p>
-              <p className="text-sm font-semibold text-light text-right font-mono">{fmt(ht)} DT</p>
-              <span />
-            </div>
+          {/* Matricule fiscal */}
+          <div>
+            <label className={labelCls}>Matricule fiscal</label>
+            <input type="text" value={clientMF} onChange={e => setClientMF(e.target.value)}
+              placeholder="Ex : 1234567A/M/000" className={inputCls} />
+          </div>
+
+          {/* Adresse */}
+          <div className="sm:col-span-2">
+            <label className={labelCls}>Adresse</label>
+            <input type="text" value={clientAddr} onChange={e => setClientAddr(e.target.value)}
+              placeholder="Adresse complète, ville" className={inputCls} />
           </div>
         </div>
       </div>
 
-      {/* ── Notes + mention retenue ──────────────────────────────────────────── */}
+      {/* ── Montant / Prestations ─────────────────────────────────────────── */}
+      <div className="border border-gold/15 bg-dark-surface p-5">
+        <div className="flex items-center justify-between mb-4 flex-wrap gap-3">
+          <p className="text-[10px] font-bold text-gold/60 uppercase tracking-widest">Honoraires</p>
+          {/* Bascule montant direct / lignes détaillées */}
+          <div className="flex gap-1">
+            {(['ht_direct', 'lignes'] as const).map(m => (
+              <button key={m} onClick={() => setSaisieMode(m)}
+                className={`text-xs px-3 py-1.5 border transition-colors ${
+                  saisieMode === m ? 'bg-gold text-dark-bg border-gold font-medium' : 'text-light/40 border-gold/15 hover:border-gold/30'
+                }`}>
+                {m === 'ht_direct' ? 'Montant HT direct' : 'Lignes détaillées'}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        {/* Montant HT direct */}
+        {saisieMode === 'ht_direct' && (
+          <div className="flex flex-col gap-4">
+            <div>
+              <label className={labelCls}>Libellé de la prestation</label>
+              <input type="text" value={htLibelle} onChange={e => setHtLibelle(e.target.value)}
+                placeholder="Honoraires professionnels" className={inputCls} />
+            </div>
+            <div>
+              <label className={labelCls}>Montant HT (DT) *</label>
+              <div className="relative">
+                <input
+                  type="number" min="0" step="0.001"
+                  value={htDirect}
+                  onChange={e => setHtDirect(e.target.value)}
+                  placeholder="0,000"
+                  className={`${inputCls} pr-10 text-lg font-semibold`}
+                />
+                <span className="absolute right-0 bottom-2 text-sm text-light/40 font-medium">DT</span>
+              </div>
+              {ht > 0 && (
+                <p className="text-[10px] text-light/30 mt-1.5">
+                  → TVA : {fmt(tva)} DT · TTC : {fmt(ttc)} DT · Retenue : {fmt(retenue)} DT · Net : <strong className="text-gold/60">{fmt(net)} DT</strong>
+                </p>
+              )}
+            </div>
+          </div>
+        )}
+
+        {/* Lignes détaillées */}
+        {saisieMode === 'lignes' && (
+          <div>
+            <div className="overflow-x-auto -mx-2">
+              <div className="min-w-[480px] px-2">
+                <div className="grid grid-cols-[1fr_56px_96px_28px] gap-2 px-3 py-2 bg-dark-bg mb-1">
+                  {['Description', 'Qté', 'PU HT (DT)', ''].map((h, i) => (
+                    <p key={h} className={`text-[10px] font-medium text-light/40 uppercase ${i > 0 ? 'text-right' : ''}`}>{h}</p>
+                  ))}
+                </div>
+                {lines.map((line, idx) => (
+                  <div key={line.id} className="grid grid-cols-[1fr_56px_96px_28px] gap-2 px-3 py-2 bg-dark-surface border-t border-gold/8 items-center">
+                    <input type="text" value={line.description}
+                      onChange={e => updLine(line.id, 'description', e.target.value)}
+                      placeholder={`Prestation ${idx + 1}`}
+                      className="text-sm text-light bg-transparent border-b border-transparent focus:border-gold/30 py-1 focus:outline-none transition-colors min-w-0"
+                    />
+                    <input type="number" min="0" step="0.5" value={line.quantity}
+                      onChange={e => updLine(line.id, 'quantity', e.target.value)}
+                      className="text-sm text-light text-right bg-transparent border-b border-transparent focus:border-gold/30 py-1 focus:outline-none transition-colors"
+                    />
+                    <input type="number" min="0" step="1" value={line.unitPrice}
+                      onChange={e => updLine(line.id, 'unitPrice', e.target.value)}
+                      className="text-sm text-light text-right bg-transparent border-b border-transparent focus:border-gold/30 py-1 focus:outline-none transition-colors"
+                    />
+                    <button onClick={() => delLine(line.id)} disabled={lines.length === 1}
+                      className="text-light/20 hover:text-red-500 transition-colors flex justify-center disabled:opacity-20">
+                      <X size={13} strokeWidth={1.5} />
+                    </button>
+                  </div>
+                ))}
+                <div className="grid grid-cols-[1fr_56px_96px_28px] gap-2 px-3 py-2 bg-dark-bg mt-1">
+                  <p className="text-xs text-light/40 col-span-2">Total HT</p>
+                  <p className="text-sm font-semibold text-light text-right font-mono">{fmt(ht)} DT</p>
+                  <span />
+                </div>
+              </div>
+            </div>
+            <button onClick={addLine}
+              className="mt-3 text-xs font-medium text-gold/55 border border-gold/15 px-3 py-1.5 hover:border-gold/35 hover:text-gold transition-colors flex items-center gap-1.5">
+              <Plus size={11} strokeWidth={1.5} /> Ajouter une ligne
+            </button>
+          </div>
+        )}
+      </div>
+
+      {/* ── Notes + Mention retenue ───────────────────────────────────────── */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
         <div className="border border-gold/15 bg-dark-surface p-5">
           <p className="text-[10px] font-bold text-gold/60 uppercase tracking-widest mb-3">Notes (optionnel)</p>
-          <textarea
-            value={notes} onChange={e => setNotes(e.target.value)}
+          <textarea value={notes} onChange={e => setNotes(e.target.value)}
             rows={3} placeholder="Conditions particulières, références dossier..."
-            className="w-full bg-transparent border-b border-gold/15 text-sm text-light placeholder:text-light/20 focus:outline-none focus:border-gold/40 resize-none transition-colors py-2"
+            className="w-full bg-transparent border-b border-gold/15 text-sm text-light placeholder:text-light/20 focus:outline-none focus:border-gold/40 resize-none py-2"
           />
         </div>
 
         <div className="border border-gold/20 bg-dark-surface p-5">
           <p className="text-[10px] font-bold text-gold/60 uppercase tracking-widest mb-3">Mention légale</p>
-          <label className="flex items-start gap-3 cursor-pointer group">
-            <div
-              onClick={() => setMention(v => !v)}
-              className={`mt-0.5 w-4 h-4 border flex-none flex items-center justify-center transition-colors ${mention ? 'bg-gold border-gold' : 'border-gold/30 hover:border-gold/60'}`}
-            >
+          <label className="flex items-start gap-3 cursor-pointer">
+            <div onClick={() => setMention(v => !v)}
+              className={`mt-0.5 w-4 h-4 border flex-none flex items-center justify-center transition-colors cursor-pointer ${
+                mention ? 'bg-gold border-gold' : 'border-gold/30 hover:border-gold/60'
+              }`}>
               {mention && <span className="text-dark-bg text-[10px] font-bold">✓</span>}
             </div>
-            <p className="text-xs text-light/55 leading-relaxed">
-              <span className="font-semibold text-light/80 block mb-1">Inclure la mention retenue à la source</span>
-              <em className="text-light/40 italic">
+            <div>
+              <p className="text-xs font-semibold text-light/80 mb-1">Attestation de retenue à la source</p>
+              <p className="text-[11px] text-light/40 leading-relaxed italic">
                 "Prière nous délivrer une attestation de retenue à la source comportant le montant de la retenue opérée."
-              </em>
-            </p>
+              </p>
+            </div>
           </label>
         </div>
       </div>

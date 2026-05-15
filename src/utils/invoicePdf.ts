@@ -33,7 +33,7 @@ const CABINET = {
   telephone:       '+216 29 784 651',
   email:           'office@mokadmi.lawyer',
   site:            'www.mokadmi.lawyer',
-  matriculeFiscal: '1234567/A/M/000',  // ← Mettre à jour avec le vrai MF
+  matriculeFiscal: '000/P/A/834881/F',
   barreau:         'Barreau de Tunis — Fondé en 2003',
 }
 

@@ -28,6 +28,7 @@ export interface Invoice {
   clientMF?: string          // matricule fiscal du client
   clientAddress?: string     // adresse du client
   dossierId?: string
+  dossierRef?: string     // référence texte libre affichée dans les contacts
   status: 'brouillon' | 'envoyee' | 'payee' | 'en_retard'
   dateEmission: string
   dateEcheance: string

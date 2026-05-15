@@ -37,6 +37,24 @@ interface ClientData {
   documents: Document[]
 }
 
+// ─── Contact types (référencés par ContactsAdmin et upsertContactFromInvoice) ─
+
+const CONTACTS_KEY = 'avocat_contacts'
+
+interface ContactEntry {
+  id: string
+  nom: string
+  email?: string
+  telephone?: string
+  adresse?: string
+  societe?: string
+  dossierId?: string
+  dossierRef?: string   // référence texte libre du dossier
+  clientId?: string     // lié à un compte client enregistré
+  notes?: string
+  createdAt: string
+}
+
 // ─── Helpers ─────────────────────────────────────────────────────────────────
 
 function formatSize(bytes: number) {
@@ -1055,6 +1073,61 @@ function InvoiceFormAdmin({ clients, allInvoices, initialValues, onSave, onCance
   )
 }
 
+// ── Crée ou enrichit une fiche contact après envoi d'une facture ──────────────
+function upsertContactFromInvoice(inv: Invoice, email: string, clientUser?: User) {
+  const contacts: ContactEntry[] = (() => {
+    try { return JSON.parse(localStorage.getItem(CONTACTS_KEY) ?? '[]') }
+    catch { return [] }
+  })()
+
+  // Chercher une fiche existante par clientId ou par email
+  const existingIdx = contacts.findIndex(c =>
+    (inv.clientId && !inv.clientId.startsWith('manual_') && c.clientId === inv.clientId) ||
+    (c.email?.toLowerCase() === email.toLowerCase())
+  )
+
+  // Référence dossier : numéro de facture comme trace
+  const dossierRef = inv.dossierId
+    ? (inv.dossierRef ?? inv.number)
+    : inv.number
+
+  if (existingIdx >= 0) {
+    // ── Enrichir la fiche existante ───────────────────────────────────────
+    const existing = contacts[existingIdx]
+    contacts[existingIdx] = {
+      ...existing,
+      email:       email || existing.email,
+      telephone:   inv.clientPhone  || existing.telephone,
+      adresse:     inv.clientAddress || existing.adresse,
+      societe:     clientUser?.company || inv.clientAddress || existing.societe,
+      // Ajouter la réf facture si pas déjà présente
+      dossierRef:  existing.dossierRef
+        ? (existing.dossierRef.includes(inv.number) ? existing.dossierRef : `${existing.dossierRef} · ${inv.number}`)
+        : dossierRef,
+    }
+  } else {
+    // ── Créer une nouvelle fiche ──────────────────────────────────────────
+    const newContact: ContactEntry = {
+      id:         crypto.randomUUID(),
+      nom:        inv.clientName ?? clientUser?.name ?? 'Client',
+      email,
+      telephone:  inv.clientPhone  || undefined,
+      adresse:    inv.clientAddress || undefined,
+      societe:    clientUser?.company || undefined,
+      clientId:   !inv.clientId.startsWith('manual_') ? inv.clientId : undefined,
+      dossierRef,
+      notes:      `Fiche créée automatiquement via facture ${inv.number}`,
+      createdAt:  new Date().toISOString(),
+    }
+    contacts.unshift(newContact)
+  }
+
+  // Sauvegarder uniquement les contacts manuels (pas les auto_)
+  localStorage.setItem(CONTACTS_KEY, JSON.stringify(
+    contacts.filter(c => !c.id.startsWith('auto_'))
+  ))
+}
+
 function AllInvoicesAdmin({ clients, onRefresh }: { clients: ClientData[]; onRefresh: () => void }) {
   const [search,       setSearch]       = useState('')
   const [filterStatus, setFilterStatus] = useState<Invoice['status'] | 'all'>('all')
@@ -1196,7 +1269,11 @@ function AllInvoicesAdmin({ clients, onRefresh }: { clients: ClientData[]; onRef
       if (res.ok && data.success) {
         // Marquer comme envoyée
         updateStatus(inv, 'envoyee')
-        setEmailFeedback({ id: inv.id, ok: true, msg: `Email envoyé à ${clientEmail}` })
+
+        // ── Créer / enrichir la fiche contact automatiquement ──────────────
+        upsertContactFromInvoice(inv, clientEmail, clientUser)
+
+        setEmailFeedback({ id: inv.id, ok: true, msg: `Email envoyé à ${clientEmail} · Fiche contact mise à jour` })
       } else {
         throw new Error(data.error ?? 'Erreur serveur')
       }
@@ -1594,22 +1671,6 @@ function AgendaAdmin({ clients, onRefresh }: { clients: ClientData[]; onRefresh:
 }
 
 // ─── Contacts Admin ───────────────────────────────────────────────────────────
-
-const CONTACTS_KEY = 'avocat_contacts'
-
-interface ContactEntry {
-  id: string
-  nom: string
-  email?: string
-  telephone?: string
-  adresse?: string
-  societe?: string
-  dossierId?: string
-  dossierRef?: string   // référence texte libre du dossier
-  clientId?: string     // lié à un compte client enregistré
-  notes?: string
-  createdAt: string
-}
 
 function getContacts(): ContactEntry[] {
   try { return JSON.parse(localStorage.getItem(CONTACTS_KEY) ?? '[]') }

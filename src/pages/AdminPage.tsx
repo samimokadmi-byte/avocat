@@ -10,7 +10,7 @@ import {
   FolderOpen, ArrowLeft, FileText, File as FileIcon, AlertCircle,
   CalendarDays, Plus, X, Menu, Receipt
 } from 'lucide-react'
-import { Invoice, computeAmounts, fmtAmount, CURRENCIES } from '../components/BillingModule'
+import { Invoice, computeAmounts, fmtAmount } from '../components/BillingModule'
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -638,9 +638,300 @@ const INV_STATUS_MAP = {
   en_retard: { label: 'En retard',  cls: 'bg-red-500/10 text-red-400 border-red-500/20' },
 } as const
 
+// ── Numérotation auto ─────────────────────────────────────────────────────────
+function nextInvoiceNumber(allInvoices: Invoice[]): string {
+  const year = new Date().getFullYear()
+  const existing = allInvoices
+    .map(i => {
+      const m = i.number.match(/(\d+)$/)
+      return m ? parseInt(m[1]) : 0
+    })
+    .filter(n => !isNaN(n))
+  const seq = existing.length > 0 ? Math.max(...existing) + 1 : 1
+  return `NH-${year}-${String(seq).padStart(3, '0')}`
+}
+
+// ── Formulaire création note d'honoraires ─────────────────────────────────────
+function InvoiceFormAdmin({ clients, allInvoices, onSave, onCancel }: {
+  clients: ClientData[]
+  allInvoices: Invoice[]
+  onSave: (inv: Invoice, clientId: string) => void
+  onCancel: () => void
+}) {
+  const today = new Date().toISOString().split('T')[0]
+  const echeance30 = new Date(Date.now() + 30 * 86400000).toISOString().split('T')[0]
+
+  const [clientId,   setClientId]   = useState(clients[0]?.user.id ?? '')
+  const [clientMF,   setClientMF]   = useState('')
+  const [clientAddr, setClientAddr] = useState('')
+  const [number,     setNumber]     = useState(() => nextInvoiceNumber(allInvoices))
+  const [dateE,      setDateE]      = useState(today)
+  const [dateEch,    setDateEch]    = useState(echeance30)
+  const [lines,      setLines]      = useState([{ id: crypto.randomUUID(), description: '', quantity: 1, unitPrice: 0 }])
+  const [notes,      setNotes]      = useState('')
+  const [mention,    setMention]    = useState(true)
+
+  // Taux fixes Tunisie
+  const TVA_RATE     = 13
+  const RETENUE_RATE = 10
+  const TIMBRE       = 1
+
+  // Calculs dynamiques
+  const ht      = lines.reduce((s, l) => s + l.quantity * l.unitPrice, 0)
+  const tva     = ht * TVA_RATE / 100
+  const ttc     = ht + tva
+  const retenue = ttc * RETENUE_RATE / 100
+  const net     = ttc - retenue + TIMBRE
+
+  const selectedClient = clients.find(c => c.user.id === clientId)
+
+  const updLine = (id: string, field: string, val: string) =>
+    setLines(prev => prev.map(l => l.id === id ? {
+      ...l,
+      [field]: field === 'quantity' || field === 'unitPrice' ? parseFloat(val) || 0 : val
+    } : l))
+
+  const addLine = () => setLines(prev => [...prev, { id: crypto.randomUUID(), description: '', quantity: 1, unitPrice: 0 }])
+  const delLine = (id: string) => setLines(prev => prev.filter(l => l.id !== id))
+
+  const handleSave = () => {
+    if (!clientId || lines.every(l => !l.description)) return
+    const inv: Invoice = {
+      id: crypto.randomUUID(),
+      number,
+      clientId,
+      clientName:   selectedClient?.user.name,
+      clientMF:     clientMF || undefined,
+      clientAddress: clientAddr || undefined,
+      status:        'brouillon',
+      dateEmission:  dateE,
+      dateEcheance:  dateEch,
+      lines,
+      linkedRdvIds:  [],
+      linkedTodoIds: [],
+      notes:         notes || undefined,
+      mentionRetenue: mention,
+      currency:      'TND',
+      tvaRate:       TVA_RATE,
+      retenueRate:   RETENUE_RATE,
+      timbreFiscal:  TIMBRE,
+      createdAt:     new Date().toISOString(),
+    }
+    onSave(inv, clientId)
+  }
+
+  const inputCls = 'w-full border-b border-gold/15 bg-transparent py-2 text-sm text-light placeholder:text-light/25 focus:outline-none focus:border-gold/50 transition-colors'
+  const labelCls = 'text-[10px] font-medium text-light/40 tracking-widest uppercase block mb-1.5'
+  const fmt = (n: number) => n.toLocaleString('fr-FR', { minimumFractionDigits: 3, maximumFractionDigits: 3 })
+
+  return (
+    <div className="flex flex-col gap-8">
+      {/* En-tête */}
+      <div className="flex items-center justify-between gap-4 flex-wrap">
+        <div>
+          <p className="text-xs font-medium tracking-[0.2em] uppercase text-gold/60 mb-1">Nouvelle facture</p>
+          <h2 className="font-serif text-2xl text-light">Note d'honoraires</h2>
+        </div>
+        <div className="flex gap-2">
+          <button onClick={onCancel} className="text-xs font-medium text-light/40 border border-gold/15 px-4 py-2 hover:border-gold/30 transition-colors">
+            Annuler
+          </button>
+          <button
+            onClick={handleSave}
+            disabled={!clientId || lines.every(l => !l.description)}
+            className="flex items-center gap-2 text-xs font-medium bg-gold text-dark-bg px-5 py-2 hover:bg-gold/90 transition-colors disabled:opacity-40"
+          >
+            <Receipt size={13} strokeWidth={1.5} /> Enregistrer
+          </button>
+        </div>
+      </div>
+
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+
+        {/* ── Colonne gauche : infos générales ─────────────────────────── */}
+        <div className="flex flex-col gap-5">
+          <div className="border border-gold/15 bg-dark-surface p-5">
+            <p className="text-[10px] font-bold text-gold/60 uppercase tracking-widest mb-4">Identité de la facture</p>
+
+            <div className="flex flex-col gap-4">
+              <div>
+                <label className={labelCls}>Numéro *</label>
+                <input type="text" value={number} onChange={e => setNumber(e.target.value)} className={inputCls} />
+              </div>
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className={labelCls}>Date d'émission</label>
+                  <input type="date" value={dateE} onChange={e => setDateE(e.target.value)} className={`${inputCls} [color-scheme:dark]`} />
+                </div>
+                <div>
+                  <label className={labelCls}>Date d'échéance</label>
+                  <input type="date" value={dateEch} onChange={e => setDateEch(e.target.value)} className={`${inputCls} [color-scheme:dark]`} />
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div className="border border-gold/15 bg-dark-surface p-5">
+            <p className="text-[10px] font-bold text-gold/60 uppercase tracking-widest mb-4">Client</p>
+
+            <div className="flex flex-col gap-4">
+              <div>
+                <label className={labelCls}>Sélectionner le client *</label>
+                <select
+                  value={clientId}
+                  onChange={e => setClientId(e.target.value)}
+                  className="w-full border-b border-gold/15 bg-dark-bg py-2 text-sm text-light focus:outline-none focus:border-gold/50 transition-colors"
+                >
+                  {clients.map(c => (
+                    <option key={c.user.id} value={c.user.id}>{c.user.name}{c.user.company ? ` — ${c.user.company}` : ''}</option>
+                  ))}
+                </select>
+              </div>
+              <div>
+                <label className={labelCls}>Matricule fiscal du client</label>
+                <input
+                  type="text" value={clientMF} onChange={e => setClientMF(e.target.value)}
+                  placeholder="Ex : 1234567A/M/000" className={inputCls}
+                />
+              </div>
+              <div>
+                <label className={labelCls}>Adresse du client</label>
+                <input
+                  type="text" value={clientAddr} onChange={e => setClientAddr(e.target.value)}
+                  placeholder="Adresse, ville" className={inputCls}
+                />
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* ── Colonne droite : récapitulatif fiscal ─────────────────────── */}
+        <div className="border border-gold/20 bg-dark-surface p-5">
+          <p className="text-[10px] font-bold text-gold/60 uppercase tracking-widest mb-5">Calcul fiscal (TND)</p>
+
+          <div className="flex flex-col gap-3">
+            {[
+              { label: 'Montant HT',              value: fmt(ht),      sub: '' },
+              { label: `+ TVA (${TVA_RATE} %)`,   value: fmt(tva),     sub: `${fmt(ht)} × ${TVA_RATE} %` },
+              { label: '= Montant TTC',            value: fmt(ttc),     sub: '', bold: true },
+              { label: `− Retenue (${RETENUE_RATE} %)`, value: fmt(retenue), sub: `${fmt(ttc)} × ${RETENUE_RATE} %`, red: true },
+              { label: '+ Timbre fiscal',          value: fmt(TIMBRE),  sub: 'Fixe' },
+            ].map(row => (
+              <div key={row.label} className={`flex items-end justify-between gap-3 py-2.5 border-b border-gold/8 ${row.bold ? 'bg-gold/5 px-2 -mx-2' : ''}`}>
+                <div>
+                  <p className={`text-sm ${row.bold ? 'font-semibold text-light' : row.red ? 'text-red-400/80' : 'text-light/60'}`}>{row.label}</p>
+                  {row.sub && <p className="text-[10px] text-light/25 mt-0.5">{row.sub}</p>}
+                </div>
+                <p className={`text-sm font-mono font-semibold flex-none ${row.bold ? 'text-light' : row.red ? 'text-red-400/70' : 'text-light/70'}`}>
+                  {row.value} DT
+                </p>
+              </div>
+            ))}
+
+            {/* Net à payer */}
+            <div className="flex items-center justify-between gap-3 bg-gold px-3 py-3 -mx-1 mt-2">
+              <p className="text-sm font-bold text-dark-bg">Net à payer</p>
+              <p className="text-base font-bold text-dark-bg font-mono">{fmt(net)} DT</p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* ── Prestations ─────────────────────────────────────────────────────── */}
+      <div className="border border-gold/15 bg-dark-surface p-5">
+        <div className="flex items-center justify-between mb-4">
+          <p className="text-[10px] font-bold text-gold/60 uppercase tracking-widest">Prestations / Honoraires</p>
+          <button onClick={addLine} className="text-xs font-medium text-gold/60 border border-gold/20 px-3 py-1.5 hover:border-gold/40 hover:text-gold transition-colors flex items-center gap-1.5">
+            <Plus size={11} strokeWidth={1.5} /> Ajouter une ligne
+          </button>
+        </div>
+
+        <div className="overflow-x-auto -mx-2">
+          <div className="min-w-[520px] px-2">
+            {/* Header colonnes */}
+            <div className="grid grid-cols-[1fr_64px_100px_28px] gap-2 px-3 py-2 bg-dark-bg mb-1">
+              {['Description', 'Qté', 'PU HT (DT)', ''].map((h, i) => (
+                <p key={h} className={`text-[10px] font-medium text-light/40 uppercase ${i > 0 ? 'text-right' : ''}`}>{h}</p>
+              ))}
+            </div>
+
+            {lines.map((line, idx) => (
+              <div key={line.id} className="grid grid-cols-[1fr_64px_100px_28px] gap-2 px-3 py-2 bg-dark-surface border-t border-gold/8 items-center">
+                <input
+                  type="text" value={line.description}
+                  onChange={e => updLine(line.id, 'description', e.target.value)}
+                  placeholder={`Prestation ${idx + 1}`}
+                  className="text-sm text-light bg-transparent border-b border-transparent focus:border-gold/30 py-1 focus:outline-none transition-colors min-w-0"
+                />
+                <input
+                  type="number" min="0" step="0.5" value={line.quantity}
+                  onChange={e => updLine(line.id, 'quantity', e.target.value)}
+                  className="text-sm text-light text-right bg-transparent border-b border-transparent focus:border-gold/30 py-1 focus:outline-none transition-colors"
+                />
+                <input
+                  type="number" min="0" step="1" value={line.unitPrice}
+                  onChange={e => updLine(line.id, 'unitPrice', e.target.value)}
+                  className="text-sm text-light text-right bg-transparent border-b border-transparent focus:border-gold/30 py-1 focus:outline-none transition-colors"
+                />
+                <button
+                  onClick={() => delLine(line.id)}
+                  disabled={lines.length === 1}
+                  className="text-light/20 hover:text-red-500 transition-colors flex justify-center disabled:opacity-20"
+                >
+                  <X size={13} strokeWidth={1.5} />
+                </button>
+              </div>
+            ))}
+
+            {/* Sous-total */}
+            <div className="grid grid-cols-[1fr_64px_100px_28px] gap-2 px-3 py-2 bg-dark-bg mt-1">
+              <p className="text-xs text-light/40 col-span-2">Total HT</p>
+              <p className="text-sm font-semibold text-light text-right font-mono">{fmt(ht)} DT</p>
+              <span />
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* ── Notes + mention retenue ──────────────────────────────────────────── */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+        <div className="border border-gold/15 bg-dark-surface p-5">
+          <p className="text-[10px] font-bold text-gold/60 uppercase tracking-widest mb-3">Notes (optionnel)</p>
+          <textarea
+            value={notes} onChange={e => setNotes(e.target.value)}
+            rows={3} placeholder="Conditions particulières, références dossier..."
+            className="w-full bg-transparent border-b border-gold/15 text-sm text-light placeholder:text-light/20 focus:outline-none focus:border-gold/40 resize-none transition-colors py-2"
+          />
+        </div>
+
+        <div className="border border-gold/20 bg-dark-surface p-5">
+          <p className="text-[10px] font-bold text-gold/60 uppercase tracking-widest mb-3">Mention légale</p>
+          <label className="flex items-start gap-3 cursor-pointer group">
+            <div
+              onClick={() => setMention(v => !v)}
+              className={`mt-0.5 w-4 h-4 border flex-none flex items-center justify-center transition-colors ${mention ? 'bg-gold border-gold' : 'border-gold/30 hover:border-gold/60'}`}
+            >
+              {mention && <span className="text-dark-bg text-[10px] font-bold">✓</span>}
+            </div>
+            <p className="text-xs text-light/55 leading-relaxed">
+              <span className="font-semibold text-light/80 block mb-1">Inclure la mention retenue à la source</span>
+              <em className="text-light/40 italic">
+                "Prière nous délivrer une attestation de retenue à la source comportant le montant de la retenue opérée."
+              </em>
+            </p>
+          </label>
+        </div>
+      </div>
+    </div>
+  )
+}
+
 function AllInvoicesAdmin({ clients, onRefresh }: { clients: ClientData[]; onRefresh: () => void }) {
-  const [search, setSearch] = useState('')
+  const [search,       setSearch]       = useState('')
   const [filterStatus, setFilterStatus] = useState<Invoice['status'] | 'all'>('all')
+  const [showForm,     setShowForm]     = useState(false)
+  // viewInv state removed
+  const [pdfLoading,   setPdfLoading]   = useState(false)
 
   const allInvoices = useMemo(() =>
     clients.flatMap(c =>
@@ -670,26 +961,64 @@ function AllInvoicesAdmin({ clients, onRefresh }: { clients: ClientData[]; onRef
   }
 
   const deleteInvoice = (inv: typeof allInvoices[number]) => {
+    if (!confirm(`Supprimer la facture ${inv.number} ?`)) return
     saveInvoicesForClient(inv.clientId, getInvoicesForClient(inv.clientId).filter(i => i.id !== inv.id))
     onRefresh()
   }
 
+  const handleSaveNew = (inv: Invoice, clientId: string) => {
+    const existing = getInvoicesForClient(clientId)
+    saveInvoicesForClient(clientId, [...existing, inv])
+    setShowForm(false)
+    onRefresh()
+  }
+
+  const handleDownloadPdf = async (inv: Invoice, clientName: string, clientCompany?: string) => {
+    setPdfLoading(true)
+    try {
+      const { downloadInvoicePdf } = await import('../utils/invoicePdf')
+      await downloadInvoicePdf(inv, clientName, clientCompany)
+    } finally {
+      setPdfLoading(false)
+    }
+  }
+
+  // ── Formulaire création ──────────────────────────────────────────────────────
+  if (showForm) {
+    return (
+      <InvoiceFormAdmin
+        clients={clients}
+        allInvoices={allInvoices}
+        onSave={handleSaveNew}
+        onCancel={() => setShowForm(false)}
+      />
+    )
+  }
+
   return (
     <div className="flex flex-col gap-6">
-      <div>
-        <p className="text-xs font-medium tracking-[0.2em] uppercase text-light/40 mb-2">Facturation</p>
-        <h2 className="font-serif text-2xl text-light">Notes d'honoraires</h2>
+      <div className="flex items-start justify-between gap-4 flex-wrap">
+        <div>
+          <p className="text-xs font-medium tracking-[0.2em] uppercase text-light/40 mb-2">Facturation</p>
+          <h2 className="font-serif text-2xl text-light">Notes d'honoraires</h2>
+        </div>
+        <button
+          onClick={() => setShowForm(true)}
+          className="flex items-center gap-2 text-xs font-medium bg-gold text-dark-bg px-4 py-2.5 hover:bg-gold/90 transition-colors"
+        >
+          <Plus size={12} strokeWidth={2} /> Nouvelle note d'honoraires
+        </button>
       </div>
 
       {/* Stats */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-px bg-gold/10">
         {[
-          { label: 'Total factures',  value: String(allInvoices.length) },
-          { label: 'En attente',      value: String(allInvoices.filter(i => i.status === 'envoyee' || i.status === 'en_retard').length) },
-          { label: 'Payées',          value: String(allInvoices.filter(i => i.status === 'payee').length) },
+          { label: 'Total factures',   value: String(allInvoices.length) },
+          { label: 'En attente',       value: String(allInvoices.filter(i => i.status === 'envoyee' || i.status === 'en_retard').length) },
+          { label: 'Payées',           value: String(allInvoices.filter(i => i.status === 'payee').length) },
           { label: 'Chiffre encaissé', value: paidNet > 0 ? fmtAmount(paidNet, 'TND') : '—' },
         ].map(({ label, value }) => (
-          <div key={label} className="bg-dark-surface p-6">
+          <div key={label} className="bg-dark-surface p-5 sm:p-6">
             <p className="text-xs text-light/40 uppercase tracking-wide mb-2">{label}</p>
             <p className="font-serif text-xl font-bold text-light">{value}</p>
           </div>
@@ -701,18 +1030,14 @@ function AllInvoicesAdmin({ clients, onRefresh }: { clients: ClientData[]; onRef
         <div className="relative flex-1">
           <Search size={14} strokeWidth={1.5} className="absolute left-3 top-1/2 -translate-y-1/2 text-light/30" />
           <input
-            type="text"
-            value={search}
-            onChange={e => setSearch(e.target.value)}
-            placeholder="Rechercher par n°, client ou société…"
+            type="text" value={search} onChange={e => setSearch(e.target.value)}
+            placeholder="Rechercher par n°, client…"
             className="w-full border border-gold/15 bg-transparent pl-9 pr-4 py-2.5 text-sm text-light placeholder:text-light/20 focus:outline-none focus:border-gold transition-colors"
           />
         </div>
         <div className="flex gap-1 flex-wrap">
           {(['all', 'brouillon', 'envoyee', 'payee', 'en_retard'] as const).map(s => (
-            <button
-              key={s}
-              onClick={() => setFilterStatus(s)}
+            <button key={s} onClick={() => setFilterStatus(s)}
               className={`text-xs font-medium px-3 py-1.5 border transition-colors ${
                 filterStatus === s ? 'bg-gold text-dark-bg border-gold' : 'text-light/40 border-gold/15 hover:border-gold/30'
               }`}
@@ -730,54 +1055,68 @@ function AllInvoicesAdmin({ clients, onRefresh }: { clients: ClientData[]; onRef
       )}
 
       {filtered.length === 0 ? (
-        <div className="border border-gold/10 px-6 py-12 text-center text-sm text-light/30">Aucune facture trouvée.</div>
+        <div className="border border-gold/10 px-6 py-12 text-center">
+          <Receipt size={28} strokeWidth={1} className="text-light/15 mx-auto mb-3" />
+          <p className="text-sm text-light/30">Aucune facture. Créez votre première note d'honoraires.</p>
+        </div>
       ) : (
         <div className="flex flex-col gap-px bg-gold/10">
           {filtered.map(inv => {
-            const { net } = computeAmounts(inv)
-            const { label, cls } = INV_STATUS_MAP[inv.status]
-            const sym = CURRENCIES[inv.currency]?.symbol ?? inv.currency
+            const { net, retenue } = computeAmounts(inv)
+            const { label, cls }  = INV_STATUS_MAP[inv.status]
             return (
-              <div key={inv.id} className="bg-dark-surface px-6 py-4 flex items-center gap-4">
-                <div className="flex-1 min-w-0">
-                  <div className="flex items-center gap-2 flex-wrap mb-0.5">
-                    <p className="text-sm font-semibold text-light font-mono">{inv.number}</p>
-                    <span className={`text-xs font-medium px-2 py-0.5 border ${cls}`}>{label}</span>
-                    <span className="text-[10px] text-light/30 border border-gold/10 px-1.5 py-0.5">{sym}</span>
+              <div key={inv.id} className="bg-dark-surface px-4 sm:px-6 py-4">
+                <div className="flex items-start sm:items-center gap-3 flex-wrap sm:flex-nowrap">
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-2 flex-wrap mb-0.5">
+                      <p className="text-sm font-bold text-light font-mono">{inv.number}</p>
+                      <span className={`text-xs font-medium px-2 py-0.5 border ${cls}`}>{label}</span>
+                    </div>
+                    <p className="text-xs text-light/50">
+                      <span className="font-medium">{inv.clientName}</span>
+                      {inv.clientMF ? <span className="text-light/30"> · MF {inv.clientMF}</span> : ''}
+                    </p>
+                    <p className="text-xs text-light/35 mt-0.5">
+                      {new Date(inv.dateEmission + 'T12:00:00').toLocaleDateString('fr-FR', { day: 'numeric', month: 'short', year: 'numeric' })}
+                      {' — échéance '}
+                      {new Date(inv.dateEcheance + 'T12:00:00').toLocaleDateString('fr-FR', { day: 'numeric', month: 'short', year: 'numeric' })}
+                    </p>
                   </div>
-                  <p className="text-xs text-light/40">
-                    <span className="font-medium text-light/60">{inv.clientName}</span>
-                    {inv.clientCompany ? ` · ${inv.clientCompany}` : ''} ·{' '}
-                    {new Date(inv.dateEmission + 'T12:00:00').toLocaleDateString('fr-FR', { day: 'numeric', month: 'short', year: 'numeric' })}
-                    {' — échéance '}
-                    {new Date(inv.dateEcheance + 'T12:00:00').toLocaleDateString('fr-FR', { day: 'numeric', month: 'short', year: 'numeric' })}
-                  </p>
-                </div>
-                <div className="flex-none text-right mr-2">
-                  <p className="text-sm font-semibold text-light">{fmtAmount(net, inv.currency)}</p>
-                  <p className="text-[10px] text-light/40">net à payer</p>
-                </div>
-                {/* Quick status change */}
-                <div className="flex gap-1 flex-none">
-                  {(['brouillon', 'envoyee', 'payee', 'en_retard'] as const).map(s => (
+
+                  {/* Montants */}
+                  <div className="flex-none text-right">
+                    <p className="text-sm font-bold text-light">{fmtAmount(net, inv.currency)} DT</p>
+                    <p className="text-[10px] text-light/35">net · retenue {fmtAmount(retenue, inv.currency)} DT</p>
+                  </div>
+
+                  {/* Actions */}
+                  <div className="flex items-center gap-1 flex-none">
+                    {/* Statuts */}
+                    {(['brouillon', 'envoyee', 'payee', 'en_retard'] as const).map(s => (
+                      <button key={s} onClick={() => updateStatus(inv, s)} title={INV_STATUS_MAP[s].label}
+                        className={`text-[10px] font-medium px-1.5 py-1 border transition-colors ${
+                          inv.status === s ? 'bg-gold text-dark-bg border-gold' : 'text-light/30 border-gold/10 hover:border-gold/30'
+                        }`}
+                      >
+                        {s === 'brouillon' ? '✎' : s === 'envoyee' ? '✉' : s === 'payee' ? '✓' : '!'}
+                      </button>
+                    ))}
+                    {/* PDF */}
                     <button
-                      key={s}
-                      onClick={() => updateStatus(inv, s)}
-                      title={INV_STATUS_MAP[s].label}
-                      className={`text-[10px] font-medium px-2 py-1 border transition-colors ${
-                        inv.status === s ? 'bg-gold text-dark-bg border-gold' : 'text-light/30 border-gold/10 hover:border-gold/30'
-                      }`}
+                      onClick={() => handleDownloadPdf(inv, inv.clientName, inv.clientCompany)}
+                      disabled={pdfLoading}
+                      title="Télécharger PDF"
+                      className="text-light/30 hover:text-gold p-1 transition-colors disabled:opacity-40"
                     >
-                      {s === 'brouillon' ? '✎' : s === 'envoyee' ? '✉' : s === 'payee' ? '✓' : '!'}
+                      <Download size={13} strokeWidth={1.5} />
                     </button>
-                  ))}
+                    {/* Supprimer */}
+                    <button onClick={() => deleteInvoice(inv)} title="Supprimer"
+                      className="text-light/20 hover:text-red-500 transition-colors p-1">
+                      <Trash2 size={13} strokeWidth={1.5} />
+                    </button>
+                  </div>
                 </div>
-                <button
-                  onClick={() => deleteInvoice(inv)}
-                  className="text-light/20 hover:text-red-500 transition-colors p-1 flex-none"
-                >
-                  <Trash2 size={13} strokeWidth={1.5} />
-                </button>
               </div>
             )
           })}

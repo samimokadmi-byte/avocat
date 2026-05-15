@@ -70,6 +70,12 @@ export async function downloadInvoicePdf(
   const sym  = CURRENCIES[invoice.currency]?.symbol ?? invoice.currency
   const { ht, tva, ttc, retenue, timbre, net } = computeAmounts(invoice)
 
+  // Utiliser les champs étendus si disponibles
+  const clientDisplayName = invoice.clientName  || userName
+  const clientMF          = invoice.clientMF    || ''
+  const clientAddr        = invoice.clientAddress || userCompany || ''
+  const showMentionRetenue = invoice.mentionRetenue !== false && invoice.retenueRate > 0
+
   const doc = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' })
   const W   = doc.internal.pageSize.getWidth()   // 210
   const H   = doc.internal.pageSize.getWidth() * Math.SQRT2 // ≈297
@@ -161,8 +167,8 @@ export async function downloadInvoicePdf(
   // ── Bloc Facturation & Dates ─────────────────────────────────────────────────
   const infoY = titleY + 16
   doc.setFillColor(...LINE)
-  doc.rect(14, infoY - 5, 80, 26, 'F')
-  doc.rect(W - 94, infoY - 5, 80, 26, 'F')
+  doc.rect(14, infoY - 5, 80, 30, 'F')
+  doc.rect(W - 94, infoY - 5, 80, 30, 'F')
 
   // Client
   doc.setFont('helvetica', 'bold')
@@ -173,19 +179,26 @@ export async function downloadInvoicePdf(
   doc.setFont('helvetica', 'bold')
   doc.setFontSize(9)
   doc.setTextColor(...LIGHT)
-  doc.text(userName, 18, infoY + 5.5)
+  doc.text(clientDisplayName, 18, infoY + 5.5)
 
-  if (userCompany) {
+  if (clientAddr) {
     doc.setFont('helvetica', 'normal')
     doc.setFontSize(7.5)
     doc.setTextColor(...GREY)
-    doc.text(userCompany, 18, infoY + 10)
+    doc.text(clientAddr, 18, infoY + 10)
+  }
+  if (clientMF) {
+    doc.setFont('helvetica', 'normal')
+    doc.setFontSize(7)
+    doc.setTextColor(...GREY)
+    doc.text(`MF : ${clientMF}`, 18, clientAddr ? infoY + 14 : infoY + 10)
   }
   if (dossierName) {
     doc.setFont('helvetica', 'italic')
     doc.setFontSize(7)
     doc.setTextColor(...GREY)
-    doc.text(`Dossier : ${dossierName}`, 18, userCompany ? infoY + 14 : infoY + 10)
+    const dossierY = infoY + (clientAddr && clientMF ? 18 : clientAddr || clientMF ? 14 : 10)
+    doc.text(`Dossier : ${dossierName}`, 18, dossierY)
   }
 
   // Dates
@@ -306,6 +319,26 @@ export async function downloadInvoicePdf(
 
   // ── Notes ────────────────────────────────────────────────────────────────────
   let currentY = netY + 20
+
+  // Mention légale retenue à la source (OBLIGATOIRE si retenueRate > 0)
+  if (showMentionRetenue) {
+    doc.setFillColor(...LINE)
+    doc.rect(14, currentY - 2, W - 28, 12, 'F')
+
+    doc.setFont('helvetica', 'bolditalic')
+    doc.setFontSize(7)
+    doc.setTextColor(...GOLD)
+    doc.text('Mention légale :', 18, currentY + 4)
+
+    doc.setFont('helvetica', 'italic')
+    doc.setFontSize(6.5)
+    doc.setTextColor(...LIGHT)
+    const mentionText = `Prière nous délivrer une attestation de retenue à la source comportant le montant de la retenue opérée (${fmtAmount(retenue, invoice.currency)} ${sym}).`
+    const mentionLines = doc.splitTextToSize(mentionText, W - 75)
+    doc.text(mentionLines, 55, currentY + 4)
+
+    currentY += 18
+  }
 
   if (invoice.notes) {
     doc.setFont('helvetica', 'bold')

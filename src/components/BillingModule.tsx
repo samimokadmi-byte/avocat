@@ -22,6 +22,9 @@ export interface Invoice {
   id: string
   number: string
   clientId: string
+  clientName?: string        // nom du client (affiché sur la facture)
+  clientMF?: string          // matricule fiscal du client
+  clientAddress?: string     // adresse du client
   dossierId?: string
   status: 'brouillon' | 'envoyee' | 'payee' | 'en_retard'
   dateEmission: string
@@ -30,6 +33,7 @@ export interface Invoice {
   linkedRdvIds: string[]
   linkedTodoIds: string[]
   notes?: string
+  mentionRetenue?: boolean   // true = afficher la mention attestation retenue à la source
   currency: string    // 'TND' | 'EUR' | 'USD' | 'GBP' | 'MAD'
   tvaRate: number     // 13 for TND
   retenueRate: number // 10 for TND (applied on TTC)

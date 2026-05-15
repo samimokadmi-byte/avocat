@@ -33,7 +33,7 @@ const DARK    = [ 20,  25,  40] as [number, number, number]
 const MID     = [ 80,  80,  80] as [number, number, number]
 const LIGHT   = [150, 150, 150] as [number, number, number]
 const WHITE   = [255, 255, 255] as [number, number, number]
-const STAMP   = [ 10,  25,  47] as [number, number, number] // couleur cachet
+// (STAMP supprimé — cachet désormais rendu via Canvas)
 
 // ── Types de documents ────────────────────────────────────────────────────────
 export const RAPPORT_TYPES = [
@@ -355,9 +355,193 @@ function drawBody(doc: jsPDF, rapport: RapportData, startY: number, W: number, H
   return y
 }
 
+// ── Générateur du cachet circulaire (Canvas → PNG → jsPDF) ───────────────────
+function buildStampCanvas(reference: string, dateDoc: string): HTMLCanvasElement {
+  const S = 600                    // taille canvas px
+  const canvas = document.createElement('canvas')
+  canvas.width = S; canvas.height = S
+  const ctx = canvas.getContext('2d')!
+  const cx = S / 2, cy = S / 2
+
+  // Rayons (en px canvas)
+  const R    = 268   // bord extérieur
+  const R1   = 253   // bord intérieur du double anneau
+  const R2   = 238   // limite bande «MAÎTRE» / zone intérieure
+  const R3   = 180   // limite bande «AVOCAT» / zone centrale
+  const R4   = 165   // bord intérieur de la zone «AVOCAT»
+  const LINE = 52    // demi-hauteur des lignes de séparation (px depuis cy)
+
+  const NAVY    = '#0A192F'
+  const NAVYMD  = '#1e3c6e'
+  const NAVYLT  = '#4a7ab5'
+  const WHITE   = '#ffffff'
+  const CREAM   = '#f2f5fb'
+
+  ctx.clearRect(0, 0, S, S)
+
+  // ── Helper : arc band rempli ──────────────────────────────────────────────
+  function arcBand(rOut: number, rIn: number, a0: number, a1: number, color: string, ccw = false) {
+    ctx.beginPath()
+    ctx.arc(cx, cy, rOut, a0, a1, ccw)
+    ctx.arc(cx, cy, rIn,  a1, a0, !ccw)
+    ctx.closePath()
+    ctx.fillStyle = color
+    ctx.fill()
+  }
+
+  // ── Helper : texte le long d'un arc ──────────────────────────────────────
+  // angle0..angle1 = canvas angles (0=droite, sens horaire positif en canvas y-bas)
+  // flip=true  → texte lisible depuis l'extérieur au bas de cercle
+  function arcText(
+    text: string, r: number,
+    a0: number, a1: number,
+    size: number, color: string,
+    weight = 'bold', flip = false
+  ) {
+    ctx.save()
+    ctx.font = `${weight} ${size}px "Arial Narrow", Arial, Helvetica, sans-serif`
+    ctx.fillStyle = color
+    ctx.textBaseline = 'middle'
+    ctx.textAlign    = 'left'
+
+    const chars = text.split('')
+    const cw    = chars.map(c => ctx.measureText(c).width)
+    const total = cw.reduce((a, b) => a + b, 0)
+    const circ  = 2 * Math.PI * r
+    const span  = a1 - a0                         // arc disponible (rad)
+    const need  = (total / circ) * 2 * Math.PI    // arc requis
+
+    let angle = a0 + (span - need) / 2            // centrer dans l'arc
+
+    for (let i = 0; i < chars.length; i++) {
+      const ca = (cw[i] / circ) * 2 * Math.PI
+      const mid = angle + ca / 2
+
+      ctx.save()
+      ctx.translate(cx, cy)
+      // rotation : mid + π/2 aligne tangentiellement (sens horaire = lecture normale)
+      ctx.rotate(flip ? mid - Math.PI / 2 : mid + Math.PI / 2)
+      ctx.translate(0, -r)
+      ctx.fillText(chars[i], -cw[i] / 2, 0)
+      ctx.restore()
+
+      angle += ca
+    }
+    ctx.restore()
+  }
+
+  // ═══════════════════════════════════════════════════════════════
+  // 1. Fond blanc complet du cercle
+  ctx.beginPath(); ctx.arc(cx, cy, R, 0, Math.PI*2); ctx.fillStyle = WHITE; ctx.fill()
+
+  // 2. Bande «MAÎTRE MOKADMI SAMI» (arc top, entre R2 et R)
+  //    Top arc : de π (9h) à 2π=0 (3h) en passant par 12h — anticlockwise=true
+  arcBand(R2, R * 0.01, Math.PI, 0, WHITE, true)   // reset fond haut
+  arcBand(R,  R2,        Math.PI, 0, NAVY,  true)   // bande navy top (9h → 3h par le haut)
+
+  // 3. Bande «AVOCAT AU BARREAU DE TUNIS» (arc top intérieur, entre R3 et R2)
+  //    Légèrement plus claire pour la distinction visuelle
+  arcBand(R2, R3, Math.PI, 0, NAVYMD, true)
+
+  // 4. Bande «BARREAU DE TUNIS» (arc bas, entre R3 et R)
+  //    Bottom arc : de 0 (3h) à π (9h) en passant par 6h — anticlockwise=false
+  arcBand(R, R3, 0, Math.PI, NAVY, false)
+
+  // 5. Zone centrale blanche
+  ctx.beginPath(); ctx.arc(cx, cy, R4, 0, Math.PI*2)
+  ctx.fillStyle = WHITE; ctx.fill()
+
+  // 6. Lignes de séparation horizontales (doubles)
+  const lx0 = cx - Math.sqrt(R3*R3 - LINE*LINE) + 8
+  const lx1 = cx + Math.sqrt(R3*R3 - LINE*LINE) - 8
+  ;[1, -1].forEach(sign => {
+    const y = cy + sign * LINE
+    ctx.strokeStyle = NAVY; ctx.lineWidth = 2.5
+    ctx.beginPath(); ctx.moveTo(lx0, y); ctx.lineTo(lx1, y); ctx.stroke()
+    ctx.strokeStyle = NAVYLT; ctx.lineWidth = 0.8
+    ctx.beginPath(); ctx.moveTo(lx0, y + sign*5); ctx.lineTo(lx1, y + sign*5); ctx.stroke()
+  })
+
+  // 7. Anneaux extérieurs (double cercle)
+  ctx.strokeStyle = NAVY
+  ctx.lineWidth = 6
+  ctx.beginPath(); ctx.arc(cx, cy, R, 0, Math.PI*2); ctx.stroke()
+  ctx.lineWidth = 2
+  ctx.beginPath(); ctx.arc(cx, cy, R1, 0, Math.PI*2); ctx.stroke()
+
+  // Cercle intérieur de séparation
+  ctx.lineWidth = 1.5
+  ctx.strokeStyle = NAVY
+  ctx.beginPath(); ctx.arc(cx, cy, R3, 0, Math.PI*2); ctx.stroke()
+  ctx.beginPath(); ctx.arc(cx, cy, R3 - 5, 0, Math.PI*2)
+  ctx.strokeStyle = NAVYLT; ctx.lineWidth = 0.8; ctx.stroke()
+
+  // ─── 8. Textes arc ───────────────────────────────────────────────────────
+
+  // «MAÎTRE MOKADMI SAMI» — bande top externe (sur NAVY = texte blanc)
+  // Canvas top arc : a0 = π+0.15, a1 = 2π-0.15 = -0.15 (en allant CCW donc l'ordre est inversé)
+  // Pour arcText qui va de a0→a1 avec sens horaire :
+  //   On passe a0=π+0.15 (peu après 9h) et a1=2π-0.15 (peu avant 3h) en passant par 12h
+  //   Comme les angles canvas croissent dans le sens horaire, et 12h = -π/2 = 3π/2 :
+  //   On écrit de gauche à droite en passant par le haut en utilisant des angles négatifs
+  const TOP_A0 = Math.PI + 0.18      // juste après 9h
+  const TOP_A1 = 2 * Math.PI - 0.18  // juste avant 3h (= -0.18)
+  // Rayon milieu de la bande MAÎTRE
+  const rMaitre = (R + R2) / 2 + 6
+  arcText(
+    'MAÎTRE MOKADMI SAMI',
+    rMaitre,
+    TOP_A0, TOP_A1,
+    34, WHITE, 'bold'
+  )
+
+  // «AVOCAT AU BARREAU DE TUNIS» — bande top intérieure
+  const rAvocat = (R2 + R3) / 2 + 4
+  const AV_A0 = Math.PI + 0.5
+  const AV_A1 = 2 * Math.PI - 0.5
+  arcText(
+    'AVOCAT AU BARREAU DE TUNIS',
+    rAvocat,
+    AV_A0, AV_A1,
+    21, CREAM, 'bold'
+  )
+
+  // «BARREAU DE TUNIS» — bande bas (flip=true)
+  const rBarreau = (R + R3) / 2 + 6
+  const BOT_A0 = 0.35     // peu après 3h
+  const BOT_A1 = Math.PI - 0.35  // peu avant 9h
+  arcText(
+    'BARREAU DE TUNIS',
+    rBarreau,
+    BOT_A0, BOT_A1,
+    34, WHITE, 'bold', true
+  )
+
+  // ─── 9. Textes centre ────────────────────────────────────────────────────
+  ctx.textAlign    = 'center'
+  ctx.textBaseline = 'middle'
+
+  // MF
+  ctx.font      = `bold 30px "Arial Narrow", Arial, Helvetica, sans-serif`
+  ctx.fillStyle = NAVY
+  ctx.fillText(`MF : ${CABINET.matriculeFiscal}`, cx, cy - 14)
+
+  // Inscription
+  ctx.font      = `bold 25px "Arial Narrow", Arial, Helvetica, sans-serif`
+  ctx.fillStyle = NAVYMD
+  ctx.fillText(`INSCRIT DEPUIS ${CABINET.inscription.replace(/\D/g, '')}`, cx, cy + 18)
+
+  // ─── 10. Référence + date (sous le cachet, en dehors du cercle) ──────────
+  ctx.font      = `500 22px "Arial Narrow", Arial, Helvetica, sans-serif`
+  ctx.fillStyle = NAVYLT
+  ctx.fillText(`${reference}  ·  ${fmtDateCourt(dateDoc)}`, cx, cy + R + 28)
+
+  return canvas
+}
+
 // ── Cachet fiscal de clôture ──────────────────────────────────────────────────
 function drawCachet(doc: jsPDF, rapport: RapportData, H: number, W: number) {
-  const cachetY = H - 50
+  const cachetY = H - 64
 
   // Ligne de séparation avant cachet
   doc.setDrawColor(...NAVYMD)
@@ -377,72 +561,37 @@ function drawCachet(doc: jsPDF, rapport: RapportData, H: number, W: number) {
   doc.setFont('helvetica', 'normal')
   doc.setFontSize(7.5)
   doc.setTextColor(...MID)
-  doc.text('Signature et cachet :', sigX, cachetY + 11)
+  doc.text('Signature et cachet :', sigX, cachetY + 12)
 
   // Ligne de signature
   doc.setDrawColor(...NAVYLT)
   doc.setLineWidth(0.4)
-  doc.line(sigX, cachetY + 26, sigX + 68, cachetY + 26)
+  doc.line(sigX, cachetY + 30, sigX + 65, cachetY + 30)
   doc.setFont('helvetica', 'italic')
   doc.setFontSize(7)
   doc.setTextColor(...LIGHT)
-  doc.text(CABINET.nom, sigX, cachetY + 31)
+  doc.text(CABINET.nom, sigX, cachetY + 35)
 
-  // ── Cachet fiscal (droite) — rectangle arrondi style tampon ──────────────
-  const cW = 90, cH = 42
-  const cX = W - 14 - cW
-  const cY = cachetY - 2
+  // ── Cachet circulaire (droite) — Canvas → PNG → jsPDF ──────────────────
+  try {
+    const stampCanvas = buildStampCanvas(rapport.reference, rapport.dateDoc)
+    const stampPng    = stampCanvas.toDataURL('image/png')
 
-  // Fond cachet (bleu très pâle)
-  doc.setFillColor(...NAVYPALE)
-  doc.roundedRect(cX, cY, cW, cH, 2, 2, 'F')
-
-  // Bordure double style cachet officiel
-  doc.setDrawColor(...STAMP)
-  doc.setLineWidth(1.5)
-  doc.roundedRect(cX, cY, cW, cH, 2, 2, 'S')
-  doc.setLineWidth(0.4)
-  doc.roundedRect(cX + 2.5, cY + 2.5, cW - 5, cH - 5, 1.5, 1.5, 'S')
-
-  // ── Contenu du cachet ────────────────────────────────────────────────────
-  const cx = cX + cW / 2  // centre X
-
-  // Nom cabinet
-  doc.setFont('helvetica', 'bold')
-  doc.setFontSize(7.5)
-  doc.setTextColor(...NAVY)
-  doc.text(CABINET.nom.toUpperCase(), cx, cY + 9, { align: 'center' })
-
-  // Qualité
-  doc.setFont('helvetica', 'normal')
-  doc.setFontSize(6.5)
-  doc.setTextColor(...NAVYMD)
-  doc.text(CABINET.qualite.toUpperCase(), cx, cY + 14.5, { align: 'center' })
-
-  // Filet interne
-  doc.setDrawColor(...NAVYLT)
-  doc.setLineWidth(0.3)
-  doc.line(cX + 6, cY + 17, cX + cW - 6, cY + 17)
-
-  // Matricule fiscal (encadré)
-  doc.setFillColor(...NAVY)
-  doc.roundedRect(cX + 8, cY + 19, cW - 16, 8, 1, 1, 'F')
-  doc.setFont('helvetica', 'bold')
-  doc.setFontSize(8)
-  doc.setTextColor(...WHITE)
-  doc.text(`MF : ${CABINET.matriculeFiscal}`, cx, cY + 24.5, { align: 'center' })
-
-  // Barreau
-  doc.setFont('helvetica', 'normal')
-  doc.setFontSize(6.5)
-  doc.setTextColor(...NAVYMD)
-  doc.text(`${CABINET.barreau} · ${CABINET.inscription}`, cx, cY + 32, { align: 'center' })
-
-  // Date du document
-  doc.setFont('helvetica', 'italic')
-  doc.setFontSize(6.5)
-  doc.setTextColor(...LIGHT)
-  doc.text(`${rapport.reference}  ·  ${fmtDateCourt(rapport.dateDoc)}`, cx, cY + 37.5, { align: 'center' })
+    // Taille dans le PDF : 58mm × 58mm, positionné à droite
+    const stampSize = 58
+    const stampX    = W - 14 - stampSize
+    const stampY    = cachetY - 6
+    doc.addImage(stampPng, 'PNG', stampX, stampY, stampSize, stampSize)
+  } catch (e) {
+    // Fallback minimal si canvas non disponible
+    console.warn('[cachet] Canvas non disponible, fallback texte', e)
+    const cX = W - 14 - 45
+    doc.setFont('helvetica', 'bold')
+    doc.setFontSize(7)
+    doc.setTextColor(...NAVY)
+    doc.text(`MF : ${CABINET.matriculeFiscal}`, cX, cachetY + 10)
+    doc.text(CABINET.barreau, cX, cachetY + 18)
+  }
 }
 
 // ── Pied de page (toutes les pages) ──────────────────────────────────────────

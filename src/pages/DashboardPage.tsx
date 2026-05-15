@@ -3,33 +3,16 @@ import { useNavigate, Link } from 'react-router-dom'
 import { useAuth } from '../contexts/AuthContext'
 import {
   LayoutDashboard, FolderOpen, FileUp, MessageSquare, LogOut,
-  CheckCircle2, Clock, Circle, ChevronRight, Upload, File,
+  Upload, File,
   FileText, Trash2, Menu, X, Shield, CalendarDays, Bell, Receipt,
   Download, CheckSquare
 } from 'lucide-react'
 import { useReminders } from '../hooks/useReminders'
 import { Invoice, computeAmounts, fmtAmount, CURRENCIES } from '../components/BillingModule'
-import { syncOnDocument } from '../utils/dossierSync'
 import type { Appointment } from '../components/CalendarView'
 import type { Todo } from '../components/TodoList'
 
 // ─── Types ───────────────────────────────────────────────────────────────────
-
-interface Etape {
-  label: string
-  statut: 'done' | 'current' | 'pending'
-  date: string | null
-}
-
-interface Dossier {
-  id: string
-  titre: string
-  statut: 'en_cours' | 'complete' | 'attente'
-  dateOuverture: string
-  prochainEcheance: string | null
-  description: string
-  etapes: Etape[]
-}
 
 export interface Document {
   id: string
@@ -132,203 +115,240 @@ function Apercu({ dossiers, documents, userName }: { dossiers: Dossier[]; docume
   )
 }
 
-// ─── Dossiers ─────────────────────────────────────────────────────────────────
+// ─── Dossiers — client peut créer ses propres dossiers ────────────────────────
 
-function Dossiers({ dossiers, rdvs, todos, invoices }: { dossiers: Dossier[]; rdvs: Appointment[]; todos: Todo[]; invoices: Invoice[] }) {
-  const [selected, setSelected] = useState<Dossier | null>(null)
+interface Dossier {
+  id: string
+  titre: string
+  statut: 'en_cours' | 'complete' | 'attente'
+  dateOuverture: string
+  prochainEcheance: string | null
+  description: string
+  etapes: Array<{ label: string; statut: 'done' | 'current' | 'pending'; date: string | null }>
+}
 
+function Dossiers({ dossiers, setDossiers, rdvs, todos, invoices }: {
+  dossiers: Dossier[]
+  setDossiers: (d: Dossier[] | ((prev: Dossier[]) => Dossier[])) => void
+  rdvs: Appointment[]
+  todos: Todo[]
+  invoices: Invoice[]
+}) {
+  const [selected,  setSelected]  = useState<Dossier | null>(null)
+  const [showForm,  setShowForm]  = useState(false)
+  const [formTitre, setFormTitre] = useState('')
+  const [formDesc,  setFormDesc]  = useState('')
+  const [formEch,   setFormEch]   = useState('')
+
+  const createDossier = () => {
+    if (!formTitre.trim()) return
+    const d: Dossier = {
+      id:              crypto.randomUUID(),
+      titre:           formTitre.trim(),
+      description:     formDesc.trim(),
+      statut:          'en_cours',
+      dateOuverture:   new Date().toISOString().split('T')[0],
+      prochainEcheance: formEch || null,
+      etapes: [
+        { label: 'Ouverture du dossier', statut: 'done',    date: new Date().toLocaleDateString('fr-FR') },
+        { label: 'En cours de traitement', statut: 'current', date: null },
+        { label: 'Clôture',               statut: 'pending', date: null },
+      ],
+    }
+    setDossiers((prev: Dossier[]) => [...prev, d])
+    setFormTitre(''); setFormDesc(''); setFormEch('')
+    setShowForm(false)
+  }
+
+  const deleteDossier = (id: string) => setDossiers((prev: Dossier[]) => prev.filter(d => d.id !== id))
+
+  // ── Détail dossier ────────────────────────────────────────────────────────
   if (selected) {
-    const linkedRdvs = rdvs
-      .filter(r => r.dossierId === selected.id)
-      .sort((a, b) => a.date.localeCompare(b.date))
-    const linkedTodos = todos.filter(t => t.dossierId === selected.id)
+    const linkedRdvs     = rdvs.filter(r => r.dossierId === selected.id).sort((a, b) => a.date.localeCompare(b.date))
+    const linkedTodos    = todos.filter(t => t.dossierId === selected.id)
     const linkedInvoices = invoices.filter(i => i.dossierId === selected.id)
 
     return (
       <div className="flex flex-col gap-6">
-        <button
-          onClick={() => setSelected(null)}
-          className="flex items-center gap-2 text-xs text-light/40 hover:text-light transition-colors"
-        >
+        <button onClick={() => setSelected(null)} className="flex items-center gap-2 text-xs text-light/40 hover:text-light transition-colors self-start">
           ← Retour aux dossiers
         </button>
-
-        <div className="flex items-start justify-between gap-4 flex-wrap">
-          <div>
-            <p className="text-xs font-medium tracking-[0.2em] uppercase text-light/40 mb-1">
-              Dossier · {new Date(selected.dateOuverture).toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric' })}
-            </p>
-            <h2 className="font-serif text-2xl text-light">{selected.titre}</h2>
+        <div className="border border-gold/15 bg-dark-surface px-5 sm:px-8 py-6">
+          <div className="flex items-start justify-between gap-4 mb-6 flex-wrap">
+            <div>
+              <h2 className="font-serif text-xl text-light mb-1">{selected.titre}</h2>
+              <p className="text-xs text-light/40">
+                Dossier · Ouvert le {new Date(selected.dateOuverture).toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric' })}
+              </p>
+              {selected.description && <p className="text-sm text-light/55 mt-3 leading-relaxed">{selected.description}</p>}
+            </div>
+            <StatusBadge statut={selected.statut} />
           </div>
-          <StatusBadge statut={selected.statut} />
-        </div>
 
-        <p className="text-sm text-light/60 leading-relaxed max-w-prose">{selected.description}</p>
-
-        <div>
-          <p className="text-xs font-medium text-light/40 uppercase tracking-wide mb-6">Avancement</p>
-          <div className="flex flex-col gap-0">
+          {/* Étapes */}
+          <div className="flex flex-col gap-2 mb-6">
             {selected.etapes.map((etape, i) => (
-              <div key={i} className="flex gap-5 pb-8 last:pb-0 relative">
-                {i < selected.etapes.length - 1 && (
-                  <div className="absolute left-[10px] top-6 bottom-0 w-px bg-gold/10" />
-                )}
-                <div className="flex-none mt-0.5 z-10">
-                  {etape.statut === 'done' && <CheckCircle2 size={20} strokeWidth={1.5} className="text-light" />}
-                  {etape.statut === 'current' && <Clock size={20} strokeWidth={1.5} className="text-blue-600" />}
-                  {etape.statut === 'pending' && <Circle size={20} strokeWidth={1.5} className="text-light/20" />}
+              <div key={i} className="flex items-center gap-3">
+                <div className={`w-5 h-5 flex-none flex items-center justify-center rounded-full border ${
+                  etape.statut === 'done'    ? 'bg-gold border-gold text-dark-bg' :
+                  etape.statut === 'current' ? 'border-gold text-gold' : 'border-light/15 text-light/20'
+                }`}>
+                  {etape.statut === 'done' ? <span className="text-[9px] font-bold">✓</span> :
+                   etape.statut === 'current' ? <span className="text-[8px]">●</span> : null}
                 </div>
-                <div className="flex-1 pt-0.5">
-                  <p className={`text-sm font-medium ${etape.statut === 'pending' ? 'text-light/30' : 'text-light'}`}>
-                    {etape.label}
-                  </p>
-                  {etape.date && (
-                    <p className="text-xs text-light/40 mt-0.5">{etape.date}</p>
-                  )}
-                </div>
+                <span className={`text-sm ${etape.statut === 'done' ? 'text-light' : etape.statut === 'current' ? 'text-gold' : 'text-light/30'}`}>
+                  {etape.label}
+                </span>
+                {etape.date && <span className="text-xs text-light/25 ml-auto">{etape.date}</span>}
               </div>
             ))}
           </div>
-        </div>
 
-        {selected.prochainEcheance && (
-          <div className="border border-gold/10 px-6 py-4">
-            <p className="text-xs text-light/40 uppercase tracking-wide mb-1">Prochaine échéance</p>
-            <p className="text-sm font-medium text-light">
-              {new Date(selected.prochainEcheance).toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })}
-            </p>
-          </div>
-        )}
-
-        {linkedRdvs.length > 0 && (
-          <div>
-            <p className="text-xs font-medium text-light/40 uppercase tracking-wide mb-3">Rendez-vous liés</p>
-            <div className="flex flex-col gap-px bg-gold/10">
+          {/* Éléments liés */}
+          {linkedRdvs.length > 0 && (
+            <div className="border-t border-gold/10 pt-4 mb-4">
+              <p className="text-xs text-light/40 uppercase tracking-wider mb-2">Rendez-vous liés</p>
               {linkedRdvs.map(r => (
-                <div key={r.id} className="bg-dark-surface px-5 py-3 flex items-center gap-3">
-                  <CalendarDays size={13} strokeWidth={1.25} className="text-light/30 flex-none" />
-                  <div className="flex-1 min-w-0">
-                    <p className="text-sm font-medium text-light truncate">{r.title}</p>
-                    <p className="text-xs text-light/40 mt-0.5">
-                      {new Date(r.date + 'T12:00:00').toLocaleDateString('fr-FR', { weekday: 'short', day: 'numeric', month: 'short' })} · {r.time}
-                    </p>
-                  </div>
-                </div>
+                <p key={r.id} className="text-sm text-light/70 py-1">{r.date} — {r.title}</p>
               ))}
             </div>
-          </div>
-        )}
-
-        {linkedTodos.length > 0 && (
-          <div>
-            <p className="text-xs font-medium text-light/40 uppercase tracking-wide mb-3">Tâches liées</p>
-            <div className="flex flex-col gap-px bg-gold/10">
+          )}
+          {linkedInvoices.length > 0 && (
+            <div className="border-t border-gold/10 pt-4">
+              <p className="text-xs text-light/40 uppercase tracking-wider mb-2">Factures liées</p>
+              {linkedInvoices.map(inv => (
+                <p key={inv.id} className="text-sm text-light/70 py-1">{inv.number}</p>
+              ))}
+            </div>
+          )}
+          {linkedTodos.length > 0 && (
+            <div className="border-t border-gold/10 pt-4">
+              <p className="text-xs text-light/40 uppercase tracking-wider mb-2">Tâches liées</p>
               {linkedTodos.map(t => (
-                <div key={t.id} className={`bg-dark-surface px-5 py-3 flex items-center gap-3 ${t.done ? 'opacity-50' : ''}`}>
-                  {t.done
-                    ? <CheckCircle2 size={13} strokeWidth={1.5} className="text-light flex-none" />
-                    : <Circle size={13} strokeWidth={1.5} className="text-light/30 flex-none" />}
-                  <p className={`text-sm flex-1 min-w-0 truncate ${t.done ? 'line-through text-light/40' : 'text-light font-medium'}`}>{t.title}</p>
-                  {t.priority === 'urgente' && !t.done && (
-                    <span className="text-[10px] font-semibold text-red-600 flex-none">Urgent</span>
-                  )}
-                </div>
+                <p key={t.id} className={`text-sm py-1 ${t.done ? 'line-through text-light/30' : 'text-light/70'}`}>{t.title}</p>
               ))}
             </div>
-          </div>
-        )}
-
-        {linkedInvoices.length > 0 && (
-          <div>
-            <p className="text-xs font-medium text-light/40 uppercase tracking-wide mb-3">Factures liées</p>
-            <div className="flex flex-col gap-px bg-gold/10">
-              {linkedInvoices.map(inv => {
-                const { net } = computeAmounts(inv)
-                const statusCls = { brouillon: 'text-gray-500', envoyee: 'text-blue-600', payee: 'text-green-600', en_retard: 'text-red-600' }[inv.status]
-                const statusLabel = { brouillon: 'Brouillon', envoyee: 'Envoyée', payee: 'Payée', en_retard: 'En retard' }[inv.status]
-                return (
-                  <div key={inv.id} className="bg-dark-surface px-5 py-3 flex items-center gap-3">
-                    <Receipt size={13} strokeWidth={1.25} className="text-light/30 flex-none" />
-                    <div className="flex-1 min-w-0">
-                      <p className="text-sm font-medium text-light font-mono truncate">{inv.number}</p>
-                      <p className="text-xs text-light/40 mt-0.5">
-                        {new Date(inv.dateEmission + 'T12:00:00').toLocaleDateString('fr-FR', { day: 'numeric', month: 'short', year: 'numeric' })}
-                        {' · '}<span className={statusCls}>{statusLabel}</span>
-                      </p>
-                    </div>
-                    <p className="text-sm font-semibold text-light flex-none">{fmtAmount(net, inv.currency)}</p>
-                  </div>
-                )
-              })}
-            </div>
-          </div>
-        )}
+          )}
+        </div>
       </div>
     )
   }
 
+  // ── Liste des dossiers ────────────────────────────────────────────────────
+  const inputCls = 'w-full border-b border-gold/15 bg-transparent py-2 text-sm text-light placeholder:text-light/25 focus:outline-none focus:border-gold/50 transition-colors'
+
   return (
     <div className="flex flex-col gap-6">
-      <div>
-        <p className="text-xs font-medium tracking-[0.2em] uppercase text-light/40 mb-2">Mes Dossiers</p>
-        <h2 className="font-serif text-2xl text-light">Suivi de vos missions</h2>
+      {/* Header */}
+      <div className="flex items-start justify-between gap-4 flex-wrap">
+        <div>
+          <p className="text-xs font-medium tracking-[0.2em] uppercase text-light/40 mb-2">Espace Client</p>
+          <h2 className="font-serif text-2xl text-light">Mes Dossiers</h2>
+        </div>
+        <button
+          onClick={() => setShowForm(v => !v)}
+          className="flex items-center gap-2 text-xs font-medium bg-gold text-dark-bg px-4 py-2.5 hover:bg-gold/90 transition-colors"
+        >
+          {showForm ? '✕ Annuler' : '+ Nouveau dossier'}
+        </button>
       </div>
 
-      <div className="flex flex-col gap-px bg-gold/10">
-        {dossiers.map(dossier => {
-          const rdvCount = rdvs.filter(r => r.dossierId === dossier.id).length
-          const todoCount = todos.filter(t => t.dossierId === dossier.id && !t.done).length
-          const invCount = invoices.filter(i => i.dossierId === dossier.id).length
-          return (
-            <button
-              key={dossier.id}
-              onClick={() => setSelected(dossier)}
-              className="bg-dark-surface px-8 py-6 flex items-center justify-between gap-4 text-left hover:bg-dark-card transition-colors group"
-            >
-              <div className="flex items-start gap-4 min-w-0">
-                <FolderOpen size={16} strokeWidth={1.25} className="text-light/30 flex-none mt-0.5" />
-                <div className="min-w-0">
-                  <p className="text-sm font-medium text-light mb-1">{dossier.titre}</p>
-                  <p className="text-xs text-light/40 truncate">{dossier.description}</p>
-                  <div className="flex items-center gap-3 mt-2 flex-wrap">
-                    <span className="text-xs text-light/30">
-                      Ouvert le {new Date(dossier.dateOuverture).toLocaleDateString('fr-FR', { day: 'numeric', month: 'short', year: 'numeric' })}
-                    </span>
-                    <span className="text-xs text-light/20">·</span>
-                    <span className="text-xs text-light/30">
-                      {dossier.etapes.filter(e => e.statut === 'done').length}/{dossier.etapes.length} étapes
-                    </span>
-                    {rdvCount > 0 && (
-                      <span className="text-xs text-blue-500">{rdvCount} RDV</span>
-                    )}
-                    {todoCount > 0 && (
-                      <span className="text-xs text-gold/70">{todoCount} tâche{todoCount > 1 ? 's' : ''}</span>
-                    )}
-                    {invCount > 0 && (
-                      <span className="text-xs text-emerald-600">{invCount} facture{invCount > 1 ? 's' : ''}</span>
-                    )}
+      {/* Formulaire création */}
+      {showForm && (
+        <div className="border border-gold/20 bg-dark-surface p-5 sm:p-6 flex flex-col gap-4">
+          <p className="text-xs font-medium text-gold/70 uppercase tracking-wider">Créer un dossier</p>
+          <div className="flex flex-col gap-4">
+            <div>
+              <label className="text-[10px] font-medium text-light/35 tracking-widest uppercase block mb-1.5">Intitulé *</label>
+              <input type="text" value={formTitre} onChange={e => setFormTitre(e.target.value)}
+                placeholder="Ex: Création de société, Levée de fonds..." className={inputCls} />
+            </div>
+            <div>
+              <label className="text-[10px] font-medium text-light/35 tracking-widest uppercase block mb-1.5">Description</label>
+              <textarea value={formDesc} onChange={e => setFormDesc(e.target.value)}
+                rows={2} placeholder="Décrivez brièvement l'objet du dossier..."
+                className={`${inputCls} resize-none`} />
+            </div>
+            <div>
+              <label className="text-[10px] font-medium text-light/35 tracking-widest uppercase block mb-1.5">Prochaine échéance</label>
+              <input type="date" value={formEch} onChange={e => setFormEch(e.target.value)}
+                className={`${inputCls} [color-scheme:dark]`} />
+            </div>
+          </div>
+          <button
+            onClick={createDossier}
+            disabled={!formTitre.trim()}
+            className="self-start bg-gold text-dark-bg text-sm font-medium px-5 py-2.5 hover:bg-gold/90 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+          >
+            Créer le dossier
+          </button>
+        </div>
+      )}
+
+      {/* État vide */}
+      {dossiers.length === 0 && !showForm && (
+        <div className="border border-gold/10 py-16 flex flex-col items-center gap-4">
+          <FolderOpen size={32} strokeWidth={1} className="text-light/15" />
+          <div className="text-center">
+            <p className="text-sm font-medium text-light/40 mb-1">Aucun dossier pour le moment</p>
+            <p className="text-xs text-light/25 leading-relaxed max-w-xs">
+              Créez votre premier dossier ou attendez que le cabinet en crée un pour vous.
+            </p>
+          </div>
+          <button
+            onClick={() => setShowForm(true)}
+            className="text-xs font-medium text-gold border border-gold/20 px-4 py-2 hover:border-gold/40 hover:bg-gold/5 transition-colors mt-2"
+          >
+            + Créer un dossier
+          </button>
+        </div>
+      )}
+
+      {/* Liste */}
+      {dossiers.length > 0 && (
+        <div className="flex flex-col gap-px bg-gold/8">
+          {dossiers.map(dossier => {
+            const rdvCount  = rdvs.filter(r => r.dossierId === dossier.id).length
+            const todoCount = todos.filter(t => t.dossierId === dossier.id && !t.done).length
+            const invCount  = invoices.filter(i => i.dossierId === dossier.id).length
+            return (
+              <div key={dossier.id}
+                className="bg-dark-surface px-4 sm:px-6 py-4 flex items-center gap-3 hover:bg-dark-card transition-colors cursor-pointer group"
+                onClick={() => setSelected(dossier)}
+              >
+                <FolderOpen size={16} strokeWidth={1.25} className="text-light/30 flex-none" />
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm font-medium text-light truncate mb-0.5">{dossier.titre}</p>
+                  <div className="flex items-center gap-3 text-xs text-light/35 flex-wrap">
+                    <span>Ouvert le {new Date(dossier.dateOuverture).toLocaleDateString('fr-FR', { day: 'numeric', month: 'short', year: 'numeric' })}</span>
+                    {rdvCount > 0  && <span>{rdvCount} RDV</span>}
+                    {todoCount > 0 && <span>{todoCount} tâche{todoCount > 1 ? 's' : ''}</span>}
+                    {invCount > 0  && <span>{invCount} facture{invCount > 1 ? 's' : ''}</span>}
                   </div>
                 </div>
+                <div className="flex items-center gap-2">
+                  <StatusBadge statut={dossier.statut} />
+                  <button
+                    onClick={e => { e.stopPropagation(); deleteDossier(dossier.id) }}
+                    className="opacity-0 group-hover:opacity-100 text-light/20 hover:text-red-500 transition-all p-1 ml-1"
+                    aria-label="Supprimer"
+                  >
+                    <Trash2 size={13} strokeWidth={1.5} />
+                  </button>
+                </div>
               </div>
-              <div className="flex items-center gap-3 flex-none">
-                <StatusBadge statut={dossier.statut} />
-                <ChevronRight size={14} strokeWidth={1.5} className="text-light/20 group-hover:text-light/50 transition-colors" />
-              </div>
-            </button>
-          )
-        })}
-      </div>
+            )
+          })}
+        </div>
+      )}
     </div>
   )
 }
-
 // ─── Documents ────────────────────────────────────────────────────────────────
 
-function Documents({ documents, setDocuments, userId, userName }: {
+function Documents({ documents, setDocuments }: {
   documents: Document[]
   setDocuments: (d: Document[] | ((prev: Document[]) => Document[])) => void
-  userId: string
-  userName: string
 }) {
   const [dragging, setDragging] = useState(false)
   const inputRef = useRef<HTMLInputElement>(null)
@@ -348,7 +368,6 @@ function Documents({ documents, setDocuments, userId, userName }: {
         }
         setDocuments((prev: Document[]) => [...prev, doc])
         // ── Sync automatique dossier ────────────────────────────────────────
-        if (userId && userName) syncOnDocument(userId, userName, f.name)
       }
       reader.readAsDataURL(f)
     })
@@ -723,7 +742,7 @@ export default function DashboardPage() {
   const [tab, setTab] = useState('apercu')
   const [mobileOpen, setMobileOpen] = useState(false)
 
-  const [dossiers] = useLocalState<Dossier[]>(`avocat_dossiers_${user?.id}`, [])
+  const [dossiers, setDossiers] = useLocalState<Dossier[]>(`avocat_dossiers_${user?.id}`, [])
   const [documents, setDocuments] = useLocalState<Document[]>(`avocat_documents_${user?.id}`, [])
   const [rdvs] = useLocalState<Appointment[]>(`avocat_rdv_${user?.id}`, [])
   const [todos] = useLocalState<Todo[]>(`avocat_todos_${user?.id}`, [])
@@ -832,13 +851,11 @@ export default function DashboardPage() {
         {/* Main content */}
         <main className="flex-1 px-4 sm:px-6 md:px-12 py-6 md:py-10 max-w-3xl pb-20 md:pb-10">
           {tab === 'apercu' && <Apercu dossiers={dossiers} documents={documents} userName={user?.name ?? ''} />}
-          {tab === 'dossiers' && <Dossiers dossiers={dossiers} rdvs={rdvs} todos={todos} invoices={invoices} />}
+          {tab === 'dossiers' && <Dossiers dossiers={dossiers} setDossiers={setDossiers} rdvs={rdvs} todos={todos} invoices={invoices} />}
           {tab === 'documents' && (
             <Documents
               documents={documents}
               setDocuments={setDocuments}
-              userId={user?.id ?? ''}
-              userName={user?.name ?? ''}
             />
           )}
           {tab === 'rendezvous' && (

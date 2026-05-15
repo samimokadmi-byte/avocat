@@ -11,7 +11,6 @@ import {
   CalendarDays, Plus, X, Receipt
 } from 'lucide-react'
 import { Invoice, computeAmounts, fmtAmount, CURRENCIES } from '../components/BillingModule'
-import { syncOnInvoice, syncOnTodo, syncOnRdv } from '../utils/dossierSync'
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -244,7 +243,6 @@ function ClientDetail({
     setClientInvoicesState(updated)
     // Sync : si la facture devient "envoyée" ou "payée", s'assurer que le dossier existe
     if (status === 'envoyee' || status === 'payee') {
-      syncOnInvoice(data.user.id, data.user.name, inv.number)
     }
     onRefresh()
   }
@@ -819,11 +817,9 @@ function AgendaAdmin({ clients, onRefresh }: { clients: ClientData[]; onRefresh:
 
   const handleCreateRdv = () => {
     if (!rdvForm.title || !rdvForm.date || !rdvForm.clientId) return
-    const client = clients.find(c => c.user.id === rdvForm.clientId)
     const newRdv: Appointment = { ...rdvForm, id: crypto.randomUUID() }
     saveRdvForClient(rdvForm.clientId, [...getRdvsForClient(rdvForm.clientId), newRdv])
     // ── Sync automatique dossier ──────────────────────────────────────────────
-    if (client) syncOnRdv(rdvForm.clientId, client.user.name, rdvForm.title)
     setShowRdvForm(false)
     setRdvForm(f => ({ ...f, title: '', notes: '' }))
     onRefresh()
@@ -836,7 +832,6 @@ function AgendaAdmin({ clients, onRefresh }: { clients: ClientData[]; onRefresh:
 
   const handleCreateTodo = () => {
     if (!todoForm.title || !todoForm.clientId) return
-    const client = clients.find(c => c.user.id === todoForm.clientId)
     const newTodo: Todo = {
       id: crypto.randomUUID(), title: todoForm.title,
       done: false, priority: todoForm.priority,
@@ -845,7 +840,6 @@ function AgendaAdmin({ clients, onRefresh }: { clients: ClientData[]; onRefresh:
     }
     saveTodosForClient(todoForm.clientId, [...getTodosForClient(todoForm.clientId), newTodo])
     // ── Sync automatique dossier ──────────────────────────────────────────────
-    if (client) syncOnTodo(todoForm.clientId, client.user.name, todoForm.title)
     setShowTodoForm(false)
     setTodoForm(f => ({ ...f, title: '', dueDate: '' }))
     onRefresh()

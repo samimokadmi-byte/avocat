@@ -8,7 +8,8 @@ import {
   LayoutDashboard, Users, FileUp, LogOut, ChevronRight,
   Download, Trash2, CheckCircle2, Clock, Circle, Search,
   FolderOpen, ArrowLeft, FileText, File as FileIcon, AlertCircle,
-  CalendarDays, Plus, X, Menu, Receipt, Pencil, Mail, CheckCircle
+  CalendarDays, Plus, X, Menu, Receipt, Pencil, Mail, CheckCircle,
+  Phone, MapPin, BookUser, AtSign, Building2, Save, UserPlus
 } from 'lucide-react'
 import { Invoice, computeAmounts, fmtAmount } from '../components/BillingModule'
 
@@ -686,6 +687,8 @@ function InvoiceFormAdmin({ clients, allInvoices, initialValues, onSave, onCance
     initialValues && !initialValues.clientId.startsWith('manual_') ? initialValues.clientId : (clients[0]?.user.id ?? '')
   )
   const [clientNom,    setClientNom]    = useState(initialValues?.clientName ?? '')
+  const [clientEmail,  setClientEmail]  = useState(initialValues?.clientEmail ?? '')
+  const [clientPhone,  setClientPhone]  = useState(initialValues?.clientPhone ?? '')
   const [clientMF,     setClientMF]     = useState(initialValues?.clientMF ?? '')
   const [clientAddr,   setClientAddr]   = useState(initialValues?.clientAddress ?? '')
 
@@ -758,6 +761,10 @@ function InvoiceFormAdmin({ clients, allInvoices, initialValues, onSave, onCance
       number,
       clientId:       finalClientId,
       clientName:     effectiveClientName,
+      clientEmail:    clientMode === 'existing'
+                        ? (selectedClient?.user?.email ?? undefined)
+                        : (clientEmail || undefined),
+      clientPhone:    clientPhone || undefined,
       clientMF:       clientMF  || undefined,
       clientAddress:  clientAddr || undefined,
       status:         initialValues?.status ?? 'brouillon',
@@ -897,6 +904,22 @@ function InvoiceFormAdmin({ clients, allInvoices, initialValues, onSave, onCance
             <label className={labelCls}>Matricule fiscal</label>
             <input type="text" value={clientMF} onChange={e => setClientMF(e.target.value)}
               placeholder="Ex : 1234567A/M/000" className={inputCls} />
+          </div>
+
+          {/* Email (mode manuel uniquement) */}
+          {clientMode === 'manual' && (
+            <div>
+              <label className={labelCls}>Email <span className="normal-case text-light/30">(pour envoi de facture)</span></label>
+              <input type="email" value={clientEmail} onChange={e => setClientEmail(e.target.value)}
+                placeholder="client@entreprise.com" className={inputCls} />
+            </div>
+          )}
+
+          {/* Téléphone */}
+          <div>
+            <label className={labelCls}>Téléphone <span className="normal-case text-light/30">(optionnel)</span></label>
+            <input type="tel" value={clientPhone} onChange={e => setClientPhone(e.target.value)}
+              placeholder="+216 XX XXX XXX" className={inputCls} />
           </div>
 
           {/* Adresse */}
@@ -1135,14 +1158,10 @@ function AllInvoicesAdmin({ clients, onRefresh }: { clients: ClientData[]; onRef
   const handleSendEmail = async (inv: Invoice) => {
     // Récupérer l'email du client
     const clientUser = clientMap[inv.clientId]
-    const clientEmail = clientUser?.email ?? ''
+    const clientEmail = clientUser?.email ?? inv.clientEmail ?? ''
 
-    if (!clientEmail && !inv.clientId.startsWith('manual_')) {
-      setEmailFeedback({ id: inv.id, ok: false, msg: 'Email client introuvable. Vérifiez le profil client.' })
-      return
-    }
     if (!clientEmail) {
-      setEmailFeedback({ id: inv.id, ok: false, msg: 'Impossible d\'envoyer : client manuel sans email. Saisissez l\'email manuellement.' })
+      setEmailFeedback({ id: inv.id, ok: false, msg: 'Email client introuvable. Ajoutez l\'email dans la fiche contact ou modifiez la facture.' })
       return
     }
 
@@ -1574,11 +1593,322 @@ function AgendaAdmin({ clients, onRefresh }: { clients: ClientData[]; onRefresh:
   )
 }
 
+// ─── Contacts Admin ───────────────────────────────────────────────────────────
+
+const CONTACTS_KEY = 'avocat_contacts'
+
+interface ContactEntry {
+  id: string
+  nom: string
+  email?: string
+  telephone?: string
+  adresse?: string
+  societe?: string
+  dossierId?: string
+  dossierRef?: string   // référence texte libre du dossier
+  clientId?: string     // lié à un compte client enregistré
+  notes?: string
+  createdAt: string
+}
+
+function getContacts(): ContactEntry[] {
+  try { return JSON.parse(localStorage.getItem(CONTACTS_KEY) ?? '[]') }
+  catch { return [] }
+}
+function saveContacts(contacts: ContactEntry[]) {
+  localStorage.setItem(CONTACTS_KEY, JSON.stringify(contacts))
+}
+
+function ContactsAdmin({ clients, onRefresh }: { clients: ClientData[]; onRefresh: () => void }) {
+  const [contacts, setContacts] = useState<ContactEntry[]>(() => {
+    // Fusionner contacts manuels + contacts auto-générés depuis les clients enregistrés
+    const manual = getContacts()
+    const manualClientIds = new Set(manual.filter(c => c.clientId).map(c => c.clientId))
+
+    // Auto-dériver les clients enregistrés non présents dans les contacts manuels
+    const autoContacts: ContactEntry[] = clients
+      .filter(c => !manualClientIds.has(c.user.id))
+      .map(c => ({
+        id: `auto_${c.user.id}`,
+        nom: c.user.name,
+        email: c.user.email,
+        societe: c.user.company,
+        clientId: c.user.id,
+        dossierRef: c.dossiers.length > 0 ? c.dossiers.map(d => d.titre).join(', ') : undefined,
+        createdAt: new Date().toISOString(),
+      }))
+
+    return [...autoContacts, ...manual]
+  })
+
+  const [search, setSearch] = useState('')
+  const [showForm, setShowForm] = useState(false)
+  const [editContact, setEditContact] = useState<ContactEntry | null>(null)
+
+  const emptyForm: Omit<ContactEntry, 'id' | 'createdAt'> = {
+    nom: '', email: '', telephone: '', adresse: '', societe: '', dossierRef: '', clientId: '', notes: '',
+  }
+  const [form, setForm] = useState<Omit<ContactEntry, 'id' | 'createdAt'>>(emptyForm)
+
+  const filtered = useMemo(() => {
+    const q = search.toLowerCase()
+    return contacts.filter(c =>
+      c.nom.toLowerCase().includes(q) ||
+      (c.email ?? '').toLowerCase().includes(q) ||
+      (c.telephone ?? '').includes(q) ||
+      (c.societe ?? '').toLowerCase().includes(q) ||
+      (c.dossierRef ?? '').toLowerCase().includes(q)
+    )
+  }, [contacts, search])
+
+  const openNew = () => {
+    setForm(emptyForm)
+    setEditContact(null)
+    setShowForm(true)
+  }
+
+  const openEdit = (c: ContactEntry) => {
+    setForm({ nom: c.nom, email: c.email ?? '', telephone: c.telephone ?? '', adresse: c.adresse ?? '', societe: c.societe ?? '', dossierRef: c.dossierRef ?? '', clientId: c.clientId ?? '', notes: c.notes ?? '' })
+    setEditContact(c)
+    setShowForm(true)
+  }
+
+  const handleSave = () => {
+    if (!form.nom.trim()) return
+    if (editContact) {
+      // Mise à jour
+      const updated = contacts.map(c => c.id === editContact.id ? { ...c, ...form } : c)
+      setContacts(updated)
+      // Ne sauvegarder que les contacts manuels (pas les auto-dérivés)
+      saveContacts(updated.filter(c => !c.id.startsWith('auto_')))
+    } else {
+      const newContact: ContactEntry = { ...form, id: crypto.randomUUID(), createdAt: new Date().toISOString() }
+      const updated = [newContact, ...contacts]
+      setContacts(updated)
+      saveContacts(updated.filter(c => !c.id.startsWith('auto_')))
+    }
+    setShowForm(false)
+    setEditContact(null)
+    setForm(emptyForm)
+    onRefresh()
+  }
+
+  const handleDelete = (id: string) => {
+    if (!confirm('Supprimer ce contact ?')) return
+    const updated = contacts.filter(c => c.id !== id)
+    setContacts(updated)
+    saveContacts(updated.filter(c => !c.id.startsWith('auto_')))
+    onRefresh()
+  }
+
+  const inputCls = 'w-full border-b border-gold/15 bg-transparent py-2 text-sm text-light placeholder:text-light/25 focus:outline-none focus:border-gold/50 transition-colors'
+  const labelCls = 'text-[10px] font-medium text-light/40 tracking-widest uppercase block mb-1.5'
+
+  return (
+    <div className="flex flex-col gap-6">
+      {/* En-tête */}
+      <div className="flex items-start justify-between gap-4 flex-wrap">
+        <div>
+          <p className="text-xs font-medium tracking-[0.2em] uppercase text-light/40 mb-2">Répertoire</p>
+          <h2 className="font-serif text-2xl text-light">Contacts clients</h2>
+          <p className="text-xs text-light/35 mt-1">Coordonnées, références dossiers et historique</p>
+        </div>
+        <button onClick={openNew}
+          className="flex items-center gap-2 text-xs font-medium bg-gold text-dark-bg px-4 py-2.5 hover:bg-gold/90 transition-colors">
+          <UserPlus size={13} strokeWidth={1.5} /> Ajouter un contact
+        </button>
+      </div>
+
+      {/* Formulaire ajout / édition */}
+      {showForm && (
+        <div className="border border-gold/20 bg-dark-surface p-6 flex flex-col gap-5">
+          <div className="flex items-center justify-between">
+            <p className="text-sm font-semibold text-light">{editContact ? 'Modifier le contact' : 'Nouveau contact'}</p>
+            <button onClick={() => setShowForm(false)} className="text-light/30 hover:text-light transition-colors"><X size={14} strokeWidth={1.5} /></button>
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            {/* Nom */}
+            <div>
+              <label className={labelCls}>Nom complet / Raison sociale *</label>
+              <input type="text" value={form.nom} onChange={e => setForm(f => ({ ...f, nom: e.target.value }))}
+                placeholder="Ahmed Ben Ali" className={inputCls} />
+            </div>
+            {/* Société */}
+            <div>
+              <label className={labelCls}>Société <span className="normal-case text-light/30">(optionnel)</span></label>
+              <input type="text" value={form.societe} onChange={e => setForm(f => ({ ...f, societe: e.target.value }))}
+                placeholder="Startup Tunisie SARL" className={inputCls} />
+            </div>
+            {/* Email */}
+            <div>
+              <label className={labelCls}>
+                <AtSign size={10} className="inline mr-1 -mt-0.5" />
+                Email
+              </label>
+              <input type="email" value={form.email} onChange={e => setForm(f => ({ ...f, email: e.target.value }))}
+                placeholder="client@entreprise.com" className={inputCls} />
+            </div>
+            {/* Téléphone */}
+            <div>
+              <label className={labelCls}>
+                <Phone size={10} className="inline mr-1 -mt-0.5" />
+                Téléphone
+              </label>
+              <input type="tel" value={form.telephone} onChange={e => setForm(f => ({ ...f, telephone: e.target.value }))}
+                placeholder="+216 XX XXX XXX" className={inputCls} />
+            </div>
+            {/* Adresse */}
+            <div className="sm:col-span-2">
+              <label className={labelCls}>
+                <MapPin size={10} className="inline mr-1 -mt-0.5" />
+                Adresse
+              </label>
+              <input type="text" value={form.adresse} onChange={e => setForm(f => ({ ...f, adresse: e.target.value }))}
+                placeholder="Rue, ville, code postal" className={inputCls} />
+            </div>
+            {/* Référence dossier */}
+            <div className="sm:col-span-2">
+              <label className={labelCls}>
+                <FolderOpen size={10} className="inline mr-1 -mt-0.5" />
+                Référence dossier(s)
+              </label>
+              <input type="text" value={form.dossierRef} onChange={e => setForm(f => ({ ...f, dossierRef: e.target.value }))}
+                placeholder="Ex : DOS-2026-001 · Levée de fonds Série A" className={inputCls} />
+            </div>
+            {/* Notes */}
+            <div className="sm:col-span-2">
+              <label className={labelCls}>Notes internes</label>
+              <input type="text" value={form.notes} onChange={e => setForm(f => ({ ...f, notes: e.target.value }))}
+                placeholder="Informations complémentaires…" className={inputCls} />
+            </div>
+          </div>
+
+          <div className="flex gap-3">
+            <button onClick={handleSave} disabled={!form.nom.trim()}
+              className="flex items-center gap-2 bg-gold text-dark-bg text-xs font-medium px-5 py-2.5 hover:bg-gold/90 transition-colors disabled:opacity-40">
+              <Save size={12} strokeWidth={1.5} /> {editContact ? 'Mettre à jour' : 'Enregistrer'}
+            </button>
+            <button onClick={() => setShowForm(false)} className="text-xs text-light/40 hover:text-light transition-colors">Annuler</button>
+          </div>
+        </div>
+      )}
+
+      {/* Barre de recherche */}
+      <div className="relative">
+        <Search size={14} strokeWidth={1.5} className="absolute left-3 top-1/2 -translate-y-1/2 text-light/30" />
+        <input type="text" value={search} onChange={e => setSearch(e.target.value)}
+          placeholder="Rechercher par nom, email, téléphone, dossier…"
+          className="w-full border border-gold/15 bg-transparent pl-9 pr-4 py-2.5 text-sm text-light placeholder:text-light/20 focus:outline-none focus:border-gold transition-colors" />
+      </div>
+
+      {/* Compteur */}
+      <p className="text-xs text-light/35">{filtered.length} contact{filtered.length > 1 ? 's' : ''}</p>
+
+      {/* Liste */}
+      {filtered.length === 0 ? (
+        <div className="border border-gold/10 py-16 flex flex-col items-center gap-4">
+          <BookUser size={32} strokeWidth={1} className="text-light/15" />
+          <div className="text-center px-6">
+            <p className="text-sm font-medium text-light/40 mb-1">Aucun contact</p>
+            <p className="text-xs text-light/25 leading-relaxed max-w-xs">
+              Les clients enregistrés apparaissent automatiquement. Ajoutez des contacts manuellement pour les clients externes.
+            </p>
+          </div>
+        </div>
+      ) : (
+        <div className="flex flex-col gap-px bg-gold/8">
+          {filtered.map(contact => (
+            <div key={contact.id} className="bg-dark-surface px-4 sm:px-6 py-5 flex items-start gap-4 hover:bg-dark-card transition-colors group">
+              {/* Avatar initiales */}
+              <div className="w-9 h-9 bg-dark-bg border border-gold/15 flex items-center justify-center flex-none mt-0.5">
+                <span className="text-xs font-semibold text-light/50">
+                  {contact.nom.split(' ').map(n => n[0]).slice(0, 2).join('').toUpperCase()}
+                </span>
+              </div>
+
+              <div className="flex-1 min-w-0">
+                {/* Nom + Société */}
+                <div className="flex items-center gap-2 flex-wrap mb-1">
+                  <p className="text-sm font-semibold text-light">{contact.nom}</p>
+                  {contact.id.startsWith('auto_') && (
+                    <span className="text-[9px] font-medium text-blue-400/70 border border-blue-400/20 px-1.5 py-0.5 tracking-widest uppercase">Enregistré</span>
+                  )}
+                  {!contact.id.startsWith('auto_') && !contact.clientId && (
+                    <span className="text-[9px] font-medium text-gold/60 border border-gold/20 px-1.5 py-0.5 tracking-widest uppercase">Manuel</span>
+                  )}
+                </div>
+                {contact.societe && (
+                  <p className="text-xs text-light/45 mb-2 flex items-center gap-1">
+                    <Building2 size={10} strokeWidth={1.5} className="text-light/25 flex-none" /> {contact.societe}
+                  </p>
+                )}
+
+                {/* Coordonnées */}
+                <div className="flex flex-col gap-1.5">
+                  {contact.email && (
+                    <a href={`mailto:${contact.email}`}
+                      className="flex items-center gap-2 text-xs text-light/55 hover:text-gold transition-colors w-fit">
+                      <AtSign size={11} strokeWidth={1.5} className="text-light/30 flex-none" />
+                      {contact.email}
+                    </a>
+                  )}
+                  {contact.telephone && (
+                    <a href={`tel:${contact.telephone}`}
+                      className="flex items-center gap-2 text-xs text-light/55 hover:text-gold transition-colors w-fit">
+                      <Phone size={11} strokeWidth={1.5} className="text-light/30 flex-none" />
+                      {contact.telephone}
+                    </a>
+                  )}
+                  {contact.adresse && (
+                    <p className="flex items-start gap-2 text-xs text-light/40">
+                      <MapPin size={11} strokeWidth={1.5} className="text-light/25 flex-none mt-0.5" />
+                      {contact.adresse}
+                    </p>
+                  )}
+                  {contact.dossierRef && (
+                    <p className="flex items-center gap-2 text-xs text-gold/55">
+                      <FolderOpen size={11} strokeWidth={1.5} className="text-gold/35 flex-none" />
+                      {contact.dossierRef}
+                    </p>
+                  )}
+                  {contact.notes && (
+                    <p className="text-xs text-light/30 italic mt-0.5">{contact.notes}</p>
+                  )}
+                </div>
+              </div>
+
+              {/* Actions */}
+              <div className="flex gap-1 flex-none opacity-0 group-hover:opacity-100 transition-opacity">
+                <button onClick={() => openEdit(contact)} title="Modifier"
+                  className="text-light/30 hover:text-light p-1.5 border border-gold/10 hover:border-gold/30 transition-colors">
+                  <Pencil size={12} strokeWidth={1.5} />
+                </button>
+                {contact.email && (
+                  <a href={`mailto:${contact.email}`} title="Envoyer un email"
+                    className="text-light/30 hover:text-gold p-1.5 border border-gold/10 hover:border-gold/30 transition-colors inline-flex items-center">
+                    <Mail size={12} strokeWidth={1.5} />
+                  </a>
+                )}
+                <button onClick={() => handleDelete(contact.id)} title="Supprimer"
+                  className="text-light/20 hover:text-red-500 p-1.5 border border-gold/10 hover:border-red-500/30 transition-colors">
+                  <Trash2 size={12} strokeWidth={1.5} />
+                </button>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  )
+}
+
 // ─── Admin Page ───────────────────────────────────────────────────────────────
 
 const navItems = [
   { id: 'overview', label: "Vue d'ensemble", icon: LayoutDashboard },
   { id: 'clients', label: 'Clients', icon: Users },
+  { id: 'contacts', label: 'Contacts', icon: BookUser },
   { id: 'documents', label: 'Documents', icon: FileUp },
   { id: 'agenda', label: 'Agenda', icon: CalendarDays },
   { id: 'facturation', label: 'Facturation', icon: Receipt },
@@ -1757,6 +2087,7 @@ export default function AdminPage() {
               onRefresh={refresh}
             />
           )}
+          {tab === 'contacts' && <ContactsAdmin clients={clients} onRefresh={refresh} />}
           {tab === 'documents' && <AllDocuments clients={clients} onRefresh={refresh} />}
           {tab === 'agenda' && <AgendaAdmin clients={clients} onRefresh={refresh} />}
           {tab === 'facturation' && <AllInvoicesAdmin clients={clients} onRefresh={refresh} />}

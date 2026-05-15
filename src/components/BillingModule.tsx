@@ -23,6 +23,8 @@ export interface Invoice {
   number: string
   clientId: string
   clientName?: string        // nom du client (affiché sur la facture)
+  clientEmail?: string       // email du client (utilisé pour l'envoi de facture)
+  clientPhone?: string       // téléphone du client
   clientMF?: string          // matricule fiscal du client
   clientAddress?: string     // adresse du client
   dossierId?: string

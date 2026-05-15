@@ -9,8 +9,11 @@ import {
   Download, Trash2, CheckCircle2, Clock, Circle, Search,
   FolderOpen, ArrowLeft, FileText, File as FileIcon, AlertCircle,
   CalendarDays, Plus, X, Menu, Receipt, Pencil, Mail, CheckCircle,
-  Phone, MapPin, BookUser, AtSign, Building2, Save, UserPlus
+  Phone, MapPin, BookUser, AtSign, Building2, Save, UserPlus,
+  Scale, ScrollText, ChevronDown, ChevronUp, Eye, EyeOff,
+  FilePlus, GripVertical, BookOpen, Shield
 } from 'lucide-react'
+import { RAPPORT_TYPES, type RapportData, type RapportSection, type RapportTypeId, downloadRapportPdf } from '../utils/rapportPdf'
 import { Invoice, computeAmounts, fmtAmount } from '../components/BillingModule'
 
 // ─── Types ────────────────────────────────────────────────────────────────────
@@ -1669,6 +1672,583 @@ function AgendaAdmin({ clients, onRefresh }: { clients: ClientData[]; onRefresh:
   )
 }
 
+// ─── Rapports Juridiques Admin ────────────────────────────────────────────────
+
+const RAPPORTS_KEY = 'avocat_rapports'
+
+function getRapports(): RapportData[] {
+  try { return JSON.parse(localStorage.getItem(RAPPORTS_KEY) ?? '[]') }
+  catch { return [] }
+}
+function saveRapports(list: RapportData[]) {
+  localStorage.setItem(RAPPORTS_KEY, JSON.stringify(list))
+}
+
+function nextRef(type: RapportTypeId, existing: RapportData[]): string {
+  const prefix = RAPPORT_TYPES.find(t => t.id === type)?.prefix ?? 'DOC'
+  const year = new Date().getFullYear()
+  const same = existing.filter(r => r.reference.startsWith(`${prefix}-${year}-`))
+  const next = (same.length + 1).toString().padStart(3, '0')
+  return `${prefix}-${year}-${next}`
+}
+
+const TYPE_ICONS: Record<string, React.ElementType> = {
+  rapport:         FileText,
+  avis:            Scale,
+  memorandum:      ScrollText,
+  opinion_fiscale: Shield,
+  note_juridique:  BookOpen,
+  consultation:    BookUser,
+}
+
+// ── Éditeur de section ───────────────────────────────────────────────────────
+function SectionEditor({
+  section, index, total,
+  onChange, onDelete, onMoveUp, onMoveDown,
+}: {
+  section: RapportSection; index: number; total: number
+  onChange: (s: RapportSection) => void
+  onDelete: () => void
+  onMoveUp: () => void
+  onMoveDown: () => void
+}) {
+  const [open, setOpen] = useState(true)
+  const labelCls = 'text-[10px] font-medium text-light/40 tracking-widest uppercase block mb-1.5'
+
+  return (
+    <div className="border border-gold/15 bg-dark-surface">
+      {/* En-tête section */}
+      <div className="flex items-center gap-2 px-4 py-3 border-b border-gold/10">
+        <div className="flex flex-col gap-0.5 flex-none">
+          <button onClick={onMoveUp} disabled={index === 0} className="text-light/20 hover:text-light disabled:opacity-20 transition-colors"><ChevronUp size={12} /></button>
+          <button onClick={onMoveDown} disabled={index === total - 1} className="text-light/20 hover:text-light disabled:opacity-20 transition-colors"><ChevronDown size={12} /></button>
+        </div>
+        <GripVertical size={14} strokeWidth={1.5} className="text-light/20 flex-none" />
+        <span className="text-[10px] font-bold text-light/30 tracking-widest uppercase flex-none w-5">{index + 1}</span>
+        <input
+          type="text"
+          value={section.titre}
+          onChange={e => onChange({ ...section, titre: e.target.value })}
+          placeholder="Titre de la section…"
+          className="flex-1 bg-transparent text-sm font-semibold text-light placeholder:text-light/20 focus:outline-none"
+        />
+        <button onClick={() => setOpen(o => !o)} className="text-light/30 hover:text-light transition-colors p-1">
+          {open ? <ChevronUp size={13} /> : <ChevronDown size={13} />}
+        </button>
+        <button onClick={onDelete} className="text-light/20 hover:text-red-500 transition-colors p-1">
+          <Trash2 size={12} strokeWidth={1.5} />
+        </button>
+      </div>
+      {/* Contenu section */}
+      {open && (
+        <div className="px-4 py-3">
+          <label className={labelCls}>Contenu</label>
+          <textarea
+            value={section.contenu}
+            onChange={e => onChange({ ...section, contenu: e.target.value })}
+            placeholder="Développez votre analyse juridique ici…&#10;&#10;Citez les textes de loi, la jurisprudence, les références réglementaires."
+            rows={6}
+            className="w-full border border-gold/10 bg-dark-bg text-sm text-light/80 leading-relaxed placeholder:text-light/20 focus:outline-none focus:border-gold/30 p-3 resize-y transition-colors"
+          />
+          <p className="text-[10px] text-light/25 mt-1">{section.contenu.length} caractères</p>
+        </div>
+      )}
+    </div>
+  )
+}
+
+// ── Formulaire principal ─────────────────────────────────────────────────────
+function RapportForm({
+  initial, clients,
+  onSave, onCancel,
+}: {
+  initial?: RapportData
+  clients: ClientData[]
+  onSave: (r: RapportData) => void
+  onCancel: () => void
+}) {
+  const existing = getRapports()
+  const defaultType: RapportTypeId = 'rapport'
+  const [type,          setType]          = useState<RapportTypeId>(initial?.type ?? defaultType)
+  const [titre,         setTitre]         = useState(initial?.titre ?? '')
+  const [objet,         setObjet]         = useState(initial?.objet ?? '')
+  const [clientNom,     setClientNom]     = useState(initial?.clientNom ?? '')
+  const [clientRef,     setClientRef]     = useState(initial?.clientRef ?? '')
+  const [clientMF,      setClientMF]      = useState(initial?.clientMF ?? '')
+  const [dateDoc,       setDateDoc]       = useState(initial?.dateDoc ?? new Date().toISOString().slice(0, 10))
+  const [confidentiel,  setConfidentiel]  = useState(initial?.confidentiel ?? false)
+  const [sections,      setSections]      = useState<RapportSection[]>(
+    initial?.sections ?? [{ titre: '', contenu: '' }]
+  )
+  const [conclusion,    setConclusion]    = useState(initial?.conclusion ?? '')
+  const [reservations,  setReservations]  = useState(initial?.reservations ?? '')
+  const [clientMode,    setClientMode]    = useState<'select' | 'manual'>(
+    initial?.clientNom ? 'manual' : 'select'
+  )
+
+  const reference = initial?.reference ?? nextRef(type, existing)
+
+  // Synchroniser clientNom si sélection client existant
+  const handleSelectClient = (e: React.ChangeEvent<HTMLSelectElement>) => {
+    const found = clients.find(c => c.user.id === e.target.value)
+    if (found) {
+      setClientNom(found.user.name)
+      setClientRef(found.dossiers[0]?.titre ?? '')
+    }
+  }
+
+  const addSection = () => setSections(s => [...s, { titre: '', contenu: '' }])
+  const updateSection = (i: number, s: RapportSection) => setSections(prev => prev.map((sec, idx) => idx === i ? s : sec))
+  const deleteSection = (i: number) => setSections(prev => prev.filter((_, idx) => idx !== i))
+  const moveSection = (i: number, dir: -1 | 1) => {
+    setSections(prev => {
+      const next = [...prev]
+      const j = i + dir
+      if (j < 0 || j >= next.length) return prev
+      ;[next[i], next[j]] = [next[j], next[i]]
+      return next
+    })
+  }
+
+  const handleSave = () => {
+    if (!titre.trim() || !clientNom.trim()) return
+    const rapport: RapportData = {
+      id:          initial?.id ?? crypto.randomUUID(),
+      type, reference, titre, objet, clientNom, clientRef, clientMF,
+      dateDoc, confidentiel,
+      sections:    sections.filter(s => s.titre || s.contenu),
+      conclusion:  conclusion || undefined,
+      reservations: reservations || undefined,
+      createdAt:   initial?.createdAt ?? new Date().toISOString(),
+    }
+    onSave(rapport)
+  }
+
+  const inputCls = 'w-full border-b border-gold/15 bg-transparent py-2 text-sm text-light placeholder:text-light/25 focus:outline-none focus:border-gold/50 transition-colors'
+  const labelCls = 'text-[10px] font-medium text-light/40 tracking-widest uppercase block mb-1.5'
+
+  return (
+    <div className="flex flex-col gap-6">
+      {/* Navigation retour */}
+      <button onClick={onCancel} className="flex items-center gap-2 text-xs text-light/40 hover:text-light transition-colors w-fit">
+        <ArrowLeft size={13} strokeWidth={1.5} /> Retour à la liste
+      </button>
+
+      {/* Titre page */}
+      <div className="flex items-start justify-between gap-4 flex-wrap">
+        <div>
+          <p className="text-xs font-medium tracking-[0.2em] uppercase text-light/40 mb-2">
+            {initial ? 'Modifier le document' : 'Nouveau document'}
+          </p>
+          <h2 className="font-serif text-2xl text-light">
+            {initial ? initial.reference : reference}
+          </h2>
+        </div>
+        {/* Confidentialité toggle */}
+        <button
+          onClick={() => setConfidentiel(c => !c)}
+          className={`flex items-center gap-2 text-xs font-medium px-4 py-2.5 border transition-colors ${
+            confidentiel
+              ? 'border-red-500/40 bg-red-500/10 text-red-400'
+              : 'border-gold/20 text-light/40 hover:text-light hover:border-gold/40'
+          }`}
+        >
+          {confidentiel ? <EyeOff size={12} strokeWidth={1.5} /> : <Eye size={12} strokeWidth={1.5} />}
+          {confidentiel ? 'Confidentiel' : 'Non confidentiel'}
+        </button>
+      </div>
+
+      {/* ── Section 1 : Type + Identification ─────────────────────────────── */}
+      <div className="border border-gold/15 bg-dark-surface p-6">
+        <p className="text-[10px] font-bold text-light/30 tracking-[0.25em] uppercase mb-5">Identification du document</p>
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
+
+          {/* Type de document */}
+          <div className="sm:col-span-2">
+            <label className={labelCls}>Type de document</label>
+            <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+              {RAPPORT_TYPES.map(t => {
+                const Icon = TYPE_ICONS[t.id] ?? FileText
+                return (
+                  <button key={t.id} onClick={() => setType(t.id)}
+                    className={`flex items-center gap-2.5 px-3 py-2.5 border text-xs font-medium transition-colors text-left ${
+                      type === t.id
+                        ? 'border-gold bg-gold/10 text-light'
+                        : 'border-gold/10 text-light/40 hover:border-gold/30 hover:text-light/70'
+                    }`}>
+                    <Icon size={13} strokeWidth={1.5} className={type === t.id ? 'text-gold' : 'text-light/25'} />
+                    {t.label}
+                  </button>
+                )
+              })}
+            </div>
+          </div>
+
+          {/* Référence (auto) */}
+          <div>
+            <label className={labelCls}>Référence (auto)</label>
+            <p className="py-2 text-sm font-mono text-gold/80 border-b border-gold/10">{reference}</p>
+          </div>
+
+          {/* Date */}
+          <div>
+            <label className={labelCls}>Date du document</label>
+            <input type="date" value={dateDoc} onChange={e => setDateDoc(e.target.value)} className={inputCls} />
+          </div>
+
+          {/* Titre */}
+          <div className="sm:col-span-2">
+            <label className={labelCls}>Titre *</label>
+            <input type="text" value={titre} onChange={e => setTitre(e.target.value)}
+              placeholder="Ex : Analyse juridique de la restructuration du capital social" className={inputCls} />
+          </div>
+
+          {/* Objet */}
+          <div className="sm:col-span-2">
+            <label className={labelCls}>Objet / Résumé</label>
+            <input type="text" value={objet} onChange={e => setObjet(e.target.value)}
+              placeholder="Synthèse de l'objet de ce document en une phrase" className={inputCls} />
+          </div>
+        </div>
+      </div>
+
+      {/* ── Section 2 : Client + Dossier ──────────────────────────────────── */}
+      <div className="border border-gold/15 bg-dark-surface p-6">
+        <p className="text-[10px] font-bold text-light/30 tracking-[0.25em] uppercase mb-5">Destinataire</p>
+
+        <div className="flex gap-3 mb-5">
+          {(['select', 'manual'] as const).map(m => (
+            <button key={m} onClick={() => setClientMode(m)}
+              className={`text-xs px-3 py-1.5 border transition-colors ${
+                clientMode === m
+                  ? 'border-gold/40 text-light bg-gold/5'
+                  : 'border-gold/10 text-light/30 hover:text-light/60'
+              }`}>
+              {m === 'select' ? 'Client enregistré' : 'Saisie manuelle'}
+            </button>
+          ))}
+        </div>
+
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
+          {clientMode === 'select' ? (
+            <div>
+              <label className={labelCls}>Choisir un client</label>
+              <select onChange={handleSelectClient} className={`${inputCls} bg-dark-surface`}>
+                <option value="">— Sélectionner —</option>
+                {clients.map(c => (
+                  <option key={c.user.id} value={c.user.id}>{c.user.name} {c.user.company ? `— ${c.user.company}` : ''}</option>
+                ))}
+              </select>
+            </div>
+          ) : (
+            <div>
+              <label className={labelCls}>Nom du destinataire *</label>
+              <input type="text" value={clientNom} onChange={e => setClientNom(e.target.value)}
+                placeholder="Entreprise ou nom complet" className={inputCls} />
+            </div>
+          )}
+
+          <div>
+            <label className={labelCls}>Référence dossier</label>
+            <input type="text" value={clientRef} onChange={e => setClientRef(e.target.value)}
+              placeholder="Ex : DOS-2026-001" className={inputCls} />
+          </div>
+
+          <div>
+            <label className={labelCls}>Matricule fiscal client <span className="normal-case text-light/25">(optionnel)</span></label>
+            <input type="text" value={clientMF} onChange={e => setClientMF(e.target.value)}
+              placeholder="000/X/X/000000/X" className={inputCls} />
+          </div>
+        </div>
+      </div>
+
+      {/* ── Section 3 : Corps du document ─────────────────────────────────── */}
+      <div className="border border-gold/15 bg-dark-surface p-6">
+        <div className="flex items-center justify-between mb-5">
+          <p className="text-[10px] font-bold text-light/30 tracking-[0.25em] uppercase">
+            Sections du document <span className="text-light/20">({sections.length})</span>
+          </p>
+          <button onClick={addSection}
+            className="flex items-center gap-2 text-xs text-gold/70 hover:text-gold border border-gold/20 hover:border-gold/40 px-3 py-1.5 transition-colors">
+            <FilePlus size={12} strokeWidth={1.5} /> Ajouter une section
+          </button>
+        </div>
+
+        <div className="flex flex-col gap-3">
+          {sections.map((sec, i) => (
+            <SectionEditor key={i} section={sec} index={i} total={sections.length}
+              onChange={s => updateSection(i, s)}
+              onDelete={() => deleteSection(i)}
+              onMoveUp={() => moveSection(i, -1)}
+              onMoveDown={() => moveSection(i, 1)}
+            />
+          ))}
+          {sections.length === 0 && (
+            <button onClick={addSection}
+              className="border border-dashed border-gold/15 py-8 text-xs text-light/25 hover:text-light/50 hover:border-gold/30 transition-colors flex flex-col items-center gap-2">
+              <FilePlus size={20} strokeWidth={1} /> Cliquez pour ajouter la première section
+            </button>
+          )}
+        </div>
+      </div>
+
+      {/* ── Section 4 : Conclusion + Réserves ─────────────────────────────── */}
+      <div className="border border-gold/15 bg-dark-surface p-6">
+        <p className="text-[10px] font-bold text-light/30 tracking-[0.25em] uppercase mb-5">Conclusion & Réserves</p>
+        <div className="flex flex-col gap-5">
+          <div>
+            <label className={labelCls}>Conclusion</label>
+            <textarea value={conclusion} onChange={e => setConclusion(e.target.value)}
+              placeholder="Synthèse finale de l'analyse, recommandations, conclusions juridiques…"
+              rows={4}
+              className="w-full border border-gold/10 bg-dark-bg text-sm text-light/80 leading-relaxed placeholder:text-light/20 focus:outline-none focus:border-gold/30 p-3 resize-y transition-colors" />
+          </div>
+          <div>
+            <label className={labelCls}>Réserves et limites <span className="normal-case text-light/25">(optionnel)</span></label>
+            <textarea value={reservations} onChange={e => setReservations(e.target.value)}
+              placeholder="Le présent document est établi sur la base des informations communiquées. Toute modification substantielle des faits ou de la législation applicable pourrait en modifier les conclusions…"
+              rows={3}
+              className="w-full border border-gold/10 bg-dark-bg text-sm text-light/80 leading-relaxed placeholder:text-light/20 focus:outline-none focus:border-gold/30 p-3 resize-y transition-colors" />
+          </div>
+        </div>
+      </div>
+
+      {/* Boutons */}
+      <div className="flex gap-3 flex-wrap">
+        <button onClick={handleSave} disabled={!titre.trim() || !clientNom.trim()}
+          className="flex items-center gap-2 bg-gold text-dark-bg text-xs font-medium px-6 py-3 hover:bg-gold/90 transition-colors disabled:opacity-40">
+          <Save size={13} strokeWidth={1.5} /> Enregistrer le document
+        </button>
+        <button onClick={onCancel} className="text-xs text-light/35 hover:text-light transition-colors px-4 py-3">
+          Annuler
+        </button>
+      </div>
+    </div>
+  )
+}
+
+// ── Liste des rapports ────────────────────────────────────────────────────────
+function RapportsAdmin({ clients, onRefresh }: { clients: ClientData[]; onRefresh: () => void }) {
+  const [rapports, setRapports] = useState<RapportData[]>(getRapports)
+  const [view,     setView]     = useState<'list' | 'form' | 'preview'>('list')
+  const [editing,  setEditing]  = useState<RapportData | null>(null)
+  const [preview,  setPreview]  = useState<RapportData | null>(null)
+  const [search,   setSearch]   = useState('')
+  const [typeFilter, setTypeFilter] = useState<RapportTypeId | 'all'>('all')
+  const [downloading, setDownloading] = useState<string | null>(null)
+
+  const filtered = useMemo(() => {
+    const q = search.toLowerCase()
+    return rapports
+      .filter(r => typeFilter === 'all' || r.type === typeFilter)
+      .filter(r =>
+        r.titre.toLowerCase().includes(q) ||
+        r.clientNom.toLowerCase().includes(q) ||
+        r.reference.toLowerCase().includes(q)
+      )
+      .sort((a, b) => b.createdAt.localeCompare(a.createdAt))
+  }, [rapports, search, typeFilter])
+
+  const handleSave = (rapport: RapportData) => {
+    const updated = rapports.some(r => r.id === rapport.id)
+      ? rapports.map(r => r.id === rapport.id ? rapport : r)
+      : [rapport, ...rapports]
+    setRapports(updated)
+    saveRapports(updated)
+    setView('list')
+    setEditing(null)
+    onRefresh()
+  }
+
+  const handleDelete = (id: string) => {
+    if (!confirm('Supprimer ce document définitivement ?')) return
+    const updated = rapports.filter(r => r.id !== id)
+    setRapports(updated)
+    saveRapports(updated)
+    onRefresh()
+  }
+
+  const handleDownload = async (rapport: RapportData) => {
+    setDownloading(rapport.id)
+    try { await downloadRapportPdf(rapport) }
+    finally { setDownloading(null) }
+  }
+
+  if (view === 'form') {
+    return (
+      <RapportForm
+        initial={editing ?? undefined}
+        clients={clients}
+        onSave={handleSave}
+        onCancel={() => { setView('list'); setEditing(null) }}
+      />
+    )
+  }
+
+  if (view === 'preview' && preview) {
+    return (
+      <div className="flex flex-col gap-6">
+        <button onClick={() => { setView('list'); setPreview(null) }}
+          className="flex items-center gap-2 text-xs text-light/40 hover:text-light transition-colors w-fit">
+          <ArrowLeft size={13} strokeWidth={1.5} /> Retour
+        </button>
+        {/* Fiche récap avant PDF */}
+        <div className="border border-gold/15 bg-dark-surface p-6 flex flex-col gap-4">
+          <div className="flex items-start justify-between gap-4">
+            <div>
+              <p className="text-[10px] text-gold/60 tracking-widest uppercase mb-1">{preview.reference}</p>
+              <h2 className="font-serif text-xl text-light">{preview.titre}</h2>
+              <p className="text-xs text-light/40 mt-1">{preview.objet}</p>
+            </div>
+            {preview.confidentiel && (
+              <span className="text-[9px] font-bold tracking-widest uppercase text-red-400 border border-red-500/30 px-2 py-1">CONFIDENTIEL</span>
+            )}
+          </div>
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 text-xs">
+            <div><p className="text-light/30 mb-1">Destinataire</p><p className="text-light font-medium">{preview.clientNom}</p></div>
+            <div><p className="text-light/30 mb-1">Dossier</p><p className="text-light font-medium">{preview.clientRef || '—'}</p></div>
+            <div><p className="text-light/30 mb-1">Date</p><p className="text-light font-medium">{new Date(preview.dateDoc).toLocaleDateString('fr-FR')}</p></div>
+            <div><p className="text-light/30 mb-1">Sections</p><p className="text-light font-medium">{preview.sections.length}</p></div>
+          </div>
+          <div className="flex gap-3 pt-2 border-t border-gold/10">
+            <button onClick={() => handleDownload(preview)} disabled={downloading === preview.id}
+              className="flex items-center gap-2 bg-gold text-dark-bg text-xs font-medium px-5 py-2.5 hover:bg-gold/90 transition-colors disabled:opacity-50">
+              {downloading === preview.id
+                ? <><Circle size={12} className="animate-spin" /> Génération…</>
+                : <><Download size={12} strokeWidth={1.5} /> Télécharger PDF</>}
+            </button>
+            <button onClick={() => { setEditing(preview); setView('form') }}
+              className="flex items-center gap-2 text-xs border border-gold/20 text-light/50 hover:text-light hover:border-gold/40 px-4 py-2.5 transition-colors">
+              <Pencil size={12} strokeWidth={1.5} /> Modifier
+            </button>
+          </div>
+        </div>
+      </div>
+    )
+  }
+
+  // ── Vue liste ───────────────────────────────────────────────────────────────
+  return (
+    <div className="flex flex-col gap-6">
+      {/* En-tête */}
+      <div className="flex items-start justify-between gap-4 flex-wrap">
+        <div>
+          <p className="text-xs font-medium tracking-[0.2em] uppercase text-light/40 mb-2">Documents juridiques</p>
+          <h2 className="font-serif text-2xl text-light">Rapports & Avis</h2>
+          <p className="text-xs text-light/35 mt-1">Papier à lettres complet — cachet fiscal MF : 000/P/A/834881/F</p>
+        </div>
+        <button onClick={() => { setEditing(null); setView('form') }}
+          className="flex items-center gap-2 text-xs font-medium bg-gold text-dark-bg px-4 py-2.5 hover:bg-gold/90 transition-colors">
+          <Plus size={13} strokeWidth={1.5} /> Nouveau document
+        </button>
+      </div>
+
+      {/* Filtres type */}
+      <div className="flex gap-2 flex-wrap">
+        <button onClick={() => setTypeFilter('all')}
+          className={`text-xs px-3 py-1.5 border transition-colors ${typeFilter === 'all' ? 'border-gold/50 text-light bg-gold/8' : 'border-gold/10 text-light/30 hover:text-light/60'}`}>
+          Tous
+        </button>
+        {RAPPORT_TYPES.map(t => (
+          <button key={t.id} onClick={() => setTypeFilter(t.id)}
+            className={`text-xs px-3 py-1.5 border transition-colors ${typeFilter === t.id ? 'border-gold/50 text-light bg-gold/8' : 'border-gold/10 text-light/30 hover:text-light/60'}`}>
+            {t.label}
+          </button>
+        ))}
+      </div>
+
+      {/* Recherche */}
+      <div className="relative">
+        <Search size={14} strokeWidth={1.5} className="absolute left-3 top-1/2 -translate-y-1/2 text-light/30" />
+        <input type="text" value={search} onChange={e => setSearch(e.target.value)}
+          placeholder="Rechercher par titre, client, référence…"
+          className="w-full border border-gold/15 bg-transparent pl-9 pr-4 py-2.5 text-sm text-light placeholder:text-light/20 focus:outline-none focus:border-gold transition-colors" />
+      </div>
+
+      <p className="text-xs text-light/35">{filtered.length} document{filtered.length > 1 ? 's' : ''}</p>
+
+      {/* Liste */}
+      {filtered.length === 0 ? (
+        <div className="border border-gold/10 py-16 flex flex-col items-center gap-4">
+          <Scale size={32} strokeWidth={1} className="text-light/15" />
+          <div className="text-center px-6">
+            <p className="text-sm font-medium text-light/40 mb-1">Aucun document</p>
+            <p className="text-xs text-light/25 max-w-xs">Créez votre premier rapport juridique, avis ou mémorandum avec papier à lettres et cachet fiscal.</p>
+          </div>
+          <button onClick={() => { setEditing(null); setView('form') }}
+            className="flex items-center gap-2 text-xs bg-gold text-dark-bg px-4 py-2.5 hover:bg-gold/90 transition-colors">
+            <Plus size={13} strokeWidth={1.5} /> Nouveau document
+          </button>
+        </div>
+      ) : (
+        <div className="flex flex-col gap-px bg-gold/8">
+          {filtered.map(rapport => {
+            const Icon = TYPE_ICONS[rapport.type] ?? FileText
+            const typeLabel = RAPPORT_TYPES.find(t => t.id === rapport.type)?.label ?? rapport.type
+            return (
+              <div key={rapport.id}
+                className="bg-dark-surface px-4 sm:px-6 py-5 flex items-center gap-4 hover:bg-dark-card transition-colors group">
+                {/* Icône type */}
+                <div className="w-9 h-9 border border-gold/15 flex items-center justify-center flex-none bg-dark-bg">
+                  <Icon size={15} strokeWidth={1.5} className="text-gold/50" />
+                </div>
+
+                {/* Info principale */}
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center gap-2 flex-wrap mb-1">
+                    <p className="text-[9px] font-bold text-gold/50 tracking-widest uppercase">{typeLabel}</p>
+                    <span className="text-light/15 text-[9px]">·</span>
+                    <p className="text-[9px] text-light/30 font-mono">{rapport.reference}</p>
+                    {rapport.confidentiel && (
+                      <span className="text-[8px] font-bold text-red-400/70 border border-red-500/20 px-1.5 py-0.5 tracking-widest uppercase">Confidentiel</span>
+                    )}
+                  </div>
+                  <p className="text-sm font-medium text-light truncate">{rapport.titre}</p>
+                  <div className="flex items-center gap-3 mt-1">
+                    <p className="text-xs text-light/40">{rapport.clientNom}</p>
+                    {rapport.clientRef && (
+                      <>
+                        <span className="text-light/15 text-xs">·</span>
+                        <p className="text-xs text-light/30">{rapport.clientRef}</p>
+                      </>
+                    )}
+                    <span className="text-light/15 text-xs">·</span>
+                    <p className="text-xs text-light/30">{new Date(rapport.dateDoc).toLocaleDateString('fr-FR')}</p>
+                    <span className="text-light/15 text-xs">·</span>
+                    <p className="text-xs text-light/25">{rapport.sections.length} section{rapport.sections.length > 1 ? 's' : ''}</p>
+                  </div>
+                </div>
+
+                {/* Actions */}
+                <div className="flex gap-1 flex-none opacity-0 group-hover:opacity-100 transition-opacity">
+                  <button onClick={() => { setPreview(rapport); setView('preview') }} title="Aperçu"
+                    className="text-light/30 hover:text-light p-1.5 border border-gold/10 hover:border-gold/30 transition-colors">
+                    <Eye size={12} strokeWidth={1.5} />
+                  </button>
+                  <button onClick={() => handleDownload(rapport)} disabled={downloading === rapport.id} title="Télécharger PDF"
+                    className="text-light/30 hover:text-gold p-1.5 border border-gold/10 hover:border-gold/30 transition-colors disabled:opacity-40">
+                    {downloading === rapport.id
+                      ? <Circle size={12} className="animate-spin" />
+                      : <Download size={12} strokeWidth={1.5} />}
+                  </button>
+                  <button onClick={() => { setEditing(rapport); setView('form') }} title="Modifier"
+                    className="text-light/30 hover:text-light p-1.5 border border-gold/10 hover:border-gold/30 transition-colors">
+                    <Pencil size={12} strokeWidth={1.5} />
+                  </button>
+                  <button onClick={() => handleDelete(rapport.id)} title="Supprimer"
+                    className="text-light/20 hover:text-red-500 p-1.5 border border-gold/10 hover:border-red-500/30 transition-colors">
+                    <Trash2 size={12} strokeWidth={1.5} />
+                  </button>
+                </div>
+              </div>
+            )
+          })}
+        </div>
+      )}
+    </div>
+  )
+}
+
 // ─── Contacts Admin ───────────────────────────────────────────────────────────
 
 function getContacts(): ContactEntry[] {
@@ -1966,12 +2546,13 @@ function ContactsAdmin({ clients, onRefresh }: { clients: ClientData[]; onRefres
 // ─── Admin Page ───────────────────────────────────────────────────────────────
 
 const navItems = [
-  { id: 'overview', label: "Vue d'ensemble", icon: LayoutDashboard },
-  { id: 'clients', label: 'Clients', icon: Users },
-  { id: 'contacts', label: 'Contacts', icon: BookUser },
-  { id: 'documents', label: 'Documents', icon: FileUp },
-  { id: 'agenda', label: 'Agenda', icon: CalendarDays },
-  { id: 'facturation', label: 'Facturation', icon: Receipt },
+  { id: 'overview',   label: "Vue d'ensemble", icon: LayoutDashboard },
+  { id: 'clients',    label: 'Clients',         icon: Users },
+  { id: 'contacts',   label: 'Contacts',        icon: BookUser },
+  { id: 'documents',  label: 'Documents',       icon: FileUp },
+  { id: 'rapports',   label: 'Rapports',        icon: Scale },
+  { id: 'agenda',     label: 'Agenda',          icon: CalendarDays },
+  { id: 'facturation',label: 'Facturation',     icon: Receipt },
 ]
 
 export default function AdminPage() {
@@ -2149,6 +2730,7 @@ export default function AdminPage() {
           )}
           {tab === 'contacts' && <ContactsAdmin clients={clients} onRefresh={refresh} />}
           {tab === 'documents' && <AllDocuments clients={clients} onRefresh={refresh} />}
+          {tab === 'rapports' && <RapportsAdmin clients={clients} onRefresh={refresh} />}
           {tab === 'agenda' && <AgendaAdmin clients={clients} onRefresh={refresh} />}
           {tab === 'facturation' && <AllInvoicesAdmin clients={clients} onRefresh={refresh} />}
         </main>

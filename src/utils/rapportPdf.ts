@@ -357,41 +357,38 @@ function drawBody(doc: jsPDF, rapport: RapportData, startY: number, W: number, H
 
 // ── Générateur du cachet circulaire (Canvas → PNG → jsPDF) ───────────────────
 function buildStampCanvas(reference: string, dateDoc: string): HTMLCanvasElement {
-  const S = 600                    // taille canvas px
+  const S  = 500
   const canvas = document.createElement('canvas')
   canvas.width = S; canvas.height = S
   const ctx = canvas.getContext('2d')!
   const cx = S / 2, cy = S / 2
 
-  // Rayons (en px canvas)
-  const R    = 268   // bord extérieur
-  const R1   = 253   // bord intérieur du double anneau
-  const R2   = 238   // limite bande «MAÎTRE» / zone intérieure
-  const R3   = 180   // limite bande «AVOCAT» / zone centrale
-  const R4   = 165   // bord intérieur de la zone «AVOCAT»
-  const LINE = 52    // demi-hauteur des lignes de séparation (px depuis cy)
+  const NAVY   = '#0A192F'
+  const NAVYMD = '#1e3c6e'
+  const NAVYLT = '#4a7ab5'
+  const WHITE  = '#ffffff'
+  const CREAM  = '#d7e1f5'
 
-  const NAVY    = '#0A192F'
-  const NAVYMD  = '#1e3c6e'
-  const NAVYLT  = '#4a7ab5'
-  const WHITE   = '#ffffff'
-  const CREAM   = '#f2f5fb'
+  // Rayons
+  const R   = 230  // bord extérieur du cercle
+  const R1  = 216  // bord intérieur du double anneau
+  const RB  = 138  // bord intérieur des bandes navy (= bord extérieur zone blanche)
+  const LINE = 46  // demi-hauteur des lignes de séparation
 
   ctx.clearRect(0, 0, S, S)
 
   // ── Helper : arc band rempli ──────────────────────────────────────────────
+  // Fix clé : inner arc utilise le MÊME sens (ccw) que outer pour fermer correctement la bande
   function arcBand(rOut: number, rIn: number, a0: number, a1: number, color: string, ccw = false) {
     ctx.beginPath()
     ctx.arc(cx, cy, rOut, a0, a1, ccw)
-    ctx.arc(cx, cy, rIn,  a1, a0, !ccw)
+    ctx.arc(cx, cy, rIn,  a1, a0, ccw)   // même sens = ferme la bande correctement
     ctx.closePath()
     ctx.fillStyle = color
     ctx.fill()
   }
 
   // ── Helper : texte le long d'un arc ──────────────────────────────────────
-  // angle0..angle1 = canvas angles (0=droite, sens horaire positif en canvas y-bas)
-  // flip=true  → texte lisible depuis l'extérieur au bas de cercle
   function arcText(
     text: string, r: number,
     a0: number, a1: number,
@@ -399,135 +396,95 @@ function buildStampCanvas(reference: string, dateDoc: string): HTMLCanvasElement
     weight = 'bold', flip = false
   ) {
     ctx.save()
-    ctx.font = `${weight} ${size}px "Arial Narrow", Arial, Helvetica, sans-serif`
-    ctx.fillStyle = color
-    ctx.textBaseline = 'middle'
-    ctx.textAlign    = 'left'
+    const font = `${weight} ${size}px "Arial Narrow", Arial, Helvetica, sans-serif`
+    ctx.font = font; ctx.fillStyle = color; ctx.textBaseline = 'middle'
 
     const chars = text.split('')
-    const cw    = chars.map(c => ctx.measureText(c).width)
+    const cw    = chars.map(c => { ctx.font = font; return ctx.measureText(c).width })
     const total = cw.reduce((a, b) => a + b, 0)
     const circ  = 2 * Math.PI * r
-    const span  = a1 - a0                         // arc disponible (rad)
-    const need  = (total / circ) * 2 * Math.PI    // arc requis
+    const span  = a1 - a0
+    const sign  = span < 0 ? -1 : 1
+    const need  = (total / circ) * 2 * Math.PI * sign
 
-    let angle = a0 + (span - need) / 2            // centrer dans l'arc
+    let angle = a0 + (span - need) / 2
 
     for (let i = 0; i < chars.length; i++) {
-      const ca = (cw[i] / circ) * 2 * Math.PI
+      const ca  = (cw[i] / circ) * 2 * Math.PI * sign
       const mid = angle + ca / 2
-
       ctx.save()
       ctx.translate(cx, cy)
-      // rotation : mid + π/2 aligne tangentiellement (sens horaire = lecture normale)
-      ctx.rotate(flip ? mid - Math.PI / 2 : mid + Math.PI / 2)
-      ctx.translate(0, -r)
+      if (flip) {
+        ctx.rotate(mid - Math.PI / 2)
+        ctx.translate(0, r)
+      } else {
+        ctx.rotate(mid + Math.PI / 2)
+        ctx.translate(0, -r)
+      }
       ctx.fillText(chars[i], -cw[i] / 2, 0)
       ctx.restore()
-
       angle += ca
     }
     ctx.restore()
   }
 
-  // ═══════════════════════════════════════════════════════════════
-  // 1. Fond blanc complet du cercle
-  ctx.beginPath(); ctx.arc(cx, cy, R, 0, Math.PI*2); ctx.fillStyle = WHITE; ctx.fill()
-
-  // 2. Bande «MAÎTRE MOKADMI SAMI» (arc top, entre R2 et R)
-  //    Top arc : de π (9h) à 2π=0 (3h) en passant par 12h — anticlockwise=true
-  arcBand(R2, R * 0.01, Math.PI, 0, WHITE, true)   // reset fond haut
-  arcBand(R,  R2,        Math.PI, 0, NAVY,  true)   // bande navy top (9h → 3h par le haut)
-
-  // 3. Bande «AVOCAT AU BARREAU DE TUNIS» (arc top intérieur, entre R3 et R2)
-  //    Légèrement plus claire pour la distinction visuelle
-  arcBand(R2, R3, Math.PI, 0, NAVYMD, true)
-
-  // 4. Bande «BARREAU DE TUNIS» (arc bas, entre R3 et R)
-  //    Bottom arc : de 0 (3h) à π (9h) en passant par 6h — anticlockwise=false
-  arcBand(R, R3, 0, Math.PI, NAVY, false)
-
-  // 5. Zone centrale blanche
-  ctx.beginPath(); ctx.arc(cx, cy, R4, 0, Math.PI*2)
+  // ── 1. Fond blanc ─────────────────────────────────────────────────────────
+  ctx.beginPath(); ctx.arc(cx, cy, R, 0, Math.PI * 2)
   ctx.fillStyle = WHITE; ctx.fill()
 
-  // 6. Lignes de séparation (simples)
-  const lx0 = cx - Math.sqrt(R3*R3 - LINE*LINE) + 8
-  const lx1 = cx + Math.sqrt(R3*R3 - LINE*LINE) - 8
-  ;[1, -1].forEach(sign => {
+  // ── 2. Bande navy TOP — CCW (anticlockwise=true) = de π→0 par le haut ────
+  arcBand(R1, RB, Math.PI, 0, NAVY, true)
+
+  // ── 3. Bande navy BOTTOM — CW (anticlockwise=false) = de 0→π par le bas ──
+  arcBand(R1, RB, 0, Math.PI, NAVY, false)
+
+  // ── 4. Zone centrale blanche ───────────────────────────────────────────────
+  ctx.beginPath(); ctx.arc(cx, cy, RB, 0, Math.PI * 2)
+  ctx.fillStyle = WHITE; ctx.fill()
+
+  // ── 5. Lignes de séparation simples ───────────────────────────────────────
+  const lx0 = cx - Math.sqrt(RB * RB - LINE * LINE)
+  const lx1 = cx + Math.sqrt(RB * RB - LINE * LINE)
+  ;[-1, 1].forEach(sign => {
     const y = cy + sign * LINE
-    ctx.strokeStyle = NAVY; ctx.lineWidth = 2.5
+    ctx.strokeStyle = NAVY; ctx.lineWidth = 2.2
     ctx.beginPath(); ctx.moveTo(lx0, y); ctx.lineTo(lx1, y); ctx.stroke()
   })
 
-  // 7. Anneaux extérieurs (double cercle)
-  ctx.strokeStyle = NAVY
-  ctx.lineWidth = 6
-  ctx.beginPath(); ctx.arc(cx, cy, R, 0, Math.PI*2); ctx.stroke()
-  ctx.lineWidth = 2
-  ctx.beginPath(); ctx.arc(cx, cy, R1, 0, Math.PI*2); ctx.stroke()
-
-  // Cercle intérieur de séparation (simple)
+  // ── 6. Double anneau extérieur ────────────────────────────────────────────
+  ctx.strokeStyle = NAVY; ctx.lineWidth = 5.5
+  ctx.beginPath(); ctx.arc(cx, cy, R, 0, Math.PI * 2); ctx.stroke()
+  ctx.lineWidth = 1.8
+  ctx.beginPath(); ctx.arc(cx, cy, R1, 0, Math.PI * 2); ctx.stroke()
   ctx.lineWidth = 1.5
-  ctx.strokeStyle = NAVY
-  ctx.beginPath(); ctx.arc(cx, cy, R3, 0, Math.PI*2); ctx.stroke()
+  ctx.beginPath(); ctx.arc(cx, cy, RB, 0, Math.PI * 2); ctx.stroke()
 
-  // ─── 8. Textes arc ───────────────────────────────────────────────────────
+  // ── 7. Textes arc ─────────────────────────────────────────────────────────
+  const T0 = Math.PI + 0.28
+  const T1 = 2 * Math.PI - 0.28
 
-  // «MAÎTRE MOKADMI SAMI» — bande top externe (sur NAVY = texte blanc)
-  // Canvas top arc : a0 = π+0.15, a1 = 2π-0.15 = -0.15 (en allant CCW donc l'ordre est inversé)
-  // Pour arcText qui va de a0→a1 avec sens horaire :
-  const TOP_A0 = Math.PI + 0.28      // juste après 9h
-  const TOP_A1 = 2 * Math.PI - 0.28  // juste avant 3h
+  // «MAÎTRE MOKADMI SAMI» — milieu de la bande navy top
+  arcText('MAÎTRE MOKADMI SAMI', (R1 + RB) / 2, T0, T1, 28, WHITE, 'bold')
 
-  // «MAÎTRE MOKADMI SAMI» — bande top externe
-  const rMaitre = (R + R2) / 2 + 8
-  arcText(
-    'MAÎTRE MOKADMI SAMI',
-    rMaitre,
-    TOP_A0, TOP_A1,
-    34, WHITE, 'bold'
-  )
+  // «AVOCAT AU BARREAU DE TUNIS» — juste à l'intérieur de RB
+  arcText('AVOCAT AU BARREAU DE TUNIS', RB + 14, T0 + 0.45, T1 - 0.45, 15, CREAM, 'bold')
 
-  // «AVOCAT AU BARREAU DE TUNIS» — bande top intérieure
-  const rAvocat = R2 + (rMaitre - R2) * 0.28
-  arcText(
-    'AVOCAT AU BARREAU DE TUNIS',
-    rAvocat,
-    TOP_A0 + 0.38, TOP_A1 - 0.38,
-    20, CREAM, 'bold'
-  )
+  // «BARREAU DE TUNIS» — bande bas, span négatif (CCW = lisible de l'extérieur)
+  arcText('BARREAU DE TUNIS', (R1 + RB) / 2, Math.PI - 0.28, 0.28, 28, WHITE, 'bold', true)
 
-  // «BARREAU DE TUNIS» — bande bas (flip=true)
-  // a0=BOT_A1 (bas-gauche) → a1=BOT_A0 (bas-droite) : span négatif = CCW = lisible de l'extérieur
-  const rBarreau = (R + R2) / 2 + 8
-  const BOT_A0 = 0.28
-  const BOT_A1 = Math.PI - 0.28
-  arcText(
-    'BARREAU DE TUNIS',
-    rBarreau,
-    BOT_A1, BOT_A0,
-    34, WHITE, 'bold', true
-  )
-
-  // ─── 9. Textes centre ────────────────────────────────────────────────────
-  ctx.textAlign    = 'center'
-  ctx.textBaseline = 'middle'
-
-  // MF
-  ctx.font      = `bold 30px "Arial Narrow", Arial, Helvetica, sans-serif`
+  // ── 8. Textes centraux ────────────────────────────────────────────────────
+  ctx.textAlign = 'center'; ctx.textBaseline = 'middle'
   ctx.fillStyle = NAVY
-  ctx.fillText(`MF : ${CABINET.matriculeFiscal}`, cx, cy - 14)
-
-  // Inscription
-  ctx.font      = `bold 25px "Arial Narrow", Arial, Helvetica, sans-serif`
+  ctx.font = `bold 25px "Arial Narrow", Arial, Helvetica, sans-serif`
+  ctx.fillText(`MF : ${CABINET.matriculeFiscal}`, cx, cy - 11)
   ctx.fillStyle = NAVYMD
-  ctx.fillText(`INSCRIT DEPUIS ${CABINET.inscription.replace(/\D/g, '')}`, cx, cy + 18)
+  ctx.font = `bold 19px "Arial Narrow", Arial, Helvetica, sans-serif`
+  ctx.fillText('INSCRIT DEPUIS 2003', cx, cy + 13)
 
-  // ─── 10. Référence + date (sous le cachet, en dehors du cercle) ──────────
-  ctx.font      = `500 22px "Arial Narrow", Arial, Helvetica, sans-serif`
+  // ── 9. Référence + date ───────────────────────────────────────────────────
   ctx.fillStyle = NAVYLT
-  ctx.fillText(`${reference}  ·  ${fmtDateCourt(dateDoc)}`, cx, cy + R + 28)
+  ctx.font = `500 16px "Arial Narrow", Arial, Helvetica, sans-serif`
+  ctx.fillText(`${reference}  ·  ${fmtDateCourt(dateDoc)}`, cx, cy + R + 20)
 
   return canvas
 }
@@ -571,7 +528,7 @@ function drawCachet(doc: jsPDF, rapport: RapportData, H: number, W: number) {
     const stampPng    = stampCanvas.toDataURL('image/png')
 
     // Taille dans le PDF : 58mm × 58mm, positionné à droite
-    const stampSize = 58
+    const stampSize = 46
     const stampX    = W - 14 - stampSize
     const stampY    = cachetY - 6
     doc.addImage(stampPng, 'PNG', stampX, stampY, stampSize, stampSize)

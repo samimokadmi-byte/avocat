@@ -1158,10 +1158,11 @@ function AllInvoicesAdmin({ clients, onRefresh }: { clients: ClientData[]; onRef
       const { net } = computeAmounts(inv)
 
       // Envoyer via l'API
-      const res = await fetch('/api/send-invoice', {
+      const res = await fetch('/api/contact', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
+          action:        'send_invoice',
           pdfBase64:     base64,
           filename,
           clientEmail,

@@ -12,12 +12,16 @@ var CABINET_SITE  = 'www.mokadmi.lawyer';
 
 function doPost(e) {
   try {
-    var data    = JSON.parse(e.postData.contents);
+    var data = JSON.parse(e.postData.contents);
 
-    // Router selon l'action
     if (data.action === 'rdv') {
       handleRdv(data);
       return reponse(true, 'RDV envoye.');
+    }
+
+    if (data.action === 'send_invoice') {
+      envoyerFacture(data);
+      return reponse(true, 'Facture envoyee.');
     }
 
     var name    = data.name    || 'Client';
@@ -189,7 +193,84 @@ function testLocal() {
 }
 
 // ============================================================
-// GESTION DES RESERVATIONS RDV
+// ENVOI FACTURE PAR EMAIL AVEC PDF EN PIECE JOINTE
+// ============================================================
+
+function envoyerFacture(data) {
+  var clientEmail   = data.clientEmail   || '';
+  var clientName    = data.clientName    || 'Client';
+  var invoiceNumber = data.invoiceNumber || '';
+  var netAmount     = data.netAmount     || '';
+  var dateEcheance  = data.dateEcheance  || '';
+  var pdfBase64     = data.pdfBase64     || '';
+  var filename      = data.filename      || ('NH_' + invoiceNumber + '.pdf');
+
+  if (!clientEmail || !pdfBase64) {
+    throw new Error('Email ou PDF manquant.');
+  }
+
+  // Convertir le base64 en blob PDF
+  var pdfBytes = Utilities.base64Decode(pdfBase64);
+  var pdfBlob  = Utilities.newBlob(pdfBytes, 'application/pdf', filename);
+
+  // Corps de l'email client
+  var corps = 'Bonjour ' + clientName + ',\n\n'
+    + 'Veuillez trouver ci-joint votre note d\'honoraires N\u00b0 ' + invoiceNumber + '.\n\n'
+    + 'Net a payer : ' + netAmount + '\n'
+    + 'Echeance    : ' + dateEcheance + '\n\n'
+    + 'Pour toute question, contactez-nous :\n'
+    + CABINET_EMAIL + ' | ' + CABINET_TEL + '\n\n'
+    + CABINET_NOM + ' - Avocat au Barreau de Tunis';
+
+  var html = '<div style="font-family:Helvetica,Arial,sans-serif;max-width:600px;">'
+    + '<div style="background:#B49150;height:3px;"></div>'
+    + '<div style="background:#ffffff;padding:28px 36px;">'
+    + '<p style="font-family:Georgia,serif;font-size:16px;color:#141928;font-weight:bold;margin:0 0 4px;">' + CABINET_NOM + '</p>'
+    + '<p style="font-size:10px;color:#B49150;letter-spacing:2px;text-transform:uppercase;margin:0 0 20px;">Avocat au Barreau de Tunis</p>'
+    + '<p style="font-size:14px;color:#333;margin:0 0 8px;">Bonjour ' + clientName + ',</p>'
+    + '<p style="font-size:14px;color:#555;line-height:1.7;margin:0 0 20px;">'
+    + 'Veuillez trouver ci-joint votre <strong>note d\'honoraires N\u00b0 ' + invoiceNumber + '</strong>.</p>'
+    + '<div style="background:#faf9f6;border-left:3px solid #B49150;padding:14px 18px;margin:0 0 20px;">'
+    + '<table style="width:100%;font-size:13px;border-collapse:collapse;">'
+    + '<tr><td style="color:#777;padding:4px 0;">Num\u00e9ro</td><td style="font-weight:bold;text-align:right;">' + invoiceNumber + '</td></tr>'
+    + '<tr><td style="color:#777;padding:4px 0;">Net \u00e0 payer</td><td style="font-weight:bold;text-align:right;color:#141928;">' + netAmount + '</td></tr>'
+    + '<tr><td style="color:#777;padding:4px 0;">\u00c9ch\u00e9ance</td><td style="font-weight:bold;text-align:right;">' + dateEcheance + '</td></tr>'
+    + '</table></div>'
+    + '<p style="font-size:13px;color:#666;margin:0;">'
+    + 'Contact : <a href="mailto:' + CABINET_EMAIL + '" style="color:#B49150;">' + CABINET_EMAIL + '</a>'
+    + ' &nbsp;&middot;&nbsp; ' + CABINET_TEL + '</p>'
+    + '</div>'
+    + '<div style="background:#f0ede6;padding:12px 36px;border-top:1px solid #e0d8c8;">'
+    + '<p style="font-size:11px;color:#999;text-align:center;margin:0;">' + CABINET_NOM + ' &middot; www.mokadmi.lawyer</p>'
+    + '</div>'
+    + '<div style="background:#B49150;height:2px;"></div>'
+    + '</div>';
+
+  // 1. Email au client avec PDF en piece jointe
+  GmailApp.sendEmail(
+    clientEmail,
+    'Note d\'honoraires N\u00b0 ' + invoiceNumber + ' - Cabinet Mokadmi',
+    corps,
+    {
+      replyTo:     CABINET_EMAIL,
+      name:        CABINET_NOM,
+      htmlBody:    html,
+      attachments: [pdfBlob]
+    }
+  );
+
+  // 2. Copie au cabinet
+  GmailApp.sendEmail(
+    CABINET_EMAIL,
+    '[Copie] NH ' + invoiceNumber + ' envoye a ' + clientName + ' (' + clientEmail + ')',
+    'Facture ' + invoiceNumber + ' envoyee a ' + clientName + ' (' + clientEmail + ').\nNet : ' + netAmount,
+    {
+      name:        'Systeme Cabinet',
+      attachments: [pdfBlob]
+    }
+  );
+}
+
 // ============================================================
 
 var SITE_URL = 'https://avocat-navy.vercel.app';

@@ -79,12 +79,12 @@ async function loadBase64(src: string): Promise<string | null> {
 
 // ─────────────────────────────────────────────────────────────────────────────
 
-export async function downloadInvoicePdf(
+async function buildPdfDoc(
   invoice: Invoice,
   userName: string,
   userCompany?: string,
   dossierName?: string,
-): Promise<void> {
+): Promise<{ doc: jsPDF; filename: string }> {
   const { ht, tva, ttc, retenue, timbre, net } = computeAmounts(invoice)
 
   const clientNom   = invoice.clientName    || userName
@@ -431,4 +431,29 @@ export async function downloadInvoicePdf(
   // ── ENREGISTREMENT ────────────────────────────────────────────────────────────
   const filename = `NH_${invoice.number.replace(/[\/\s]/g, '-')}_${clientNom.replace(/\s+/g, '_')}.pdf`
   doc.save(filename)
+  return { doc, filename }
+}
+
+// ── Téléchargement direct ─────────────────────────────────────────────────────
+export async function downloadInvoicePdf(
+  invoice: Invoice,
+  userName: string,
+  userCompany?: string,
+  dossierName?: string,
+): Promise<void> {
+  await buildPdfDoc(invoice, userName, userCompany, dossierName)
+}
+
+// ── Génère le PDF en base64 pour envoi email ──────────────────────────────────
+export async function generateInvoicePdfBase64(
+  invoice: Invoice,
+  userName: string,
+  userCompany?: string,
+  dossierName?: string,
+): Promise<{ base64: string; filename: string }> {
+  const { doc, filename } = await buildPdfDoc(invoice, userName, userCompany, dossierName)
+  // Annuler le save() automatique n'est pas possible avec jsPDF.save()
+  // On utilise output('datauristring') sur un second appel léger
+  const base64 = doc.output('datauristring').split(',')[1]
+  return { base64, filename }
 }

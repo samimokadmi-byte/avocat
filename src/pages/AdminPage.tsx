@@ -8,7 +8,7 @@ import {
   LayoutDashboard, Users, FileUp, LogOut, ChevronRight,
   Download, Trash2, CheckCircle2, Clock, Circle, Search,
   FolderOpen, ArrowLeft, FileText, File as FileIcon, AlertCircle,
-  CalendarDays, Plus, X, Menu, Receipt, Pencil
+  CalendarDays, Plus, X, Menu, Receipt, Pencil, Mail, CheckCircle
 } from 'lucide-react'
 import { Invoice, computeAmounts, fmtAmount } from '../components/BillingModule'
 
@@ -1037,7 +1037,9 @@ function AllInvoicesAdmin({ clients, onRefresh }: { clients: ClientData[]; onRef
   const [filterStatus, setFilterStatus] = useState<Invoice['status'] | 'all'>('all')
   const [showForm,     setShowForm]     = useState(false)
   const [editInv,      setEditInv]      = useState<Invoice | null>(null)
-  const [pdfLoading,   setPdfLoading]   = useState(false)
+  const [pdfLoading,    setPdfLoading]    = useState(false)
+  const [emailLoading,  setEmailLoading]  = useState<string | null>(null) // invoice id en cours
+  const [emailFeedback, setEmailFeedback] = useState<{ id: string; ok: boolean; msg: string } | null>(null)
 
   // ── Source de vérité : registre admin centralisé ──────────────────────────
   const [invoices, setInvoicesState] = useState<Invoice[]>(() => getAdminInvoices())
@@ -1128,6 +1130,65 @@ function AllInvoicesAdmin({ clients, onRefresh }: { clients: ClientData[]; onRef
       const { downloadInvoicePdf } = await import('../utils/invoicePdf')
       await downloadInvoicePdf(inv, inv.clientName ?? 'Client', clientMap[inv.clientId]?.company)
     } finally { setPdfLoading(false) }
+  }
+
+  const handleSendEmail = async (inv: Invoice) => {
+    // Récupérer l'email du client
+    const clientUser = clientMap[inv.clientId]
+    const clientEmail = clientUser?.email ?? ''
+
+    if (!clientEmail && !inv.clientId.startsWith('manual_')) {
+      setEmailFeedback({ id: inv.id, ok: false, msg: 'Email client introuvable. Vérifiez le profil client.' })
+      return
+    }
+    if (!clientEmail) {
+      setEmailFeedback({ id: inv.id, ok: false, msg: 'Impossible d\'envoyer : client manuel sans email. Saisissez l\'email manuellement.' })
+      return
+    }
+
+    setEmailLoading(inv.id)
+    setEmailFeedback(null)
+    try {
+      // Générer le PDF en base64
+      const { generateInvoicePdfBase64 } = await import('../utils/invoicePdf')
+      const { base64, filename } = await generateInvoicePdfBase64(
+        inv, inv.clientName ?? 'Client', clientUser?.company
+      )
+
+      const { net } = computeAmounts(inv)
+
+      // Envoyer via l'API
+      const res = await fetch('/api/send-invoice', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          pdfBase64:     base64,
+          filename,
+          clientEmail,
+          clientName:    inv.clientName ?? clientUser?.name ?? 'Client',
+          invoiceNumber: inv.number,
+          netAmount:     `${(net).toFixed(3).replace(/\B(?=(\d{3})+(?!\d))/g, '\u00A0').replace('.', ',')} DT`,
+          dateEcheance:  inv.dateEcheance,
+        }),
+      })
+
+      const data = await res.json()
+      if (res.ok && data.success) {
+        // Marquer comme envoyée
+        updateStatus(inv, 'envoyee')
+        setEmailFeedback({ id: inv.id, ok: true, msg: `Email envoyé à ${clientEmail}` })
+      } else {
+        throw new Error(data.error ?? 'Erreur serveur')
+      }
+    } catch (err) {
+      setEmailFeedback({
+        id: inv.id,
+        ok: false,
+        msg: err instanceof Error ? err.message : 'Échec de l\'envoi',
+      })
+    } finally {
+      setEmailLoading(null)
+    }
   }
 
   // ── Formulaire création / édition ─────────────────────────────────────────
@@ -1246,6 +1307,24 @@ function AllInvoicesAdmin({ clients, onRefresh }: { clients: ClientData[]; onRef
                       className="text-light/30 hover:text-light p-1.5 transition-colors border border-gold/10 hover:border-gold/25">
                       <Pencil size={12} strokeWidth={1.5} />
                     </button>
+                    {/* Envoyer par email */}
+                    <button
+                      onClick={() => handleSendEmail(inv)}
+                      disabled={!!emailLoading}
+                      title="Envoyer par email"
+                      className={`p-1.5 transition-colors border ${
+                        emailLoading === inv.id
+                          ? 'border-gold/20 text-gold/40 animate-pulse'
+                          : emailFeedback?.id === inv.id && emailFeedback.ok
+                          ? 'border-emerald-400/30 text-emerald-400'
+                          : 'border-gold/10 text-light/30 hover:text-gold hover:border-gold/25'
+                      } disabled:opacity-40`}
+                    >
+                      {emailFeedback?.id === inv.id && emailFeedback.ok
+                        ? <CheckCircle size={12} strokeWidth={1.5} />
+                        : <Mail size={12} strokeWidth={1.5} />
+                      }
+                    </button>
                     {/* PDF */}
                     <button onClick={() => handleDownloadPdf(inv)} disabled={pdfLoading} title="Télécharger PDF"
                       className="text-light/30 hover:text-gold p-1.5 transition-colors border border-gold/10 hover:border-gold/25 disabled:opacity-40">
@@ -1258,6 +1337,13 @@ function AllInvoicesAdmin({ clients, onRefresh }: { clients: ClientData[]; onRef
                     </button>
                   </div>
                 </div>
+
+                {/* Feedback email */}
+                {emailFeedback?.id === inv.id && (
+                  <p className={`text-xs mt-2 px-1 ${emailFeedback.ok ? 'text-emerald-400' : 'text-red-400'}`}>
+                    {emailFeedback.ok ? '✓ ' : '⚠ '}{emailFeedback.msg}
+                  </p>
+                )}
               </div>
             )
           })}

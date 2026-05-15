@@ -104,6 +104,8 @@ function LandingPage() {
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
   const { user } = useAuth()
   if (!user) return <Navigate to="/login" replace />
+  // L'admin ne doit pas accéder à l'espace client
+  if (user.role === 'admin') return <Navigate to="/admin" replace />
   return <>{children}</>
 }
 

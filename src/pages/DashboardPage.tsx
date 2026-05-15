@@ -704,17 +704,22 @@ export default function DashboardPage() {
 
   return (
     <div className="min-h-screen bg-dark-bg flex flex-col">
-      {/* Top bar */}
-      <header className="border-b border-gold/10 bg-dark-surface flex items-center justify-between px-6 h-14 sticky top-0 z-40">
-        <Link to="/" className="flex flex-col">
-          <span className="font-serif text-base font-semibold text-light leading-tight">Maître Mokadmi Sami</span>
-          <span className="text-[10px] text-light/40 tracking-wide">Espace Client</span>
+      {/* Top bar — Espace Client */}
+      <header className="border-b border-gold/10 bg-dark-surface flex items-center justify-between px-4 sm:px-6 h-14 sticky top-0 z-40">
+        <Link to="/" className="flex items-center gap-3">
+          <div className="flex flex-col">
+            <span className="font-serif text-sm sm:text-base font-semibold text-light leading-tight">Maître Mokadmi Sami</span>
+            <span className="inline-flex items-center gap-1.5 mt-0.5">
+              <span className="w-1.5 h-1.5 bg-blue-400 rounded-full"></span>
+              <span className="text-[10px] text-blue-400/80 tracking-widest uppercase font-medium">Espace Client</span>
+            </span>
+          </div>
         </Link>
-        <div className="flex items-center gap-4">
+        <div className="flex items-center gap-3">
           {alerts.length > 0 && (
             <button onClick={() => changeTab('rendezvous')} className="relative text-light/40 hover:text-light transition-colors" title="Rappels">
               <Bell size={16} strokeWidth={1.5} />
-              <span className="absolute -top-1 -right-1 w-3.5 h-3.5 bg-red-500 text-white text-[8px] font-bold flex items-center justify-center">{alerts.length}</span>
+              <span className="absolute -top-1 -right-1 w-3.5 h-3.5 bg-red-500 text-white text-[8px] font-bold flex items-center justify-center rounded-full">{alerts.length}</span>
             </button>
           )}
           <div className="hidden sm:flex flex-col items-end">
@@ -723,14 +728,15 @@ export default function DashboardPage() {
           </div>
           <button
             onClick={handleLogout}
+            title="Déconnexion"
             className="flex items-center gap-1.5 text-xs text-light/40 hover:text-light transition-colors"
           >
-            <LogOut size={13} strokeWidth={1.5} />
-            <span className="hidden sm:inline">Déconnexion</span>
+            <LogOut size={15} strokeWidth={1.5} />
+            <span className="hidden sm:inline text-xs">Déconnexion</span>
           </button>
           <button
             onClick={() => setMobileOpen(v => !v)}
-            className="md:hidden text-light/50 hover:text-light transition-colors"
+            className="md:hidden text-light/50 hover:text-light transition-colors p-1"
           >
             {mobileOpen ? <X size={20} strokeWidth={1.5} /> : <Menu size={20} strokeWidth={1.5} />}
           </button>

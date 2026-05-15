@@ -8,7 +8,7 @@ import {
   LayoutDashboard, Users, FileUp, LogOut, ChevronRight,
   Download, Trash2, CheckCircle2, Clock, Circle, Search,
   FolderOpen, ArrowLeft, FileText, File as FileIcon, AlertCircle,
-  CalendarDays, Plus, X, Receipt
+  CalendarDays, Plus, X, Menu, Receipt
 } from 'lucide-react'
 import { Invoice, computeAmounts, fmtAmount, CURRENCIES } from '../components/BillingModule'
 
@@ -1097,26 +1097,32 @@ export default function AdminPage() {
           <button onClick={() => setRdvNotif(null)} className="text-gold/50 hover:text-gold text-xs">✕</button>
         </div>
       )}
-      {/* Header */}
-      <header className="border-b border-gold/10 bg-dark-surface flex items-center justify-between px-6 h-14 sticky top-0 z-40">
-        <Link to="/" className="flex flex-col">
-          <span className="font-serif text-base font-semibold text-white leading-tight">Maître Mokadmi Sami</span>
-          <span className="text-[10px] text-white/40 tracking-wide uppercase">Administration</span>
+      {/* Header Admin — visuellement distinct de l'Espace Client */}
+      <header className="border-b border-gold/25 bg-dark-bg flex items-center justify-between px-4 sm:px-6 h-14 sticky top-0 z-40">
+        <Link to="/" className="flex items-center gap-3">
+          <div className="flex flex-col">
+            <span className="font-serif text-sm sm:text-base font-semibold text-light leading-tight">Maître Mokadmi Sami</span>
+            <span className="inline-flex items-center gap-1.5 mt-0.5">
+              <span className="w-1.5 h-1.5 bg-gold rounded-full"></span>
+              <span className="text-[10px] text-gold tracking-widest uppercase font-bold">Dashboard Avocat</span>
+            </span>
+          </div>
         </Link>
-        <div className="flex items-center gap-4">
-          <span className="hidden sm:block text-xs text-white/50">{user?.name}</span>
+        <div className="flex items-center gap-3">
+          <span className="hidden sm:block text-xs font-medium text-light/60">{user?.name}</span>
           <button
             onClick={handleLogout}
-            className="flex items-center gap-1.5 text-xs text-white/40 hover:text-white transition-colors"
+            title="Déconnexion"
+            className="flex items-center gap-1.5 text-xs text-light/40 hover:text-light transition-colors"
           >
-            <LogOut size={13} strokeWidth={1.5} />
-            <span className="hidden sm:inline">Déconnexion</span>
+            <LogOut size={15} strokeWidth={1.5} />
+            <span className="hidden sm:inline text-xs">Déconnexion</span>
           </button>
           <button
             onClick={() => setMobileOpen(v => !v)}
-            className="md:hidden text-white/50 hover:text-white transition-colors text-lg"
+            className="md:hidden text-light/50 hover:text-light transition-colors p-1"
           >
-            ☰
+            {mobileOpen ? <X size={20} strokeWidth={1.5} /> : <Menu size={20} strokeWidth={1.5} />}
           </button>
         </div>
       </header>

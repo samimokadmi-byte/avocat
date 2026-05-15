@@ -3,7 +3,7 @@ import { useNavigate, Link } from 'react-router-dom'
 import { useAuth } from '../contexts/AuthContext'
 import {
   LayoutDashboard, FolderOpen, FileUp, MessageSquare, LogOut,
-  Upload, File,
+  Upload, File, ChevronRight,
   FileText, Trash2, Menu, X, Shield, CalendarDays, Bell, Receipt,
   Download, CheckSquare
 } from 'lucide-react'
@@ -127,42 +127,15 @@ interface Dossier {
   etapes: Array<{ label: string; statut: 'done' | 'current' | 'pending'; date: string | null }>
 }
 
-function Dossiers({ dossiers, setDossiers, rdvs, todos, invoices }: {
+function Dossiers({ dossiers, rdvs, todos, invoices }: {
   dossiers: Dossier[]
-  setDossiers: (d: Dossier[] | ((prev: Dossier[]) => Dossier[])) => void
   rdvs: Appointment[]
   todos: Todo[]
   invoices: Invoice[]
 }) {
-  const [selected,  setSelected]  = useState<Dossier | null>(null)
-  const [showForm,  setShowForm]  = useState(false)
-  const [formTitre, setFormTitre] = useState('')
-  const [formDesc,  setFormDesc]  = useState('')
-  const [formEch,   setFormEch]   = useState('')
+  const [selected, setSelected] = useState<Dossier | null>(null)
 
-  const createDossier = () => {
-    if (!formTitre.trim()) return
-    const d: Dossier = {
-      id:              crypto.randomUUID(),
-      titre:           formTitre.trim(),
-      description:     formDesc.trim(),
-      statut:          'en_cours',
-      dateOuverture:   new Date().toISOString().split('T')[0],
-      prochainEcheance: formEch || null,
-      etapes: [
-        { label: 'Ouverture du dossier', statut: 'done',    date: new Date().toLocaleDateString('fr-FR') },
-        { label: 'En cours de traitement', statut: 'current', date: null },
-        { label: 'Clôture',               statut: 'pending', date: null },
-      ],
-    }
-    setDossiers((prev: Dossier[]) => [...prev, d])
-    setFormTitre(''); setFormDesc(''); setFormEch('')
-    setShowForm(false)
-  }
-
-  const deleteDossier = (id: string) => setDossiers((prev: Dossier[]) => prev.filter(d => d.id !== id))
-
-  // ── Détail dossier ────────────────────────────────────────────────────────
+  // ── Détail dossier (lecture seule) ─────────────────────────────────────────
   if (selected) {
     const linkedRdvs     = rdvs.filter(r => r.dossierId === selected.id).sort((a, b) => a.date.localeCompare(b.date))
     const linkedTodos    = todos.filter(t => t.dossierId === selected.id)
@@ -170,7 +143,7 @@ function Dossiers({ dossiers, setDossiers, rdvs, todos, invoices }: {
 
     return (
       <div className="flex flex-col gap-6">
-        <button onClick={() => setSelected(null)} className="flex items-center gap-2 text-xs text-light/40 hover:text-light transition-colors self-start">
+        <button onClick={() => setSelected(null)} className="flex items-center gap-2 text-xs text-light/45 hover:text-light transition-colors self-start">
           ← Retour aux dossiers
         </button>
         <div className="border border-gold/15 bg-dark-surface px-5 sm:px-8 py-6">
@@ -178,27 +151,27 @@ function Dossiers({ dossiers, setDossiers, rdvs, todos, invoices }: {
             <div>
               <h2 className="font-serif text-xl text-light mb-1">{selected.titre}</h2>
               <p className="text-xs text-light/40">
-                Dossier · Ouvert le {new Date(selected.dateOuverture).toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric' })}
+                Ouvert le {new Date(selected.dateOuverture).toLocaleDateString("fr-FR", { day: "numeric", month: "long", year: "numeric" })}
               </p>
               {selected.description && <p className="text-sm text-light/55 mt-3 leading-relaxed">{selected.description}</p>}
             </div>
             <StatusBadge statut={selected.statut} />
           </div>
 
-          {/* Étapes */}
-          <div className="flex flex-col gap-2 mb-6">
+          {/* Étapes de progression */}
+          <div className="flex flex-col gap-3 mb-6">
             {selected.etapes.map((etape, i) => (
               <div key={i} className="flex items-center gap-3">
                 <div className={`w-5 h-5 flex-none flex items-center justify-center rounded-full border ${
-                  etape.statut === 'done'    ? 'bg-gold border-gold text-dark-bg' :
-                  etape.statut === 'current' ? 'border-gold text-gold' : 'border-light/15 text-light/20'
+                  etape.statut === "done"    ? "bg-gold border-gold text-dark-bg" :
+                  etape.statut === "current" ? "border-gold text-gold" : "border-light/15 text-light/20"
                 }`}>
-                  {etape.statut === 'done' ? <span className="text-[9px] font-bold">✓</span> :
-                   etape.statut === 'current' ? <span className="text-[8px]">●</span> : null}
+                  {etape.statut === "done"    ? <span className="text-[9px] font-bold">✓</span> :
+                   etape.statut === "current" ? <span className="text-[8px]">●</span> : null}
                 </div>
-                <span className={`text-sm ${etape.statut === 'done' ? 'text-light' : etape.statut === 'current' ? 'text-gold' : 'text-light/30'}`}>
-                  {etape.label}
-                </span>
+                <span className={`text-sm ${
+                  etape.statut === "done" ? "text-light" : etape.statut === "current" ? "text-gold" : "text-light/30"
+                }`}>{etape.label}</span>
                 {etape.date && <span className="text-xs text-light/25 ml-auto">{etape.date}</span>}
               </div>
             ))}
@@ -207,26 +180,38 @@ function Dossiers({ dossiers, setDossiers, rdvs, todos, invoices }: {
           {/* Éléments liés */}
           {linkedRdvs.length > 0 && (
             <div className="border-t border-gold/10 pt-4 mb-4">
-              <p className="text-xs text-light/40 uppercase tracking-wider mb-2">Rendez-vous liés</p>
-              {linkedRdvs.map(r => (
-                <p key={r.id} className="text-sm text-light/70 py-1">{r.date} — {r.title}</p>
-              ))}
+              <p className="text-xs text-light/40 uppercase tracking-wider mb-3">Rendez-vous liés</p>
+              <div className="flex flex-col gap-1.5">
+                {linkedRdvs.map(r => (
+                  <div key={r.id} className="flex items-center gap-3 text-sm">
+                    <span className="text-gold/50 text-xs">{r.date}</span>
+                    <span className="text-light/70">{r.title}</span>
+                    <span className="text-light/30 text-xs ml-auto">{r.time}</span>
+                  </div>
+                ))}
+              </div>
             </div>
           )}
           {linkedInvoices.length > 0 && (
-            <div className="border-t border-gold/10 pt-4">
-              <p className="text-xs text-light/40 uppercase tracking-wider mb-2">Factures liées</p>
-              {linkedInvoices.map(inv => (
-                <p key={inv.id} className="text-sm text-light/70 py-1">{inv.number}</p>
-              ))}
+            <div className="border-t border-gold/10 pt-4 mb-4">
+              <p className="text-xs text-light/40 uppercase tracking-wider mb-3">Factures liées</p>
+              <div className="flex flex-col gap-1.5">
+                {linkedInvoices.map(inv => (
+                  <div key={inv.id} className="flex items-center gap-3 text-sm">
+                    <span className="text-light/70">{inv.number}</span>
+                  </div>
+                ))}
+              </div>
             </div>
           )}
           {linkedTodos.length > 0 && (
             <div className="border-t border-gold/10 pt-4">
-              <p className="text-xs text-light/40 uppercase tracking-wider mb-2">Tâches liées</p>
-              {linkedTodos.map(t => (
-                <p key={t.id} className={`text-sm py-1 ${t.done ? 'line-through text-light/30' : 'text-light/70'}`}>{t.title}</p>
-              ))}
+              <p className="text-xs text-light/40 uppercase tracking-wider mb-3">Tâches liées</p>
+              <div className="flex flex-col gap-1.5">
+                {linkedTodos.map(t => (
+                  <p key={t.id} className={`text-sm ${t.done ? "line-through text-light/30" : "text-light/70"}`}>{t.title}</p>
+                ))}
+              </div>
             </div>
           )}
         </div>
@@ -234,73 +219,26 @@ function Dossiers({ dossiers, setDossiers, rdvs, todos, invoices }: {
     )
   }
 
-  // ── Liste des dossiers ────────────────────────────────────────────────────
-  const inputCls = 'w-full border-b border-gold/15 bg-transparent py-2 text-sm text-light placeholder:text-light/25 focus:outline-none focus:border-gold/50 transition-colors'
-
+  // ── Liste des dossiers (lecture seule) ──────────────────────────────────────
   return (
     <div className="flex flex-col gap-6">
-      {/* Header */}
-      <div className="flex items-start justify-between gap-4 flex-wrap">
-        <div>
-          <p className="text-xs font-medium tracking-[0.2em] uppercase text-light/40 mb-2">Espace Client</p>
-          <h2 className="font-serif text-2xl text-light">Mes Dossiers</h2>
-        </div>
-        <button
-          onClick={() => setShowForm(v => !v)}
-          className="flex items-center gap-2 text-xs font-medium bg-gold text-dark-bg px-4 py-2.5 hover:bg-gold/90 transition-colors"
-        >
-          {showForm ? '✕ Annuler' : '+ Nouveau dossier'}
-        </button>
+      <div>
+        <p className="text-xs font-medium tracking-[0.2em] uppercase text-light/40 mb-2">Espace Client</p>
+        <h2 className="font-serif text-2xl text-light">Mes Dossiers</h2>
+        <p className="text-xs text-light/35 mt-1">Dossiers ouverts et gérés par le cabinet</p>
       </div>
 
-      {/* Formulaire création */}
-      {showForm && (
-        <div className="border border-gold/20 bg-dark-surface p-5 sm:p-6 flex flex-col gap-4">
-          <p className="text-xs font-medium text-gold/70 uppercase tracking-wider">Créer un dossier</p>
-          <div className="flex flex-col gap-4">
-            <div>
-              <label className="text-[10px] font-medium text-light/35 tracking-widest uppercase block mb-1.5">Intitulé *</label>
-              <input type="text" value={formTitre} onChange={e => setFormTitre(e.target.value)}
-                placeholder="Ex: Création de société, Levée de fonds..." className={inputCls} />
-            </div>
-            <div>
-              <label className="text-[10px] font-medium text-light/35 tracking-widest uppercase block mb-1.5">Description</label>
-              <textarea value={formDesc} onChange={e => setFormDesc(e.target.value)}
-                rows={2} placeholder="Décrivez brièvement l'objet du dossier..."
-                className={`${inputCls} resize-none`} />
-            </div>
-            <div>
-              <label className="text-[10px] font-medium text-light/35 tracking-widest uppercase block mb-1.5">Prochaine échéance</label>
-              <input type="date" value={formEch} onChange={e => setFormEch(e.target.value)}
-                className={`${inputCls} [color-scheme:dark]`} />
-            </div>
-          </div>
-          <button
-            onClick={createDossier}
-            disabled={!formTitre.trim()}
-            className="self-start bg-gold text-dark-bg text-sm font-medium px-5 py-2.5 hover:bg-gold/90 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
-          >
-            Créer le dossier
-          </button>
-        </div>
-      )}
-
       {/* État vide */}
-      {dossiers.length === 0 && !showForm && (
+      {dossiers.length === 0 && (
         <div className="border border-gold/10 py-16 flex flex-col items-center gap-4">
           <FolderOpen size={32} strokeWidth={1} className="text-light/15" />
-          <div className="text-center">
-            <p className="text-sm font-medium text-light/40 mb-1">Aucun dossier pour le moment</p>
+          <div className="text-center px-6">
+            <p className="text-sm font-medium text-light/40 mb-2">Aucun dossier ouvert</p>
             <p className="text-xs text-light/25 leading-relaxed max-w-xs">
-              Créez votre premier dossier ou attendez que le cabinet en crée un pour vous.
+              Le cabinet n&apos;a pas encore ouvert de dossier pour vous.
+              Un dossier sera créé lors du démarrage de votre mission.
             </p>
           </div>
-          <button
-            onClick={() => setShowForm(true)}
-            className="text-xs font-medium text-gold border border-gold/20 px-4 py-2 hover:border-gold/40 hover:bg-gold/5 transition-colors mt-2"
-          >
-            + Créer un dossier
-          </button>
         </div>
       )}
 
@@ -313,34 +251,37 @@ function Dossiers({ dossiers, setDossiers, rdvs, todos, invoices }: {
             const invCount  = invoices.filter(i => i.dossierId === dossier.id).length
             return (
               <div key={dossier.id}
-                className="bg-dark-surface px-4 sm:px-6 py-4 flex items-center gap-3 hover:bg-dark-card transition-colors cursor-pointer group"
+                className="bg-dark-surface px-4 sm:px-6 py-4 flex items-center gap-3 hover:bg-dark-card transition-colors cursor-pointer"
                 onClick={() => setSelected(dossier)}
               >
-                <FolderOpen size={16} strokeWidth={1.25} className="text-light/30 flex-none" />
+                <FolderOpen size={16} strokeWidth={1.25} className="text-gold/40 flex-none" />
                 <div className="flex-1 min-w-0">
-                  <p className="text-sm font-medium text-light truncate mb-0.5">{dossier.titre}</p>
+                  <p className="text-sm font-semibold text-light truncate mb-0.5">{dossier.titre}</p>
                   <div className="flex items-center gap-3 text-xs text-light/35 flex-wrap">
-                    <span>Ouvert le {new Date(dossier.dateOuverture).toLocaleDateString('fr-FR', { day: 'numeric', month: 'short', year: 'numeric' })}</span>
+                    <span>Ouvert le {new Date(dossier.dateOuverture).toLocaleDateString("fr-FR", { day: "numeric", month: "short", year: "numeric" })}</span>
                     {rdvCount > 0  && <span>{rdvCount} RDV</span>}
-                    {todoCount > 0 && <span>{todoCount} tâche{todoCount > 1 ? 's' : ''}</span>}
-                    {invCount > 0  && <span>{invCount} facture{invCount > 1 ? 's' : ''}</span>}
+                    {todoCount > 0 && <span>{todoCount} tâche{todoCount > 1 ? "s" : ""}</span>}
+                    {invCount > 0  && <span>{invCount} facture{invCount > 1 ? "s" : ""}</span>}
                   </div>
                 </div>
-                <div className="flex items-center gap-2">
+                <div className="flex items-center gap-2 flex-none">
                   <StatusBadge statut={dossier.statut} />
-                  <button
-                    onClick={e => { e.stopPropagation(); deleteDossier(dossier.id) }}
-                    className="opacity-0 group-hover:opacity-100 text-light/20 hover:text-red-500 transition-all p-1 ml-1"
-                    aria-label="Supprimer"
-                  >
-                    <Trash2 size={13} strokeWidth={1.5} />
-                  </button>
+                  <ChevronRight size={14} strokeWidth={1.5} className="text-light/25" />
                 </div>
               </div>
             )
           })}
         </div>
       )}
+
+      {/* Note cabinet */}
+      <div className="border border-gold/10 px-4 sm:px-6 py-4 flex items-start gap-3">
+        <Shield size={14} strokeWidth={1.25} className="text-light/25 flex-none mt-0.5" />
+        <p className="text-xs text-light/35 leading-relaxed">
+          Vos dossiers sont ouverts et gérés exclusivement par Maître Mokadmi.
+          Pour toute demande d&apos;ouverture de dossier, contactez le cabinet.
+        </p>
+      </div>
     </div>
   )
 }
@@ -742,7 +683,14 @@ export default function DashboardPage() {
   const [tab, setTab] = useState('apercu')
   const [mobileOpen, setMobileOpen] = useState(false)
 
-  const [dossiers, setDossiers] = useLocalState<Dossier[]>(`avocat_dossiers_${user?.id}`, [])
+  // ── Purge : supprimer les dossiers auto-créés par dossierSync ───────────────
+  // Les dossiers côté client doivent être créés uniquement par l'admin.
+  // On nettoie une seule fois au chargement les dossiers marqués autoCreated.
+  const [dossiers] = useLocalState<Dossier[]>(`avocat_dossiers_${user?.id}`, [])
+
+  // Filtrer en mémoire (sans modifier le storage) — seuls les dossiers
+  // sans marqueur autoCreated sont affichés au client
+  const dossiersVisibles = dossiers.filter((d: Dossier & { autoCreated?: boolean }) => !d.autoCreated)
   const [documents, setDocuments] = useLocalState<Document[]>(`avocat_documents_${user?.id}`, [])
   const [rdvs] = useLocalState<Appointment[]>(`avocat_rdv_${user?.id}`, [])
   const [todos] = useLocalState<Todo[]>(`avocat_todos_${user?.id}`, [])
@@ -850,8 +798,8 @@ export default function DashboardPage() {
 
         {/* Main content */}
         <main className="flex-1 px-4 sm:px-6 md:px-12 py-6 md:py-10 max-w-3xl pb-20 md:pb-10">
-          {tab === 'apercu' && <Apercu dossiers={dossiers} documents={documents} userName={user?.name ?? ''} />}
-          {tab === 'dossiers' && <Dossiers dossiers={dossiers} setDossiers={setDossiers} rdvs={rdvs} todos={todos} invoices={invoices} />}
+          {tab === 'apercu' && <Apercu dossiers={dossiersVisibles} documents={documents} userName={user?.name ?? ''} />}
+          {tab === "dossiers" && <Dossiers dossiers={dossiersVisibles} rdvs={rdvs} todos={todos} invoices={invoices} />}
           {tab === 'documents' && (
             <Documents
               documents={documents}
@@ -859,7 +807,7 @@ export default function DashboardPage() {
             />
           )}
           {tab === 'rendezvous' && (
-            <RdvViewer rdvs={rdvs} todos={todos} dossiers={dossiers} />
+            <RdvViewer rdvs={rdvs} todos={todos} dossiers={dossiersVisibles} />
           )}
           {tab === 'facturation' && (
             <InvoiceViewer

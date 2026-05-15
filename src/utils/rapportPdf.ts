@@ -451,15 +451,13 @@ function buildStampCanvas(reference: string, dateDoc: string): HTMLCanvasElement
   ctx.beginPath(); ctx.arc(cx, cy, R4, 0, Math.PI*2)
   ctx.fillStyle = WHITE; ctx.fill()
 
-  // 6. Lignes de séparation horizontales (doubles)
+  // 6. Lignes de séparation (simples)
   const lx0 = cx - Math.sqrt(R3*R3 - LINE*LINE) + 8
   const lx1 = cx + Math.sqrt(R3*R3 - LINE*LINE) - 8
   ;[1, -1].forEach(sign => {
     const y = cy + sign * LINE
     ctx.strokeStyle = NAVY; ctx.lineWidth = 2.5
     ctx.beginPath(); ctx.moveTo(lx0, y); ctx.lineTo(lx1, y); ctx.stroke()
-    ctx.strokeStyle = NAVYLT; ctx.lineWidth = 0.8
-    ctx.beginPath(); ctx.moveTo(lx0, y + sign*5); ctx.lineTo(lx1, y + sign*5); ctx.stroke()
   })
 
   // 7. Anneaux extérieurs (double cercle)
@@ -469,25 +467,21 @@ function buildStampCanvas(reference: string, dateDoc: string): HTMLCanvasElement
   ctx.lineWidth = 2
   ctx.beginPath(); ctx.arc(cx, cy, R1, 0, Math.PI*2); ctx.stroke()
 
-  // Cercle intérieur de séparation
+  // Cercle intérieur de séparation (simple)
   ctx.lineWidth = 1.5
   ctx.strokeStyle = NAVY
   ctx.beginPath(); ctx.arc(cx, cy, R3, 0, Math.PI*2); ctx.stroke()
-  ctx.beginPath(); ctx.arc(cx, cy, R3 - 5, 0, Math.PI*2)
-  ctx.strokeStyle = NAVYLT; ctx.lineWidth = 0.8; ctx.stroke()
 
   // ─── 8. Textes arc ───────────────────────────────────────────────────────
 
   // «MAÎTRE MOKADMI SAMI» — bande top externe (sur NAVY = texte blanc)
   // Canvas top arc : a0 = π+0.15, a1 = 2π-0.15 = -0.15 (en allant CCW donc l'ordre est inversé)
   // Pour arcText qui va de a0→a1 avec sens horaire :
-  //   On passe a0=π+0.15 (peu après 9h) et a1=2π-0.15 (peu avant 3h) en passant par 12h
-  //   Comme les angles canvas croissent dans le sens horaire, et 12h = -π/2 = 3π/2 :
-  //   On écrit de gauche à droite en passant par le haut en utilisant des angles négatifs
-  const TOP_A0 = Math.PI + 0.18      // juste après 9h
-  const TOP_A1 = 2 * Math.PI - 0.18  // juste avant 3h (= -0.18)
-  // Rayon milieu de la bande MAÎTRE
-  const rMaitre = (R + R2) / 2 + 6
+  const TOP_A0 = Math.PI + 0.28      // juste après 9h
+  const TOP_A1 = 2 * Math.PI - 0.28  // juste avant 3h
+
+  // «MAÎTRE MOKADMI SAMI» — bande top externe
+  const rMaitre = (R + R2) / 2 + 8
   arcText(
     'MAÎTRE MOKADMI SAMI',
     rMaitre,
@@ -496,24 +490,23 @@ function buildStampCanvas(reference: string, dateDoc: string): HTMLCanvasElement
   )
 
   // «AVOCAT AU BARREAU DE TUNIS» — bande top intérieure
-  const rAvocat = (R2 + R3) / 2 + 4
-  const AV_A0 = Math.PI + 0.5
-  const AV_A1 = 2 * Math.PI - 0.5
+  const rAvocat = R2 + (rMaitre - R2) * 0.28
   arcText(
     'AVOCAT AU BARREAU DE TUNIS',
     rAvocat,
-    AV_A0, AV_A1,
-    21, CREAM, 'bold'
+    TOP_A0 + 0.38, TOP_A1 - 0.38,
+    20, CREAM, 'bold'
   )
 
   // «BARREAU DE TUNIS» — bande bas (flip=true)
-  const rBarreau = (R + R3) / 2 + 6
-  const BOT_A0 = 0.35     // peu après 3h
-  const BOT_A1 = Math.PI - 0.35  // peu avant 9h
+  // a0=BOT_A1 (bas-gauche) → a1=BOT_A0 (bas-droite) : span négatif = CCW = lisible de l'extérieur
+  const rBarreau = (R + R2) / 2 + 8
+  const BOT_A0 = 0.28
+  const BOT_A1 = Math.PI - 0.28
   arcText(
     'BARREAU DE TUNIS',
     rBarreau,
-    BOT_A0, BOT_A1,
+    BOT_A1, BOT_A0,
     34, WHITE, 'bold', true
   )
 

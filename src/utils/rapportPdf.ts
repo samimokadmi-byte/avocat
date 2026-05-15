@@ -21,7 +21,7 @@ const CABINET = {
   site:            'www.mokadmi.lawyer',
   matriculeFiscal: '000/P/A/834881/F',
   barreau:         'Barreau de Tunis',
-  inscription:     'Inscrit depuis 2001',
+  inscription:     'Inscrit depuis 2003',
 }
 
 // ── Palette navy charte Mokadmi ───────────────────────────────────────────────

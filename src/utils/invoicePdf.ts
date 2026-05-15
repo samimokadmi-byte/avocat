@@ -1,62 +1,65 @@
 /**
- * invoicePdf.ts — Générateur PDF facture avec en-tête Cabinet Mokadmi
- * Utilise jsPDF + jspdf-autotable (pas de html2canvas = pas de dépendance DOM)
+ * invoicePdf.ts — Note d'honoraires Cabinet Mokadmi
+ * Papier en-tête blanc professionnel : logo, adresse, MF cabinet
+ * Formule fiscale tunisienne : HT × 13% TVA → TTC × 10% retenue
  */
 
 import jsPDF from 'jspdf'
 import autoTable from 'jspdf-autotable'
-import { Invoice, CURRENCIES, computeAmounts, fmtAmount } from '../components/BillingModule'
+import { Invoice, computeAmounts, fmtAmount } from '../components/BillingModule'
 
 // ── Identité du cabinet ────────────────────────────────────────────────────────
 const CABINET = {
   nom:             'Maître Mokadmi Sami',
-  qualite:         'Avocat — Droit des Affaires, Fiscal & IA',
+  qualite:         'Avocat au Barreau de Tunis',
+  specialite:      'Droit des Affaires — Fiscal — IA',
   adresse1:        'Bloc B, Espace Tunis Monplaisir',
   adresse2:        '1073 Montplaisir, Tunis — Tunisie',
   telephone:       '+216 29 784 651',
   email:           'office@mokadmi.lawyer',
   site:            'www.mokadmi.lawyer',
-  // Fondé en 2003
-  matriculeFiscal: '1234567 A/M/000',   // ← à mettre à jour avec le vrai MF
-  barreauTunis:    'Barreau de Tunis',
+  matriculeFiscal: '1234567/A/M/000',  // ← Mettre à jour avec le vrai MF
+  barreau:         'Barreau de Tunis — Fondé en 2003',
 }
 
-// ── Palette couleurs (PDF = RGB) ───────────────────────────────────────────────
-const GOLD  = [201, 169, 110] as [number, number, number]  // #C9A96E
-const DARK  = [7,  12,  24]  as [number, number, number]   // #070C18
-const LIGHT = [230, 220, 200] as [number, number, number]  // off-white
-const GREY  = [130, 120, 100] as [number, number, number]  // texte secondaire
-const LINE  = [40,  45,  60] as [number, number, number]   // séparateur
+// ── Palette (fond blanc, accent doré) ─────────────────────────────────────────
+const GOLD    = [180, 145,  80] as [number, number, number]  // doré sobre
+const DARK    = [ 20,  25,  40] as [number, number, number]  // quasi-noir
+const MID     = [ 80,  80,  80] as [number, number, number]  // gris moyen
+const LIGHT   = [140, 140, 140] as [number, number, number]  // gris clair
+const WHITE   = [255, 255, 255] as [number, number, number]
+const CREAM   = [252, 251, 248] as [number, number, number]  // fond crème léger
+const GOLDLT  = [245, 235, 210] as [number, number, number]  // doré très pâle
 
+const STATUS_COLORS: Record<string, [number,number,number]> = {
+  brouillon: [160, 155, 145],
+  envoyee:   [ 60, 120, 210],
+  payee:     [ 40, 160,  80],
+  en_retard: [210,  60,  60],
+}
 const STATUS_LABELS: Record<string, string> = {
   brouillon: 'BROUILLON',
-  envoyee:   'ENVOYÉE',
-  payee:     'PAYÉE',
+  envoyee:   'ENVOYEE',
+  payee:     'PAYEE',
   en_retard: 'EN RETARD',
 }
 
-function formatDate(s: string): string {
+function fmtDate(s: string): string {
   return new Date(s + 'T12:00:00').toLocaleDateString('fr-FR', {
     day: 'numeric', month: 'long', year: 'numeric',
   })
 }
 
-/**
- * Convertit une image depuis une URL publique en base64 (pour jsPDF)
- * On charge le logo via un <img> temporaire.
- */
-async function loadImageAsBase64(src: string): Promise<string | null> {
+async function loadBase64(src: string): Promise<string | null> {
   try {
     const res  = await fetch(src)
     const blob = await res.blob()
     return await new Promise<string>(resolve => {
-      const reader = new FileReader()
-      reader.onloadend = () => resolve(reader.result as string)
-      reader.readAsDataURL(blob)
+      const r = new FileReader()
+      r.onloadend = () => resolve(r.result as string)
+      r.readAsDataURL(blob)
     })
-  } catch {
-    return null
-  }
+  } catch { return null }
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -67,323 +70,352 @@ export async function downloadInvoicePdf(
   userCompany?: string,
   dossierName?: string,
 ): Promise<void> {
-  const sym  = CURRENCIES[invoice.currency]?.symbol ?? invoice.currency
   const { ht, tva, ttc, retenue, timbre, net } = computeAmounts(invoice)
 
-  // Utiliser les champs étendus si disponibles
-  const clientDisplayName = invoice.clientName  || userName
-  const clientMF          = invoice.clientMF    || ''
-  const clientAddr        = invoice.clientAddress || userCompany || ''
-  const showMentionRetenue = invoice.mentionRetenue !== false && invoice.retenueRate > 0
+  const clientNom   = invoice.clientName    || userName
+  const clientMF    = invoice.clientMF      || ''
+  const clientAddr  = invoice.clientAddress || userCompany || ''
+  const showMention = invoice.mentionRetenue !== false && invoice.retenueRate > 0
 
   const doc = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' })
-  const W   = doc.internal.pageSize.getWidth()   // 210
-  const H   = doc.internal.pageSize.getWidth() * Math.SQRT2 // ≈297
+  const W = doc.internal.pageSize.getWidth()   // 210mm
+  const H = doc.internal.pageSize.getHeight()  // 297mm
 
-  // ── Fond sombre ─────────────────────────────────────────────────────────────
-  doc.setFillColor(...DARK)
+  // ── FOND BLANC ───────────────────────────────────────────────────────────────
+  doc.setFillColor(...WHITE)
   doc.rect(0, 0, W, H, 'F')
 
-  // ── Bande dorée top ─────────────────────────────────────────────────────────
+  // ── BANDE EN-TÊTE DORÉE (haut) ───────────────────────────────────────────────
   doc.setFillColor(...GOLD)
-  doc.rect(0, 0, W, 1.2, 'F')
+  doc.rect(0, 0, W, 28, 'F')
 
-  // ── Logo (top-left) ─────────────────────────────────────────────────────────
-  let logoY = 12
-  const logoSize = 22
-
-  const logoBase64 = await loadImageAsBase64('/logo_processed.png')
+  // ── LOGO ─────────────────────────────────────────────────────────────────────
+  const logoBase64 = await loadBase64('/logo_processed.png')
   if (logoBase64) {
-    doc.addImage(logoBase64, 'PNG', 14, logoY, logoSize, logoSize)
+    doc.addImage(logoBase64, 'PNG', 8, 3, 22, 22)
   }
 
-  // ── Nom du cabinet (à droite du logo) ───────────────────────────────────────
-  const textX = logoBase64 ? 14 + logoSize + 5 : 14
+  // ── NOM CABINET (sur bande dorée) ────────────────────────────────────────────
+  const txtX = logoBase64 ? 34 : 14
   doc.setFont('times', 'bold')
-  doc.setFontSize(14)
-  doc.setTextColor(...LIGHT)
-  doc.text(CABINET.nom, textX, logoY + 7)
+  doc.setFontSize(15)
+  doc.setTextColor(...WHITE)
+  doc.text(CABINET.nom, txtX, 12)
 
   doc.setFont('helvetica', 'normal')
   doc.setFontSize(7.5)
-  doc.setTextColor(...GREY)
-  doc.text(CABINET.qualite, textX, logoY + 12)
-  doc.text(CABINET.barreauTunis, textX, logoY + 16)
+  doc.setTextColor(255, 248, 230)  // blanc cassé sur doré
+  doc.text(CABINET.qualite,    txtX, 17)
+  doc.text(CABINET.specialite, txtX, 21.5)
 
-  // ── Coordonnées cabinet (top-right) ─────────────────────────────────────────
-  doc.setFontSize(7)
-  doc.setTextColor(...GREY)
-  const coordX = W - 14
-  doc.text(CABINET.adresse1,       coordX, logoY + 5,  { align: 'right' })
-  doc.text(CABINET.adresse2,       coordX, logoY + 9,  { align: 'right' })
-  doc.text(CABINET.telephone,      coordX, logoY + 14, { align: 'right' })
-  doc.setTextColor(...GOLD)
-  doc.text(CABINET.email,          coordX, logoY + 18, { align: 'right' })
-  doc.setTextColor(...GREY)
-  doc.text(CABINET.site,           coordX, logoY + 22, { align: 'right' })
-
-  // ── Séparateur doré ──────────────────────────────────────────────────────────
-  const sepY = 40
-  doc.setDrawColor(...GOLD)
-  doc.setLineWidth(0.3)
-  doc.line(14, sepY, W - 14, sepY)
-
-  // ── Matricule fiscal ─────────────────────────────────────────────────────────
+  // ── COORDONNÉES CABINET (droite de la bande) ──────────────────────────────────
   doc.setFontSize(6.5)
-  doc.setTextColor(...GREY)
-  doc.text(`Matricule fiscal : ${CABINET.matriculeFiscal}`, 14, sepY + 4.5)
+  doc.setTextColor(255, 248, 230)
+  const rX = W - 8
+  doc.text(CABINET.adresse1,  rX, 8,    { align: 'right' })
+  doc.text(CABINET.adresse2,  rX, 12.5, { align: 'right' })
+  doc.text(CABINET.telephone, rX, 17,   { align: 'right' })
+  doc.text(CABINET.email,     rX, 21.5, { align: 'right' })
+  doc.text(CABINET.site,      rX, 26,   { align: 'right' })
 
-  // ── Titre + Numéro facture ───────────────────────────────────────────────────
-  const titleY = sepY + 14
-  doc.setFont('times', 'bold')
-  doc.setFontSize(20)
-  doc.setTextColor(...LIGHT)
-  doc.text("NOTE D'HONORAIRES", 14, titleY)
+  // ── BANDE MATRICULE FISCAL ────────────────────────────────────────────────────
+  doc.setFillColor(...CREAM)
+  doc.rect(0, 28, W, 8, 'F')
+  doc.setDrawColor(...GOLD)
+  doc.setLineWidth(0.4)
+  doc.line(0, 28, W, 28)
+  doc.line(0, 36, W, 36)
 
   doc.setFont('helvetica', 'bold')
-  doc.setFontSize(10)
+  doc.setFontSize(7)
+  doc.setTextColor(...MID)
+  doc.text(`Matricule fiscal : ${CABINET.matriculeFiscal}`, 14, 33.5)
+  doc.text(CABINET.barreau, W - 14, 33.5, { align: 'right' })
+
+  // ── TITRE NOTE D'HONORAIRES ───────────────────────────────────────────────────
+  const titleY = 48
+  doc.setFont('times', 'bold')
+  doc.setFontSize(18)
+  doc.setTextColor(...DARK)
+  doc.text("NOTE D'HONORAIRES", 14, titleY)
+
+  // Numéro facture
+  doc.setFont('helvetica', 'bold')
+  doc.setFontSize(9)
   doc.setTextColor(...GOLD)
   doc.text(`N° ${invoice.number}`, 14, titleY + 7)
 
-  // Badge statut
+  // Badge statut (droite)
   const statusLabel = STATUS_LABELS[invoice.status] ?? invoice.status.toUpperCase()
-  const badgeX = W - 14
-  doc.setFontSize(7)
+  const badgeClr    = STATUS_COLORS[invoice.status] ?? GOLD
+  const badgeW = 28, badgeH = 6
+  doc.setFillColor(...badgeClr)
+  doc.roundedRect(W - 14 - badgeW, titleY - 4.5, badgeW, badgeH, 1, 1, 'F')
   doc.setFont('helvetica', 'bold')
-  doc.setTextColor(...DARK)
+  doc.setFontSize(6.5)
+  doc.setTextColor(...WHITE)
+  doc.text(statusLabel, W - 14 - badgeW / 2, titleY, { align: 'center' })
 
-  const statusColors: Record<string, [number,number,number]> = {
-    brouillon: [130, 120, 100],
-    envoyee:   [96,  165, 250],
-    payee:     [74,  222, 128],
-    en_retard: [248, 113, 113],
-  }
-  const badgeColor = statusColors[invoice.status] ?? GOLD
-  const badgeW = 30, badgeH = 6.5
-  doc.setFillColor(...badgeColor)
-  doc.roundedRect(badgeX - badgeW, titleY - 4, badgeW, badgeH, 1, 1, 'F')
-  doc.text(statusLabel, badgeX - badgeW / 2, titleY, { align: 'center' })
+  // Séparateur fin
+  doc.setDrawColor(...GOLD)
+  doc.setLineWidth(0.25)
+  doc.line(14, titleY + 10, W - 14, titleY + 10)
 
-  // ── Bloc Facturation & Dates ─────────────────────────────────────────────────
+  // ── BLOC CLIENT & DATES ───────────────────────────────────────────────────────
   const infoY = titleY + 16
-  doc.setFillColor(...LINE)
-  doc.rect(14, infoY - 5, 80, 30, 'F')
-  doc.rect(W - 94, infoY - 5, 80, 30, 'F')
 
-  // Client
+  // Cadre FACTURÉ À (gauche)
+  doc.setFillColor(...CREAM)
+  doc.rect(14, infoY - 4, 86, 32, 'F')
+  doc.setDrawColor(...GOLDLT)
+  doc.setLineWidth(0.3)
+  doc.rect(14, infoY - 4, 86, 32)
+  // Bordure gauche colorée
+  doc.setDrawColor(...GOLD)
+  doc.setLineWidth(1.2)
+  doc.line(14, infoY - 4, 14, infoY + 28)
+
   doc.setFont('helvetica', 'bold')
-  doc.setFontSize(7)
+  doc.setFontSize(6.5)
   doc.setTextColor(...GOLD)
-  doc.text('FACTURÉ À', 18, infoY)
+  doc.text('FACTURE À', 19, infoY + 1)
 
   doc.setFont('helvetica', 'bold')
-  doc.setFontSize(9)
-  doc.setTextColor(...LIGHT)
-  doc.text(clientDisplayName, 18, infoY + 5.5)
+  doc.setFontSize(10)
+  doc.setTextColor(...DARK)
+  doc.text(clientNom, 19, infoY + 7)
 
+  let clientY = infoY + 12
   if (clientAddr) {
     doc.setFont('helvetica', 'normal')
     doc.setFontSize(7.5)
-    doc.setTextColor(...GREY)
-    doc.text(clientAddr, 18, infoY + 10)
+    doc.setTextColor(...MID)
+    doc.text(clientAddr, 19, clientY)
+    clientY += 4.5
   }
   if (clientMF) {
     doc.setFont('helvetica', 'normal')
     doc.setFontSize(7)
-    doc.setTextColor(...GREY)
-    doc.text(`MF : ${clientMF}`, 18, clientAddr ? infoY + 14 : infoY + 10)
+    doc.setTextColor(...MID)
+    doc.text(`Matricule fiscal : ${clientMF}`, 19, clientY)
+    clientY += 4
   }
   if (dossierName) {
     doc.setFont('helvetica', 'italic')
     doc.setFontSize(7)
-    doc.setTextColor(...GREY)
-    const dossierY = infoY + (clientAddr && clientMF ? 18 : clientAddr || clientMF ? 14 : 10)
-    doc.text(`Dossier : ${dossierName}`, 18, dossierY)
+    doc.setTextColor(...LIGHT)
+    doc.text(`Réf. dossier : ${dossierName}`, 19, clientY)
   }
 
-  // Dates
-  const dateX = W - 90
-  doc.setFont('helvetica', 'bold')
-  doc.setFontSize(7)
-  doc.setTextColor(...GOLD)
-  doc.text('DATES', dateX + 4, infoY)
+  // Cadre DATES (droite)
+  const datesX = W - 100
+  doc.setFillColor(...CREAM)
+  doc.rect(datesX, infoY - 4, 86, 32, 'F')
+  doc.setDrawColor(...GOLDLT)
+  doc.setLineWidth(0.3)
+  doc.rect(datesX, infoY - 4, 86, 32)
+  doc.setDrawColor(...GOLD)
+  doc.setLineWidth(1.2)
+  doc.line(datesX, infoY - 4, datesX, infoY + 28)
 
-  const dateRows = [
-    ['Date d\'émission', formatDate(invoice.dateEmission)],
-    ['Date d\'échéance', formatDate(invoice.dateEcheance)],
-    ['Devise',          `${invoice.currency} (${sym})`],
+  doc.setFont('helvetica', 'bold')
+  doc.setFontSize(6.5)
+  doc.setTextColor(...GOLD)
+  doc.text('INFORMATIONS', datesX + 5, infoY + 1)
+
+  const infoRows = [
+    { label: "Date d'émission",  value: fmtDate(invoice.dateEmission) },
+    { label: "Date d'échéance",  value: fmtDate(invoice.dateEcheance) },
+    { label: 'Devise',           value: 'Dinar Tunisien (DT)' },
   ]
-  dateRows.forEach(([label, val], i) => {
-    const rowY = infoY + 5.5 + i * 5.5
+  infoRows.forEach(({ label, value }, i) => {
+    const rowY = infoY + 7 + i * 7
     doc.setFont('helvetica', 'normal')
     doc.setFontSize(7)
-    doc.setTextColor(...GREY)
-    doc.text(label, dateX + 4, rowY)
-    doc.setFont('helvetica', 'bold')
     doc.setTextColor(...LIGHT)
-    doc.text(val, dateX + 76, rowY, { align: 'right' })
+    doc.text(label, datesX + 5, rowY)
+    doc.setFont('helvetica', 'bold')
+    doc.setFontSize(7.5)
+    doc.setTextColor(...DARK)
+    doc.text(value, datesX + 81, rowY, { align: 'right' })
   })
 
-  // ── Tableau des prestations ──────────────────────────────────────────────────
-  const tableStartY = infoY + 30
+  // ── TABLEAU PRESTATIONS ───────────────────────────────────────────────────────
+  const tableY = infoY + 38
 
   autoTable(doc, {
-    startY: tableStartY,
+    startY: tableY,
     margin: { left: 14, right: 14 },
     head: [[
-      { content: 'Description', styles: { halign: 'left' } },
-      { content: 'Qté/h',       styles: { halign: 'right' } },
-      { content: `PU HT (${sym})`, styles: { halign: 'right' } },
-      { content: `Total HT (${sym})`, styles: { halign: 'right' } },
+      { content: 'Description de la prestation', styles: { halign: 'left' } },
+      { content: 'Qté',                           styles: { halign: 'right' } },
+      { content: 'PU HT (DT)',                    styles: { halign: 'right' } },
+      { content: 'Total HT (DT)',                 styles: { halign: 'right' } },
     ]],
     body: invoice.lines.map(l => [
       l.description || '—',
       { content: String(l.quantity),                          styles: { halign: 'right' } },
       { content: fmtAmount(l.unitPrice, invoice.currency),    styles: { halign: 'right' } },
-      { content: fmtAmount(l.quantity * l.unitPrice, invoice.currency), styles: { halign: 'right' } },
+      { content: fmtAmount(l.quantity * l.unitPrice, invoice.currency), styles: { halign: 'right', fontStyle: 'bold' } },
     ]),
     headStyles: {
-      fillColor:  GOLD,
-      textColor:  DARK,
-      fontStyle:  'bold',
-      fontSize:   8,
-      cellPadding: { top: 3, bottom: 3, left: 4, right: 4 },
+      fillColor:   GOLD,
+      textColor:   WHITE,
+      fontStyle:   'bold',
+      fontSize:    8,
+      cellPadding: { top: 3.5, bottom: 3.5, left: 5, right: 5 },
     },
     bodyStyles: {
-      fillColor:  [15, 22, 40] as [number,number,number],
-      textColor:  LIGHT,
-      fontSize:   8.5,
-      cellPadding: { top: 3.5, bottom: 3.5, left: 4, right: 4 },
+      fillColor:   WHITE,
+      textColor:   DARK,
+      fontSize:    8.5,
+      cellPadding: { top: 4, bottom: 4, left: 5, right: 5 },
     },
     alternateRowStyles: {
-      fillColor: [22, 30, 55] as [number,number,number],
+      fillColor: CREAM,
     },
     columnStyles: {
       0: { cellWidth: 'auto' },
-      1: { cellWidth: 18 },
-      2: { cellWidth: 32 },
-      3: { cellWidth: 35, fontStyle: 'bold' },
+      1: { cellWidth: 16 },
+      2: { cellWidth: 34 },
+      3: { cellWidth: 38, fontStyle: 'bold' },
     },
-    tableLineColor: LINE,
+    tableLineColor: GOLDLT,
     tableLineWidth: 0.2,
     theme: 'grid',
   })
 
-  // ── Totaux ───────────────────────────────────────────────────────────────────
-  const afterTableY: number = (doc as unknown as { lastAutoTable: { finalY: number } }).lastAutoTable.finalY + 6
+  // ── TOTAUX ────────────────────────────────────────────────────────────────────
+  // @ts-ignore
+  const afterTable: number = doc.lastAutoTable.finalY + 8
 
-  const totaux: Array<{ label: string; value: string; highlight?: boolean; red?: boolean; green?: boolean }> = [
-    { label: 'Montant HT',  value: fmtAmount(ht, invoice.currency) },
+  const fmt3 = (n: number) => fmtAmount(n, invoice.currency)
+  const totW = 88
+  const totX = W - 14 - totW
+
+  const rows: Array<{ label: string; value: string; highlight?: boolean; red?: boolean }> = [
+    { label: 'Montant HT',                                  value: `${fmt3(ht)} DT` },
+    { label: `TVA ${invoice.tvaRate} %`,                    value: `${fmt3(tva)} DT` },
+    { label: 'Montant TTC',                                 value: `${fmt3(ttc)} DT`, highlight: true },
+    ...(invoice.retenueRate > 0
+      ? [{ label: `Retenue à la source ${invoice.retenueRate} %`, value: `− ${fmt3(retenue)} DT`, red: true }]
+      : []),
+    ...(invoice.timbreFiscal > 0
+      ? [{ label: 'Timbre fiscal', value: `+ ${fmt3(timbre)} DT` }]
+      : []),
   ]
-  if (invoice.tvaRate > 0)     totaux.push({ label: `TVA (${invoice.tvaRate} %)`, value: fmtAmount(tva, invoice.currency) })
-  totaux.push({ label: 'Montant TTC', value: fmtAmount(ttc, invoice.currency), highlight: true })
-  if (invoice.retenueRate > 0) totaux.push({ label: `Retenue à la source (${invoice.retenueRate} %)`, value: `– ${fmtAmount(retenue, invoice.currency)}`, red: true })
-  if (invoice.timbreFiscal > 0) totaux.push({ label: 'Timbre fiscal', value: `+ ${fmtAmount(timbre, invoice.currency)}`, green: true })
 
-  const rowH  = 6.5
-  const totW  = 90
-  const totX  = W - 14 - totW
+  // Fond crème pour la zone totaux
+  doc.setFillColor(...CREAM)
+  doc.rect(totX - 2, afterTable - 3, totW + 4, rows.length * 8 + 18, 'F')
+  doc.setDrawColor(...GOLDLT)
+  doc.setLineWidth(0.2)
+  doc.rect(totX - 2, afterTable - 3, totW + 4, rows.length * 8 + 18)
 
-  totaux.forEach((row, i) => {
-    const rowY = afterTableY + i * rowH
-    const isBold = row.highlight
+  rows.forEach((row, i) => {
+    const rY = afterTable + i * 8
 
-    // Fond de ligne TTC
-    if (isBold) {
-      doc.setFillColor(...LINE)
-      doc.rect(totX, rowY - 4.5, totW, rowH, 'F')
+    if (row.highlight) {
+      doc.setFillColor(...GOLDLT)
+      doc.rect(totX - 2, rY - 4, totW + 4, 8, 'F')
     }
 
-    doc.setFont('helvetica', isBold ? 'bold' : 'normal')
-    doc.setFontSize(isBold ? 8.5 : 7.5)
-    const color: [number,number,number] = row.red ? [220, 80, 80] : row.green ? [80, 200, 120] : isBold ? LIGHT : GREY
-    doc.setTextColor(...color)
-    doc.text(row.label, totX + 3,      rowY)
-    doc.setFont('helvetica', isBold ? 'bold' : 'normal')
-    doc.text(row.value, totX + totW - 3, rowY, { align: 'right' })
+    doc.setFont('helvetica', row.highlight ? 'bold' : 'normal')
+    doc.setFontSize(row.highlight ? 8.5 : 7.5)
+    const clr: [number,number,number] = row.red ? [180, 40, 40] : row.highlight ? DARK : MID
+    doc.setTextColor(...clr)
+    doc.text(row.label, totX, rY)
+    doc.setFont('helvetica', row.highlight ? 'bold' : 'normal')
+    doc.text(row.value, totX + totW, rY, { align: 'right' })
   })
 
-  // Ligne Net à payer
-  const netY = afterTableY + totaux.length * rowH + 3
-  doc.setDrawColor(...GOLD)
-  doc.setLineWidth(0.3)
-  doc.line(totX, netY - 2, totX + totW, netY - 2)
-
+  // Net à payer — encadré doré
+  const netY = afterTable + rows.length * 8 + 2
   doc.setFillColor(...GOLD)
-  doc.rect(totX, netY, totW, 9, 'F')
+  doc.rect(totX - 2, netY - 2, totW + 4, 10, 'F')
   doc.setFont('times', 'bold')
   doc.setFontSize(10)
-  doc.setTextColor(...DARK)
-  doc.text('Net à payer',          totX + 4,         netY + 6)
-  doc.text(fmtAmount(net, invoice.currency), totX + totW - 3, netY + 6, { align: 'right' })
+  doc.setTextColor(...WHITE)
+  doc.text('Net à payer', totX + 2, netY + 5)
+  doc.text(`${fmt3(net)} DT`, totX + totW, netY + 5, { align: 'right' })
 
-  // ── Notes ────────────────────────────────────────────────────────────────────
-  let currentY = netY + 20
+  // ── MENTION RETENUE (sur fond crème avec bordure gauche rouge) ────────────────
+  let nextY = netY + 18
 
-  // Mention légale retenue à la source (OBLIGATOIRE si retenueRate > 0)
-  if (showMentionRetenue) {
-    doc.setFillColor(...LINE)
-    doc.rect(14, currentY - 2, W - 28, 12, 'F')
+  if (showMention) {
+    doc.setFillColor(255, 245, 245)
+    doc.rect(14, nextY - 3, W - 28, 13, 'F')
+    doc.setDrawColor(180, 40, 40)
+    doc.setLineWidth(1.5)
+    doc.line(14, nextY - 3, 14, nextY + 10)
+    doc.setLineWidth(0.2)
+    doc.setDrawColor(220, 190, 190)
+    doc.rect(14, nextY - 3, W - 28, 13)
 
-    doc.setFont('helvetica', 'bolditalic')
+    doc.setFont('helvetica', 'bold')
     doc.setFontSize(7)
-    doc.setTextColor(...GOLD)
-    doc.text('Mention légale :', 18, currentY + 4)
+    doc.setTextColor(180, 40, 40)
+    doc.text('Mention légale :', 18, nextY + 2)
 
     doc.setFont('helvetica', 'italic')
     doc.setFontSize(6.5)
-    doc.setTextColor(...LIGHT)
-    const mentionText = `Prière nous délivrer une attestation de retenue à la source comportant le montant de la retenue opérée (${fmtAmount(retenue, invoice.currency)} ${sym}).`
-    const mentionLines = doc.splitTextToSize(mentionText, W - 75)
-    doc.text(mentionLines, 55, currentY + 4)
+    doc.setTextColor(...MID)
+    const mentionTxt = `Prière nous délivrer une attestation de retenue à la source comportant le montant de la retenue opérée (${fmt3(retenue)} DT).`
+    const mentionLines = doc.splitTextToSize(mentionTxt, W - 75)
+    doc.text(mentionLines, 18 + 22, nextY + 2)
 
-    currentY += 18
+    nextY += 19
   }
 
+  // ── NOTES ────────────────────────────────────────────────────────────────────
   if (invoice.notes) {
+    doc.setFillColor(...CREAM)
+    doc.rect(14, nextY - 2, W - 28, 14, 'F')
     doc.setFont('helvetica', 'bold')
     doc.setFontSize(7)
     doc.setTextColor(...GOLD)
-    doc.text('NOTES', 14, currentY)
-    currentY += 4
-
+    doc.text('Notes :', 18, nextY + 3)
     doc.setFont('helvetica', 'normal')
     doc.setFontSize(7.5)
-    doc.setTextColor(...GREY)
-    const noteLines = doc.splitTextToSize(invoice.notes, W - 28)
-    doc.text(noteLines, 14, currentY)
-    currentY += noteLines.length * 4 + 6
+    doc.setTextColor(...MID)
+    const noteLines = doc.splitTextToSize(invoice.notes, W - 46)
+    doc.text(noteLines, 35, nextY + 3)
+    nextY += 18
   }
 
-  // ── Pied de page ─────────────────────────────────────────────────────────────
-  const footerY = 282
+  // ── PIED DE PAGE ─────────────────────────────────────────────────────────────
+  const footY = 280
   doc.setDrawColor(...GOLD)
-  doc.setLineWidth(0.3)
-  doc.line(14, footerY - 4, W - 14, footerY - 4)
+  doc.setLineWidth(0.5)
+  doc.line(14, footY, W - 14, footY)
+
+  doc.setFillColor(...CREAM)
+  doc.rect(0, footY, W, 17, 'F')
 
   doc.setFont('helvetica', 'normal')
   doc.setFontSize(6.5)
-  doc.setTextColor(...GREY)
+  doc.setTextColor(...MID)
   doc.text(
-    `${CABINET.nom} · ${CABINET.barreauTunis} · ${CABINET.adresse1}, ${CABINET.adresse2}`,
-    W / 2, footerY,
-    { align: 'center' }
+    `${CABINET.nom} · ${CABINET.barreau}`,
+    W / 2, footY + 5, { align: 'center' }
   )
   doc.text(
-    `Tél : ${CABINET.telephone} · ${CABINET.email} · MF : ${CABINET.matriculeFiscal}`,
-    W / 2, footerY + 4.5,
-    { align: 'center' }
+    `${CABINET.adresse1}, ${CABINET.adresse2} · Tél : ${CABINET.telephone}`,
+    W / 2, footY + 9.5, { align: 'center' }
   )
-
-  // Numéro de page
   doc.setTextColor(...GOLD)
-  doc.text(`Page 1 / 1`, W - 14, footerY + 4.5, { align: 'right' })
+  doc.text(
+    `${CABINET.email} · ${CABINET.site} · MF : ${CABINET.matriculeFiscal}`,
+    W / 2, footY + 14, { align: 'center' }
+  )
 
-  // ── Bande dorée bottom ───────────────────────────────────────────────────────
-  doc.setFillColor(...GOLD)
-  doc.rect(0, 296, W, 1.2, 'F')
+  // Numéro page
+  doc.setFont('helvetica', 'normal')
+  doc.setFontSize(7)
+  doc.setTextColor(...LIGHT)
+  doc.text('1 / 1', W - 14, footY + 9, { align: 'right' })
 
-  // ── Sauvegarde ───────────────────────────────────────────────────────────────
-  const filename = `Facture_${invoice.number.replace(/\//g, '-')}_Mokadmi.pdf`
+  // ── ENREGISTREMENT ────────────────────────────────────────────────────────────
+  const filename = `NH_${invoice.number.replace(/[\/\s]/g, '-')}_${clientNom.replace(/\s+/g, '_')}.pdf`
   doc.save(filename)
 }

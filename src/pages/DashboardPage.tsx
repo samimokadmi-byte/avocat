@@ -779,26 +779,29 @@ export default function DashboardPage() {
           </nav>
         </aside>
 
-        {/* Mobile nav drawer */}
+        {/* Mobile nav drawer — avec backdrop */}
         {mobileOpen && (
-          <div className="md:hidden fixed inset-0 top-14 z-30 bg-dark-surface border-t border-gold/10 p-6 flex flex-col gap-2">
-            {navItems.map(({ id, label, icon: Icon }) => (
-              <button
-                key={id}
-                onClick={() => changeTab(id)}
-                className={`flex items-center gap-3 px-4 py-3 text-sm font-medium transition-colors text-left ${
-                  tab === id ? 'bg-gold text-dark-bg' : 'text-light/60 hover:text-light hover:bg-dark-card'
-                }`}
-              >
-                <Icon size={15} strokeWidth={1.25} />
-                {label}
-              </button>
-            ))}
-            <div className="mt-auto pt-6 border-t border-gold/10">
-              <button onClick={handleLogout} className="flex items-center gap-2 text-sm text-light/40 hover:text-light transition-colors">
-                <LogOut size={14} strokeWidth={1.5} /> Déconnexion
-              </button>
+          <div className="md:hidden fixed inset-0 top-14 z-30 flex">
+            <div className="w-64 bg-dark-surface border-r border-blue-400/15 flex flex-col py-4 px-3 shadow-2xl">
+              <nav className="flex flex-col gap-1 flex-1">
+                {navItems.map(({ id, label, icon: Icon }) => (
+                  <button key={id} onClick={() => changeTab(id)}
+                    className={`flex items-center gap-3 px-4 py-3.5 text-sm font-medium transition-colors text-left rounded-sm ${
+                      tab === id ? 'bg-blue-500/20 text-blue-300 border-l-2 border-blue-400' : 'text-light/60 hover:text-light hover:bg-dark-card'
+                    }`}
+                  >
+                    <Icon size={16} strokeWidth={1.25} />
+                    {label}
+                  </button>
+                ))}
+              </nav>
+              <div className="pt-4 border-t border-gold/10 mt-4">
+                <button onClick={handleLogout} className="flex items-center gap-2 text-sm text-light/40 hover:text-light transition-colors px-4 py-2">
+                  <LogOut size={14} strokeWidth={1.5} /> Déconnexion
+                </button>
+              </div>
             </div>
+            <div className="flex-1 bg-black/50" onClick={() => setMobileOpen(false)} />
           </div>
         )}
 

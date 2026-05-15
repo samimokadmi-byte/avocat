@@ -1569,26 +1569,30 @@ export default function AdminPage() {
           </div>
         </aside>
 
-        {/* Mobile menu */}
+        {/* Mobile drawer */}
         {mobileOpen && (
-          <div className="md:hidden fixed inset-0 top-14 z-30 bg-dark-surface border-t border-gold/10 p-6 flex flex-col gap-2">
-            {navItems.map(({ id, label, icon: Icon }) => (
-              <button
-                key={id}
-                onClick={() => changeTab(id)}
-                className={`flex items-center gap-3 px-4 py-3 text-sm font-medium transition-colors text-left ${
-                  tab === id ? 'bg-gold text-dark-bg' : 'text-light/60 hover:text-light hover:bg-dark-card'
-                }`}
-              >
-                <Icon size={15} strokeWidth={1.25} />
-                {label}
-              </button>
-            ))}
+          <div className="md:hidden fixed inset-0 top-14 z-30 flex">
+            <div className="w-64 bg-dark-surface border-r border-gold/15 flex flex-col py-4 px-3 shadow-2xl">
+              <nav className="flex flex-col gap-1">
+                {navItems.map(({ id, label, icon: Icon }) => (
+                  <button key={id} onClick={() => changeTab(id)}
+                    className={`flex items-center gap-3 px-4 py-3.5 text-sm font-medium transition-colors text-left rounded-sm ${
+                      tab === id ? 'bg-gold text-dark-bg' : 'text-light/60 hover:text-light hover:bg-dark-card'
+                    }`}
+                  >
+                    <Icon size={16} strokeWidth={1.25} />
+                    {label}
+                  </button>
+                ))}
+              </nav>
+            </div>
+            {/* Backdrop semi-transparent */}
+            <div className="flex-1 bg-black/50" onClick={() => setMobileOpen(false)} />
           </div>
         )}
 
         {/* Main */}
-        <main className="flex-1 px-4 sm:px-6 md:px-12 py-6 md:py-10 max-w-4xl pb-6">
+        <main className="flex-1 px-4 sm:px-6 md:px-10 py-5 md:py-8 max-w-4xl pb-24 md:pb-8 min-w-0">
           {tab === 'overview' && <Overview clients={clients} />}
           {tab === 'clients' && !selectedClient && (
             <ClientsList clients={clients} onSelect={handleSelectClient} onRefresh={refresh} />
@@ -1605,6 +1609,22 @@ export default function AdminPage() {
           {tab === 'facturation' && <AllInvoicesAdmin clients={clients} onRefresh={refresh} />}
         </main>
       </div>
+
+      {/* ── Bottom nav mobile Admin ─────────────────────────────────────── */}
+      <nav className="md:hidden fixed bottom-0 left-0 right-0 z-30 bg-dark-surface border-t border-gold/20 flex">
+        {navItems.map(({ id, label, icon: Icon }) => (
+          <button
+            key={id}
+            onClick={() => changeTab(id)}
+            className={`flex-1 flex flex-col items-center justify-center gap-0.5 py-2 transition-colors min-h-[56px] ${
+              tab === id ? 'text-gold' : 'text-light/35 hover:text-light/60'
+            }`}
+          >
+            <Icon size={20} strokeWidth={tab === id ? 2 : 1.25} />
+            <span className="text-[9px] font-medium leading-none mt-0.5 tracking-wide">{label}</span>
+          </button>
+        ))}
+      </nav>
     </div>
   )
 }

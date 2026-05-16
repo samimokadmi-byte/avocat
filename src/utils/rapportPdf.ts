@@ -25,8 +25,8 @@ const CABINET = {
 }
 
 // ── Palette navy charte Mokadmi ───────────────────────────────────────────────
-const NAVY    = [ 10,  25,  47] as [number, number, number]
-const NAVYMD  = [ 30,  60, 110] as [number, number, number]
+const NAVY    = [ 20,  55, 115] as [number, number, number]  // bleu plus clair
+const NAVYMD  = [ 45,  95, 160] as [number, number, number]
 const NAVYLT  = [215, 225, 245] as [number, number, number]
 const NAVYPALE= [237, 242, 252] as [number, number, number]
 const DARK    = [ 20,  25,  40] as [number, number, number]
@@ -451,9 +451,6 @@ function drawCachet(doc: jsPDF, rapport: RapportData, H: number, W: number) {
 
   // TOP intérieur : «AVOCAT AU BARREAU DE TUNIS»
   arcText('AVOCAT AU BARREAU DE TUNIS', RB + 1.8, 218, 322, 3.4, [215, 225, 245])
-
-  // BOTTOM : «BARREAU DE TUNIS» — de 25° à 155° via 90° (bas) flip=true
-  arcText('BARREAU DE TUNIS', rBand, 25, 155, 5.2, [255, 255, 255], true)
 
   // ── 7. Textes centraux ────────────────────────────────────────────────────
   doc.setFont('helvetica', 'bold')

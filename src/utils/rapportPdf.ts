@@ -355,145 +355,11 @@ function drawBody(doc: jsPDF, rapport: RapportData, startY: number, W: number, H
   return y
 }
 
-// ── Générateur du cachet circulaire (Canvas → PNG → jsPDF) ───────────────────
-function buildStampCanvas(reference: string, dateDoc: string): HTMLCanvasElement {
-  const S  = 500
-  const canvas = document.createElement('canvas')
-  canvas.width = S; canvas.height = S
-  const ctx = canvas.getContext('2d')!
-  const cx = S / 2, cy = S / 2
-
-  const NAVY   = '#0A192F'
-  const NAVYMD = '#1e3c6e'
-  const NAVYLT = '#4a7ab5'
-  const WHITE  = '#ffffff'
-  const CREAM  = '#d7e1f5'
-
-  // Rayons
-  const R   = 230  // bord extérieur du cercle
-  const R1  = 216  // bord intérieur du double anneau
-  const RB  = 138  // bord intérieur des bandes navy (= bord extérieur zone blanche)
-  const LINE = 46  // demi-hauteur des lignes de séparation
-
-  ctx.clearRect(0, 0, S, S)
-
-  // ── Helper : arc band rempli ──────────────────────────────────────────────
-  // Fix clé : inner arc utilise le MÊME sens (ccw) que outer pour fermer correctement la bande
-  function arcBand(rOut: number, rIn: number, a0: number, a1: number, color: string, ccw = false) {
-    ctx.beginPath()
-    ctx.arc(cx, cy, rOut, a0, a1, ccw)
-    ctx.arc(cx, cy, rIn,  a1, a0, ccw)   // même sens = ferme la bande correctement
-    ctx.closePath()
-    ctx.fillStyle = color
-    ctx.fill()
-  }
-
-  // ── Helper : texte le long d'un arc ──────────────────────────────────────
-  function arcText(
-    text: string, r: number,
-    a0: number, a1: number,
-    size: number, color: string,
-    weight = 'bold', flip = false
-  ) {
-    ctx.save()
-    const font = `${weight} ${size}px "Arial Narrow", Arial, Helvetica, sans-serif`
-    ctx.font = font; ctx.fillStyle = color; ctx.textBaseline = 'middle'
-
-    const chars = text.split('')
-    const cw    = chars.map(c => { ctx.font = font; return ctx.measureText(c).width })
-    const total = cw.reduce((a, b) => a + b, 0)
-    const circ  = 2 * Math.PI * r
-    const span  = a1 - a0
-    const sign  = span < 0 ? -1 : 1
-    const need  = (total / circ) * 2 * Math.PI * sign
-
-    let angle = a0 + (span - need) / 2
-
-    for (let i = 0; i < chars.length; i++) {
-      const ca  = (cw[i] / circ) * 2 * Math.PI * sign
-      const mid = angle + ca / 2
-      ctx.save()
-      ctx.translate(cx, cy)
-      if (flip) {
-        ctx.rotate(mid - Math.PI / 2)
-        ctx.translate(0, r)
-      } else {
-        ctx.rotate(mid + Math.PI / 2)
-        ctx.translate(0, -r)
-      }
-      ctx.fillText(chars[i], -cw[i] / 2, 0)
-      ctx.restore()
-      angle += ca
-    }
-    ctx.restore()
-  }
-
-  // ── 1. Fond blanc ─────────────────────────────────────────────────────────
-  ctx.beginPath(); ctx.arc(cx, cy, R, 0, Math.PI * 2)
-  ctx.fillStyle = WHITE; ctx.fill()
-
-  // ── 2. Bande navy TOP — CCW (anticlockwise=true) = de π→0 par le haut ────
-  arcBand(R1, RB, Math.PI, 0, NAVY, true)
-
-  // ── 3. Bande navy BOTTOM — CW (anticlockwise=false) = de 0→π par le bas ──
-  arcBand(R1, RB, 0, Math.PI, NAVY, false)
-
-  // ── 4. Zone centrale blanche ───────────────────────────────────────────────
-  ctx.beginPath(); ctx.arc(cx, cy, RB, 0, Math.PI * 2)
-  ctx.fillStyle = WHITE; ctx.fill()
-
-  // ── 5. Lignes de séparation simples ───────────────────────────────────────
-  const lx0 = cx - Math.sqrt(RB * RB - LINE * LINE)
-  const lx1 = cx + Math.sqrt(RB * RB - LINE * LINE)
-  ;[-1, 1].forEach(sign => {
-    const y = cy + sign * LINE
-    ctx.strokeStyle = NAVY; ctx.lineWidth = 2.2
-    ctx.beginPath(); ctx.moveTo(lx0, y); ctx.lineTo(lx1, y); ctx.stroke()
-  })
-
-  // ── 6. Double anneau extérieur ────────────────────────────────────────────
-  ctx.strokeStyle = NAVY; ctx.lineWidth = 5.5
-  ctx.beginPath(); ctx.arc(cx, cy, R, 0, Math.PI * 2); ctx.stroke()
-  ctx.lineWidth = 1.8
-  ctx.beginPath(); ctx.arc(cx, cy, R1, 0, Math.PI * 2); ctx.stroke()
-  ctx.lineWidth = 1.5
-  ctx.beginPath(); ctx.arc(cx, cy, RB, 0, Math.PI * 2); ctx.stroke()
-
-  // ── 7. Textes arc ─────────────────────────────────────────────────────────
-  const T0 = Math.PI + 0.28
-  const T1 = 2 * Math.PI - 0.28
-
-  // «MAÎTRE MOKADMI SAMI» — milieu de la bande navy top
-  arcText('MAÎTRE MOKADMI SAMI', (R1 + RB) / 2, T0, T1, 28, WHITE, 'bold')
-
-  // «AVOCAT AU BARREAU DE TUNIS» — juste à l'intérieur de RB
-  arcText('AVOCAT AU BARREAU DE TUNIS', RB + 14, T0 + 0.45, T1 - 0.45, 15, CREAM, 'bold')
-
-  // «BARREAU DE TUNIS» — bande bas, span négatif (CCW = lisible de l'extérieur)
-  arcText('BARREAU DE TUNIS', (R1 + RB) / 2, Math.PI - 0.28, 0.28, 28, WHITE, 'bold', true)
-
-  // ── 8. Textes centraux ────────────────────────────────────────────────────
-  ctx.textAlign = 'center'; ctx.textBaseline = 'middle'
-  ctx.fillStyle = NAVY
-  ctx.font = `bold 25px "Arial Narrow", Arial, Helvetica, sans-serif`
-  ctx.fillText(`MF : ${CABINET.matriculeFiscal}`, cx, cy - 11)
-  ctx.fillStyle = NAVYMD
-  ctx.font = `bold 19px "Arial Narrow", Arial, Helvetica, sans-serif`
-  ctx.fillText('INSCRIT DEPUIS 2003', cx, cy + 13)
-
-  // ── 9. Référence + date ───────────────────────────────────────────────────
-  ctx.fillStyle = NAVYLT
-  ctx.font = `500 16px "Arial Narrow", Arial, Helvetica, sans-serif`
-  ctx.fillText(`${reference}  ·  ${fmtDateCourt(dateDoc)}`, cx, cy + R + 20)
-
-  return canvas
-}
-
-// ── Cachet fiscal de clôture ──────────────────────────────────────────────────
+// ── Cachet circulaire — dessin natif jsPDF (sans canvas) ─────────────────────
 function drawCachet(doc: jsPDF, rapport: RapportData, H: number, W: number) {
   const cachetY = H - 64
 
-  // Ligne de séparation avant cachet
+  // Ligne de séparation
   doc.setDrawColor(...NAVYMD)
   doc.setLineWidth(0.5)
   doc.line(14, cachetY - 4, W - 14, cachetY - 4)
@@ -507,13 +373,10 @@ function drawCachet(doc: jsPDF, rapport: RapportData, H: number, W: number) {
   doc.setFont('helvetica', 'bold')
   doc.setTextColor(...DARK)
   doc.text(fmtDate(rapport.dateDoc), sigX + 28, cachetY + 4)
-
   doc.setFont('helvetica', 'normal')
   doc.setFontSize(7.5)
   doc.setTextColor(...MID)
   doc.text('Signature et cachet :', sigX, cachetY + 12)
-
-  // Ligne de signature
   doc.setDrawColor(...NAVYLT)
   doc.setLineWidth(0.4)
   doc.line(sigX, cachetY + 30, sigX + 65, cachetY + 30)
@@ -522,26 +385,94 @@ function drawCachet(doc: jsPDF, rapport: RapportData, H: number, W: number) {
   doc.setTextColor(...LIGHT)
   doc.text(CABINET.nom, sigX, cachetY + 35)
 
-  // ── Cachet circulaire (droite) — Canvas → PNG → jsPDF ──────────────────
-  try {
-    const stampCanvas = buildStampCanvas(rapport.reference, rapport.dateDoc)
-    const stampPng    = stampCanvas.toDataURL('image/png')
+  // ── Cachet circulaire (droite) — dessin natif jsPDF ───────────────────────
+  const R  = 20    // rayon extérieur (mm)
+  const R1 = 18.8  // rayon bord intérieur du double anneau
+  const RB = 12.5  // rayon limite bandes / zone centrale
+  const cX = W - 14 - R     // centre X du cachet
+  const cY = cachetY + R - 4 // centre Y du cachet
 
-    // Taille dans le PDF : 58mm × 58mm, positionné à droite
-    const stampSize = 46
-    const stampX    = W - 14 - stampSize
-    const stampY    = cachetY - 6
-    doc.addImage(stampPng, 'PNG', stampX, stampY, stampSize, stampSize)
-  } catch (e) {
-    // Fallback minimal si canvas non disponible
-    console.warn('[cachet] Canvas non disponible, fallback texte', e)
-    const cX = W - 14 - 45
+  // ── 1. Disque navy complet ────────────────────────────────────────────────
+  doc.setFillColor(...NAVY)
+  doc.circle(cX, cY, R1, 'F')
+
+  // ── 2. Zone centrale blanche ──────────────────────────────────────────────
+  doc.setFillColor(255, 255, 255)
+  doc.circle(cX, cY, RB, 'F')
+
+  // ── 3. Lignes de séparation ───────────────────────────────────────────────
+  const SEP  = 4.2
+  const linW = Math.sqrt(RB * RB - SEP * SEP)
+  doc.setDrawColor(...NAVY)
+  doc.setLineWidth(0.3)
+  ;[-1, 1].forEach((s: number) => {
+    const ly = cY + s * SEP
+    doc.line(cX - linW, ly, cX + linW, ly)
+  })
+
+  // ── 4. Cercles (double anneau + bord zone centrale) ───────────────────────
+  doc.setDrawColor(...NAVY)
+  doc.setLineWidth(0.9); doc.circle(cX, cY, R,  'S')
+  doc.setLineWidth(0.3); doc.circle(cX, cY, R1, 'S')
+  doc.setLineWidth(0.25); doc.circle(cX, cY, RB + 0.3, 'S')
+
+  // ── 5. Helper texte en arc ────────────────────────────────────────────────
+  // theta = angle canvas en degrés (0=droite, 90=bas, 180=gauche, 270=haut)
+  // flip=false → texte sur arc supérieur (lisible de l'extérieur)
+  // flip=true  → texte sur arc inférieur (lisible de l'extérieur)
+  const arcText = (
+    text: string, r: number,
+    a0deg: number, a1deg: number,
+    fontSize: number, rgb: [number, number, number],
+    flip = false
+  ) => {
     doc.setFont('helvetica', 'bold')
-    doc.setFontSize(7)
-    doc.setTextColor(...NAVY)
-    doc.text(`MF : ${CABINET.matriculeFiscal}`, cX, cachetY + 10)
-    doc.text(CABINET.barreau, cX, cachetY + 18)
+    doc.setFontSize(fontSize)
+    doc.setTextColor(...rgb)
+    const n    = text.length
+    const span = a1deg - a0deg
+    const step = span / (n + 1)
+    for (let i = 0; i < n; i++) {
+      const theta = a0deg + step * (i + 1)          // degrés, canvas convention
+      const rad   = theta * Math.PI / 180
+      const x     = cX + r * Math.cos(rad)
+      const y     = cY + r * Math.sin(rad)
+      // Rotation pour que le caractère soit tangent au cercle, lisible de l'extérieur
+      const angle = flip ? (theta - 90) : (270 - theta)
+      doc.text(text[i], x, y, { angle, align: 'center' })
+    }
   }
+
+  // ── 6. Textes arc ─────────────────────────────────────────────────────────
+  const rBand = (R1 + RB) / 2   // milieu de la bande navy
+
+  // TOP : «MAÎTRE MOKADMI SAMI» — de 205° à 335° via 270° (haut)
+  arcText('MAÎTRE MOKADMI SAMI', rBand, 205, 335, 5.2, [255, 255, 255])
+
+  // TOP intérieur : «AVOCAT AU BARREAU DE TUNIS»
+  arcText('AVOCAT AU BARREAU DE TUNIS', RB + 1.8, 218, 322, 3.4, [215, 225, 245])
+
+  // BOTTOM : «BARREAU DE TUNIS» — de 25° à 155° via 90° (bas) flip=true
+  arcText('BARREAU DE TUNIS', rBand, 25, 155, 5.2, [255, 255, 255], true)
+
+  // ── 7. Textes centraux ────────────────────────────────────────────────────
+  doc.setFont('helvetica', 'bold')
+  doc.setFontSize(5.2)
+  doc.setTextColor(...NAVY)
+  doc.text(`MF : ${CABINET.matriculeFiscal}`, cX, cY - 1.5, { align: 'center' })
+
+  doc.setFontSize(4.2)
+  doc.setTextColor(...NAVYMD)
+  doc.text('INSCRIT DEPUIS 2003', cX, cY + 2.5, { align: 'center' })
+
+  // ── 8. Référence + date sous le cachet ────────────────────────────────────
+  doc.setFont('helvetica', 'normal')
+  doc.setFontSize(5)
+  doc.setTextColor(...NAVYLT)
+  doc.text(
+    `${rapport.reference}  ·  ${fmtDateCourt(rapport.dateDoc)}`,
+    cX, cY + R + 4, { align: 'center' }
+  )
 }
 
 // ── Pied de page (toutes les pages) ──────────────────────────────────────────

@@ -1,4 +1,4 @@
-import { useState, useMemo, useEffect } from 'react'
+import { useState, useMemo, useEffect, useRef } from 'react'
 import { Link, useNavigate, useLocation } from 'react-router-dom'
 import { useAuth, User } from '../contexts/AuthContext'
 import { Document } from './DashboardPage'
@@ -585,8 +585,20 @@ function ClientsList({ clients, onSelect }: {
 
 // ─── Tous les documents ───────────────────────────────────────────────────────
 
+function saveDocumentForUser(userId: string, doc: Document) {
+  const docs: Document[] = JSON.parse(localStorage.getItem(`avocat_documents_${userId}`) || '[]')
+  localStorage.setItem(`avocat_documents_${userId}`, JSON.stringify([doc, ...docs]))
+}
+
 function AllDocuments({ clients, onRefresh }: { clients: ClientData[]; onRefresh: () => void }) {
-  const [search, setSearch] = useState('')
+  const [search,      setSearch]      = useState('')
+  const [showUpload,  setShowUpload]  = useState(false)
+  const [targetUser,  setTargetUser]  = useState(clients[0]?.user.id ?? '')
+  const [dragOver,    setDragOver]    = useState(false)
+  const [uploading,   setUploading]   = useState(false)
+  const [uploadMsg,   setUploadMsg]   = useState<{ ok: boolean; text: string } | null>(null)
+  const fileInputRef = useRef<HTMLInputElement>(null)
+
   const allDocs = useMemo(() =>
     clients.flatMap(c => c.documents.map(d => ({ ...d, client: c.user }))),
     [clients]
@@ -595,20 +607,154 @@ function AllDocuments({ clients, onRefresh }: { clients: ClientData[]; onRefresh
     allDocs.filter(d =>
       d.name.toLowerCase().includes(search.toLowerCase()) ||
       d.client.name.toLowerCase().includes(search.toLowerCase())
-    ), [allDocs, search])
+    ).sort((a, b) => new Date(b.uploadedAt).getTime() - new Date(a.uploadedAt).getTime()),
+    [allDocs, search]
+  )
 
   const handleDelete = (userId: string, docId: string) => {
+    if (!confirm('Supprimer ce document définitivement ?')) return
     deleteDocument(userId, docId)
     onRefresh()
   }
 
+  const processFiles = (files: FileList | null) => {
+    if (!files || files.length === 0 || !targetUser) return
+    setUploading(true)
+    setUploadMsg(null)
+    let done = 0
+    Array.from(files).forEach(file => {
+      const reader = new FileReader()
+      reader.onload = () => {
+        const doc: Document = {
+          id:         crypto.randomUUID(),
+          name:       file.name,
+          size:       file.size,
+          type:       file.type || 'application/octet-stream',
+          uploadedAt: new Date().toISOString(),
+          content:    reader.result as string,
+        }
+        saveDocumentForUser(targetUser, doc)
+        done++
+        if (done === files.length) {
+          setUploading(false)
+          setUploadMsg({ ok: true, text: `${done} fichier${done > 1 ? 's' : ''} ajouté${done > 1 ? 's' : ''} avec succès` })
+          setShowUpload(false)
+          onRefresh()
+          setTimeout(() => setUploadMsg(null), 4000)
+        }
+      }
+      reader.onerror = () => {
+        done++
+        setUploading(false)
+        setUploadMsg({ ok: false, text: `Erreur lors de la lecture de ${file.name}` })
+      }
+      reader.readAsDataURL(file)
+    })
+  }
+
   return (
     <div className="flex flex-col gap-6">
-      <div>
-        <p className="text-xs font-medium tracking-[0.2em] uppercase text-light/40 mb-2">Documents</p>
-        <h2 className="font-serif text-2xl text-light">{allDocs.length} document{allDocs.length > 1 ? 's' : ''}</h2>
+      {/* En-tête */}
+      <div className="flex items-start justify-between gap-4 flex-wrap">
+        <div>
+          <p className="text-xs font-medium tracking-[0.2em] uppercase text-light/40 mb-2">Documents</p>
+          <h2 className="font-serif text-2xl text-light">{allDocs.length} document{allDocs.length > 1 ? 's' : ''}</h2>
+          <p className="text-xs text-light/35 mt-1">Tous les fichiers partagés avec les clients</p>
+        </div>
+        <button
+          onClick={() => { setShowUpload(s => !s); setUploadMsg(null) }}
+          className="flex items-center gap-2 text-xs font-medium bg-gold text-dark-bg px-4 py-2.5 hover:bg-gold/90 transition-colors"
+        >
+          <Plus size={13} strokeWidth={1.5} />
+          {showUpload ? 'Annuler' : 'Ajouter un document'}
+        </button>
       </div>
 
+      {/* Feedback upload */}
+      {uploadMsg && (
+        <div className={`flex items-center gap-2 px-4 py-3 text-xs border ${
+          uploadMsg.ok
+            ? 'border-green-500/20 bg-green-500/8 text-green-400'
+            : 'border-red-500/20 bg-red-500/8 text-red-400'
+        }`}>
+          {uploadMsg.ok ? <CheckCircle size={13} strokeWidth={1.5} /> : <AlertCircle size={13} strokeWidth={1.5} />}
+          {uploadMsg.text}
+        </div>
+      )}
+
+      {/* Zone d'upload */}
+      {showUpload && (
+        <div className="border border-gold/20 bg-dark-surface p-6 flex flex-col gap-5">
+          <p className="text-[10px] font-bold text-light/30 tracking-[0.25em] uppercase">Ajouter un document</p>
+
+          {/* Sélection du client destinataire */}
+          <div>
+            <label className="text-[10px] font-medium text-light/40 tracking-widest uppercase block mb-2">
+              Client destinataire *
+            </label>
+            <select
+              value={targetUser}
+              onChange={e => setTargetUser(e.target.value)}
+              className="w-full sm:w-auto border-b border-gold/15 bg-dark-surface py-2 text-sm text-light focus:outline-none focus:border-gold/50 transition-colors pr-8"
+            >
+              {clients.length === 0 && (
+                <option value="">— Aucun client enregistré —</option>
+              )}
+              {clients.map(c => (
+                <option key={c.user.id} value={c.user.id}>
+                  {c.user.name}{c.user.company ? ` — ${c.user.company}` : ''}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          {/* Zone drag & drop */}
+          <div
+            onDragOver={e => { e.preventDefault(); setDragOver(true) }}
+            onDragLeave={() => setDragOver(false)}
+            onDrop={e => {
+              e.preventDefault()
+              setDragOver(false)
+              processFiles(e.dataTransfer.files)
+            }}
+            onClick={() => fileInputRef.current?.click()}
+            className={`border-2 border-dashed rounded-none cursor-pointer flex flex-col items-center gap-4 py-12 px-6 transition-colors ${
+              dragOver
+                ? 'border-gold bg-gold/5 text-light'
+                : 'border-gold/20 hover:border-gold/40 text-light/35 hover:text-light/60'
+            }`}
+          >
+            <FileUp size={28} strokeWidth={1} className={dragOver ? 'text-gold' : 'text-light/25'} />
+            <div className="text-center">
+              <p className="text-sm font-medium mb-1">
+                {uploading ? 'Chargement en cours…' : 'Glissez vos fichiers ici'}
+              </p>
+              <p className="text-xs text-light/30">
+                ou cliquez pour sélectionner · PDF, Word, Excel, images, etc.
+              </p>
+            </div>
+            {!uploading && (
+              <span className="text-xs border border-gold/25 px-4 py-1.5 text-light/50 hover:text-light transition-colors">
+                Parcourir
+              </span>
+            )}
+          </div>
+
+          <input
+            ref={fileInputRef}
+            type="file"
+            multiple
+            className="hidden"
+            onChange={e => processFiles(e.target.files)}
+          />
+
+          <p className="text-[10px] text-light/25">
+            Les fichiers seront visibles immédiatement dans l'espace client du destinataire.
+          </p>
+        </div>
+      )}
+
+      {/* Recherche */}
       <div className="relative">
         <Search size={14} strokeWidth={1.5} className="absolute left-3 top-1/2 -translate-y-1/2 text-light/30" />
         <input
@@ -620,29 +766,38 @@ function AllDocuments({ clients, onRefresh }: { clients: ClientData[]; onRefresh
         />
       </div>
 
+      {/* Liste documents */}
       {filtered.length === 0 ? (
-        <div className="border border-gold/10 px-6 py-12 text-center text-sm text-light/30">Aucun document reçu.</div>
+        <div className="border border-gold/10 py-16 flex flex-col items-center gap-4">
+          <FileUp size={32} strokeWidth={1} className="text-light/15" />
+          <div className="text-center">
+            <p className="text-sm font-medium text-light/40 mb-1">Aucun document</p>
+            <p className="text-xs text-light/25">
+              {search ? 'Aucun résultat pour cette recherche.' : 'Ajoutez des documents pour les partager avec vos clients.'}
+            </p>
+          </div>
+        </div>
       ) : (
         <div className="flex flex-col gap-px bg-gold/10">
           {filtered.map(doc => (
-            <div key={`${doc.client.id}-${doc.id}`} className="bg-dark-surface px-6 py-4 flex items-center gap-4">
-              {fileIcon(doc.type)}
+            <div key={`${doc.client.id}-${doc.id}`}
+              className="bg-dark-surface px-4 sm:px-6 py-4 flex items-center gap-4 hover:bg-dark-card transition-colors group">
+              <div className="flex-none">{fileIcon(doc.type)}</div>
               <div className="flex-1 min-w-0">
                 <p className="text-sm font-medium text-light truncate">{doc.name}</p>
                 <p className="text-xs text-light/40 mt-0.5">
-                  <span className="font-medium">{doc.client.name}</span>
+                  <span className="font-medium text-light/60">{doc.client.name}</span>
                   {doc.client.company ? ` · ${doc.client.company}` : ''} ·{' '}
                   {formatSize(doc.size)} · {new Date(doc.uploadedAt).toLocaleDateString('fr-FR', { day: 'numeric', month: 'short', year: 'numeric' })}
                 </p>
               </div>
-              <div className="flex items-center gap-2 flex-none">
+              <div className="flex items-center gap-1.5 flex-none opacity-0 group-hover:opacity-100 transition-opacity">
                 {doc.content ? (
                   <button
                     onClick={() => downloadDocument(doc)}
-                    className="flex items-center gap-1.5 text-xs text-light/50 hover:text-light border border-gold/15 hover:border-gold/30 px-3 py-1.5 transition-colors"
+                    className="flex items-center gap-1.5 text-xs text-light/50 hover:text-gold border border-gold/15 hover:border-gold/30 px-3 py-1.5 transition-colors"
                   >
-                    <Download size={11} strokeWidth={1.5} />
-                    Télécharger
+                    <Download size={11} strokeWidth={1.5} /> Télécharger
                   </button>
                 ) : (
                   <span className="flex items-center gap-1 text-xs text-light/30">
@@ -651,9 +806,9 @@ function AllDocuments({ clients, onRefresh }: { clients: ClientData[]; onRefresh
                 )}
                 <button
                   onClick={() => handleDelete(doc.client.id, doc.id)}
-                  className="text-light/20 hover:text-red-500 transition-colors p-1"
+                  className="text-light/20 hover:text-red-500 transition-colors p-1.5 border border-gold/10 hover:border-red-500/30"
                 >
-                  <Trash2 size={13} strokeWidth={1.5} />
+                  <Trash2 size={12} strokeWidth={1.5} />
                 </button>
               </div>
             </div>

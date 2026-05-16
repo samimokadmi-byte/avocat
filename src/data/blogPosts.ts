@@ -9,6 +9,46 @@ export interface BlogPost {
 
 export const blogPosts: BlogPost[] = [
   {
+    slug: 'ingenierie-gouvernance-legaltech-tunisie',
+    title: "L'Ingénierie de Gouvernance : Impératifs stratégiques de la modélisation des flux juridiques face aux illusions de la LegalTech en Tunisie",
+    category: 'Gouvernance & Stratégie',
+    date: '16 mai 2026',
+    excerpt: "L'automatisation des actes juridiques par des outils no-code ou des IA non supervisées crée l'illusion d'une gouvernance maîtrisée. L'ingénierie juridique exige de subordonner la technologie à l'architecture doctrinale — et non l'inverse.",
+    content: `L'expansion contemporaine de l'intelligence artificielle et des solutions no-code au sein de l'écosystème entrepreneurial tunisien engendre une confusion systémique entre la digitalisation des supports et l'ingénierie des structures. Séduits par l'immédiateté opérationnelle, nombre de comités de direction, de holdings et de structures labellisées Startup Act automatisent de manière empirique des actes hautement stratégiques : pactes d'actionnaires, conventions réglementées, ou procès-verbaux d'organes collégiaux.
+
+Pourtant, un postulat méthodologique s'impose : l'optimisation technique d'un processus juridiquement vicié ne fait qu'accélérer la réalisation du risque contentieux ou de la déchéance réglementaire. En matière de gouvernance, l'ingénieur interconnecte les flux ; seul l'architecte du droit en conçoit la matrice.
+
+## I. Le sophisme technologique : De la standardisation contractuelle à la fragilisation des structures
+
+Confier l'automatisation des flux juridiques à des services informatiques ou à des modèles d'IA générative non supervisés procède d'une méprise sur la nature même de la règle de droit. Le technicien no-code maîtrise l'interopérabilité des systèmes — l'appariement de variables à un traitement de texte ou le déclenchement de protocoles de signature électronique. Néanmoins, cette tuyauterie numérique demeure imperméable à la substance du droit positif tunisien.
+
+L'algorithme ignore par définition les revirements de la jurisprudence de la Cour de cassation, les subtilités doctrinales du Code des Obligations et des Contrats (COC) et la réalité économique des structures de marché locales. Substituer un automatisme à une analyse de matérialité juridique expose l'entité à la prolifération d'actes d'adhésion inadaptés, dénués de toute flexibilité contractuelle et potentiellement frappés de nullité absolue.
+
+## II. Anatomie d'un blocage : La paralysie programmée des organes sociaux
+
+L'impact d'une automatisation exogène est particulièrement critique lors des phases de reconfiguration du capital ou de restructuration de groupe (Corporate Restructuring).
+
+Prenons l'hypothèse d'une Société Anonyme (SA) tunisienne en phase de scale-up. Pour rationaliser sa gestion partenariale, la direction déploie une solution automatisée de secrétariat juridique. Sur le plan formel, le formalisme est respecté : génération des avis de convocation, calcul des règles de quorum et émargement des feuilles de présence.
+
+Cependant, le logiciel applique un modèle de statuts standardisé, n'intégrant aucune modélisation sur mesure des droits de vote plural, des clauses de veto sur les décisions extraordinaires, ou des mécanismes d'alignement des intérêts lors d'un Exit. À l'occasion d'un tour de table ultérieur impliquant des fonds de capital-investissement (Venture Capital), un conflit de gouvernance surgit. Le workflow s'exécute, mais il matérialise une minorité de blocage indue, sanctuarisée par le dogme de l'outil informatique. L'efficience de l'algorithme s'est retournée contre l'intérêt social de l'entreprise, provoquant une impasse stratégique majeure.
+
+## III. Le paradigme architectural : Subordonner la LegalTech à la conception doctrinale
+
+L'ingénierie juridique d'affaires exige de restaurer la hiérarchie des compétences. L'outil technologique doit être le script final d'un cadre conceptuel rigoureusement établi en amont par l'architecte du droit. Cette démarche s'articule autour de trois phases synallagmatiques :
+
+**L'Audit et la Cartographie des Pouvoirs** : Analyse critique des équilibres actionnariaux, des stipulations limitatives de pouvoirs et des clauses d'arbitrage. Il s'agit de traduire les objectifs de gouvernance en règles de droit applicables.
+
+**L'Ingénierie de Sécurisation et de Conformité** : Intégration des contraintes d'ordre public du Code des Sociétés Commerciales, de l'optimisation des flux fiscaux nationaux ou transfrontaliers, et des obligations de conformité impératives édictées par l'Instance Nationale de Protection des Données Personnelles (INPDP). Cette phase fixe les verrous juridiques et les clauses de sauvegarde.
+
+**L'Établissement du Cahier des Charges Fonctionnel** : Le livrable juridique prend ici la forme d'un Blueprint — un plan d'architecture logique — transmis à l'ingénieur ou au prestataire LegalTech. L'implémentation technique intervient alors exclusivement pour codifier une stratégie préalablement sécurisée.
+
+## Conclusion : L'impératif d'une gouvernance éclairée
+
+Pour les directions générales, les directions juridiques et les actionnaires de référence en Tunisie, la transformation digitale ne doit pas s'opérer au détriment de la sécurité juridique. L'automatisation est une commodité de traitement ; l'architecture contractuelle et statutaire demeure un acte de haute stratégie.
+
+**Ne déléguez pas la conception de vos structures à ceux qui ne font que les connecter.**`,
+  },
+  {
     slug: 'ia-due-diligence-revolution',
     title: "L'IA dans la due diligence : comment nous avons réduit le temps de revue de 60%",
     category: 'IA Juridique',

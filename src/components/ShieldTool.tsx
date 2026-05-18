@@ -16,8 +16,9 @@ async function callAI(prompt: string, maxTokens = 2000): Promise<string> {
     body: JSON.stringify({ prompt, maxTokens }),
   })
   const data = await res.json()
-  if (!res.ok) throw new Error(data.error ?? 'Erreur serveur')
-  return data.text ?? ''
+  if (!res.ok) throw new Error(data.error ?? `Erreur ${res.status}`)
+  if (!data.text) throw new Error('Réponse vide du serveur')
+  return data.text
 }
 
 // ── DOCX-like download (plain text formatted) ─────────────────────────────────
@@ -87,7 +88,7 @@ The contract must include these sections:
 Write in formal French legal language. Format clearly with article numbers. Include blanks like [DATE], [NOM CLIENT], [ADRESSE CLIENT] where needed. Be specific and protective of the freelancer.`
       const text = await callAI(prompt, 2500)
       setResult(text)
-    } catch { setResult('Erreur lors de la génération. Veuillez réessayer.') }
+    } catch (e) { setResult('Erreur : ' + (e instanceof Error ? e.message : 'Réessayez')) }
     finally { setLoading(false) }
   }
 
@@ -204,7 +205,7 @@ Return exactly 5 flags ranked by risk (1=highest). JSON only, no markdown.`
       const parsed = JSON.parse(cleaned)
       setFlags(parsed.flags ?? [])
       setSummary(parsed.summary ?? '')
-    } catch { setSummary('Erreur d\'analyse. Vérifiez que le contrat est suffisamment long et réessayez.') }
+    } catch (e) { setSummary('Erreur : ' + (e instanceof Error ? e.message : 'Réessayez')) }
     finally { setLoading(false) }
   }
 
@@ -379,7 +380,7 @@ function TemplateLibrary() {
 Le contrat doit être professionnel, protecteur du prestataire, avec tous les articles standards : parties, objet, prix, paiement, PI, confidentialité, résiliation, loi applicable. Utilise [VARIABLE] pour les champs à remplir. Format structuré avec numéros d'articles.`
       const text = await callAI(prompt, 2000)
       downloadAsDocx(text, t.title.replace(/\s/g, '_'))
-    } catch { alert('Erreur de génération. Réessayez.') }
+    } catch (e) { alert('Erreur : ' + (e instanceof Error ? e.message : 'Réessayez')) }
     finally { setGenerating(null) }
   }
 
@@ -445,7 +446,7 @@ function NdaGenerator() {
 L'accord doit couvrir : définition des informations confidentielles, obligations des parties, exceptions, durée et post-contrat, sanctions en cas de violation, loi applicable (droit tunisien, tribunaux de Tunis). Professionnel, complet, format structuré avec articles numérotés. Utilise [DATE] pour la date de signature.`
       const text = await callAI(prompt, 1500)
       setResult(text)
-    } catch { setResult('Erreur de génération. Réessayez.') }
+    } catch (e) { setResult('Erreur : ' + (e instanceof Error ? e.message : 'Réessayez')) }
     finally { setLoading(false) }
   }
 

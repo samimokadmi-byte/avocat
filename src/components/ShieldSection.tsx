@@ -65,7 +65,7 @@ export default function ShieldSection() {
           </div>
 
           {/* Stats */}
-          <div className="flex flex-wrap gap-px bg-gold/10 mt-2">
+          <div className="grid grid-cols-3 gap-px bg-gold/10 mt-2 w-full">
             {stats.map((s, i) => (
               <div key={i} className="bg-dark-surface px-6 py-4">
                 <p className="font-serif text-2xl text-light font-bold mb-0.5">{s.value}</p>

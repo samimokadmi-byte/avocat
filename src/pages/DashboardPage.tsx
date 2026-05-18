@@ -5,8 +5,9 @@ import {
   LayoutDashboard, FolderOpen, FileUp, MessageSquare, LogOut,
   Upload, File, ChevronRight,
   FileText, Trash2, Menu, X, Shield, CalendarDays, Bell, Receipt,
-  Download, CheckSquare
+  Download, CheckSquare, ShieldCheck
 } from 'lucide-react'
+import ShieldTool from '../components/ShieldTool'
 import { useReminders } from '../hooks/useReminders'
 import { Invoice, computeAmounts, fmtAmount, CURRENCIES } from '../components/BillingModule'
 import type { Appointment } from '../components/CalendarView'
@@ -669,12 +670,13 @@ function Messagerie() {
 // ─── Dashboard ────────────────────────────────────────────────────────────────
 
 const navItems = [
-  { id: 'apercu', label: 'Aperçu', icon: LayoutDashboard },
-  { id: 'dossiers', label: 'Dossiers', icon: FolderOpen },
-  { id: 'documents', label: 'Documents', icon: FileUp },
-  { id: 'rendezvous', label: 'Agenda', icon: CalendarDays },
+  { id: 'apercu',      label: 'Aperçu',      icon: LayoutDashboard },
+  { id: 'dossiers',    label: 'Dossiers',    icon: FolderOpen },
+  { id: 'documents',   label: 'Documents',   icon: FileUp },
+  { id: 'rendezvous',  label: 'Agenda',      icon: CalendarDays },
   { id: 'facturation', label: 'Facturation', icon: Receipt },
-  { id: 'messagerie', label: 'Messagerie', icon: MessageSquare },
+  { id: 'shield',      label: 'Shield',      icon: ShieldCheck },
+  { id: 'messagerie',  label: 'Messagerie',  icon: MessageSquare },
 ]
 
 export default function DashboardPage() {
@@ -825,6 +827,7 @@ export default function DashboardPage() {
               userCompany={user?.company}
             />
           )}
+          {tab === 'shield' && <ShieldTool />}
           {tab === 'messagerie' && <Messagerie />}
         </main>
       </div>

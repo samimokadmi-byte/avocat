@@ -8,25 +8,16 @@ import {
 // ── Disclaimer constant ───────────────────────────────────────────────────────
 const DISCLAIMER = "Cet outil fournit des modèles et des informations générales uniquement. Il ne constitue pas un conseil juridique. Consultez un avocat qualifié avant toute utilisation."
 
-// ── API call ──────────────────────────────────────────────────────────────────
+// ── API call via proxy serverless (clé API côté serveur) ─────────────────────
 async function callAI(prompt: string, maxTokens = 2000): Promise<string> {
-  const res = await fetch('https://api.anthropic.com/v1/messages', {
+  const res = await fetch('/api/ai', {
     method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      'x-api-key': import.meta.env.VITE_ANTHROPIC_API_KEY ?? '',
-      'anthropic-version': '2023-06-01',
-      'anthropic-dangerous-direct-browser-access': 'true',
-    },
-    body: JSON.stringify({
-      model: 'claude-sonnet-4-20250514',
-      max_tokens: maxTokens,
-      messages: [{ role: 'user', content: prompt }],
-    }),
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ prompt, maxTokens }),
   })
   const data = await res.json()
-  if (!res.ok) throw new Error(data.error?.message ?? 'Erreur API')
-  return data.content?.[0]?.text ?? ''
+  if (!res.ok) throw new Error(data.error ?? 'Erreur serveur')
+  return data.text ?? ''
 }
 
 // ── DOCX-like download (plain text formatted) ─────────────────────────────────

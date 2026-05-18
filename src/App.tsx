@@ -39,6 +39,7 @@ import CasEtudes from './components/CasEtudes'
 import SuiviNumerique from './components/SuiviNumerique'
 import Veille from './components/Veille'
 import ServicesAssocies from './components/ServicesAssocies'
+import ShieldSection from './components/ShieldSection'
 import BlogSection from './components/BlogSection'
 import FAQ from './components/FAQ'
 import Booking from './components/Booking'
@@ -91,6 +92,7 @@ function LandingPage() {
         {/* ── Veille juridique & Services associés ── */}
         <Veille />
         <ServicesAssocies />
+        <ShieldSection />
 
         {/* ── Blog & FAQ & Contact ── */}
         <BlogSection />

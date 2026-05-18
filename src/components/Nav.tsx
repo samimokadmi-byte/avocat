@@ -9,6 +9,7 @@ const links = [
   { id: 'systeme',   label: 'Expertise' },
   { id: 'methode',   label: 'Méthode' },
   { id: 'resultats', label: 'Résultats' },
+  { id: 'shield',    label: 'Shield' },
   { id: 'blog',      label: 'Blog' },
   { id: 'faq',       label: 'FAQ' },
 ]

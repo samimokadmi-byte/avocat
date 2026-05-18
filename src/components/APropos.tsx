@@ -3,7 +3,7 @@ import { Award, BookOpen, Scale, Cpu } from 'lucide-react'
 const parcours = [
   {
     icon: Scale,
-    periode: '2001 — 2010',
+    periode: '2003 — 2010',
     titre: 'Fondation du cabinet',
     detail: 'Installation au Barreau de Tunis. Premiers dossiers structurants en droit des sociétés et accompagnement de groupes industriels tunisiens.',
   },

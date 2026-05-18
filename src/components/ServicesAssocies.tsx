@@ -66,7 +66,7 @@ export default function ServicesAssocies() {
                 <div className="w-9 h-9 border border-gold/15 flex items-center justify-center group-hover:border-gold/30 transition-colors duration-200">
                   <Icon size={16} strokeWidth={1.25} className="text-gold/40 group-hover:text-gold/60 transition-colors duration-200" />
                 </div>
-                <span className="text-[10px] font-medium text-gold/45 uppercase tracking-widest border border-gold/12 px-2 py-0.5">
+                <span className="text-[10px] font-medium text-gold/50 uppercase tracking-widest">
                   {tag}
                 </span>
               </div>

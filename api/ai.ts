@@ -39,7 +39,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         'anthropic-beta':  'pdfs-2024-09-25',  // activer la lecture native de PDF
       },
       body: JSON.stringify({
-        model:      'claude-sonnet-4-20250514',
+        model:      'claude-sonnet-4-5',
         max_tokens: maxTokens,
         messages:   [{ role: 'user', content: userContent }],
       }),

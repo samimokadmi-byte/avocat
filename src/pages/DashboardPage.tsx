@@ -410,13 +410,13 @@ function Documents({ documents, setDocuments }: {
         <Upload size={24} strokeWidth={1.25} className="text-light/30" />
         <div className="text-center">
           <p className="text-sm font-medium text-light">Déposer vos fichiers ici</p>
-          <p className="text-xs text-light/40 mt-1">ou cliquez pour parcourir · PDF, Word, Excel acceptés</p>
+          <p className="text-xs text-light/40 mt-1">ou cliquez pour parcourir · PDF, Word, Excel, images acceptés</p>
         </div>
         <input
           ref={inputRef}
           type="file"
           multiple
-          accept=".pdf,.doc,.docx,.xls,.xlsx,.png,.jpg,.jpeg"
+          accept=".pdf,.doc,.docx,.xls,.xlsx,.csv,.txt,.png,.jpg,.jpeg,.webp,application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document,application/vnd.ms-excel,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,image/*"
           onChange={onInputChange}
           className="hidden"
         />

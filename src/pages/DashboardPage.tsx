@@ -289,6 +289,63 @@ function Dossiers({ dossiers, rdvs, todos, invoices }: {
 }
 // ─── Documents ────────────────────────────────────────────────────────────────
 
+// ── OCR via Claude vision ─────────────────────────────────────────────────────
+function OCRButton({ doc }: { doc: Document }) {
+  const [loading,  setLoading]  = useState(false)
+  const [result,   setResult]   = useState('')
+  const [showText, setShowText] = useState(false)
+
+  const runOCR = async () => {
+    if (!doc.content) return
+    setLoading(true); setResult('')
+    try {
+      const base64 = doc.content.split(',')[1] ?? doc.content
+      const mediaType = doc.type || 'image/jpeg'
+      const res = await fetch('/api/ai', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          prompt: 'Extrais tout le texte visible dans cette image. Retourne uniquement le texte, sans commentaire.',
+          maxTokens: 1500,
+          imageBase64: base64,
+          imageMediaType: mediaType,
+        }),
+      })
+      const data = await res.json()
+      if (!res.ok) throw new Error(data.error)
+      setResult(data.text ?? '')
+      setShowText(true)
+    } catch (e) {
+      setResult('Erreur OCR : ' + (e instanceof Error ? e.message : 'Réessayez'))
+      setShowText(true)
+    } finally { setLoading(false) }
+  }
+
+  return (
+    <div className="flex flex-col gap-1 flex-none">
+      <button
+        onClick={runOCR}
+        disabled={loading}
+        className="flex items-center gap-1 text-[10px] text-light/40 hover:text-gold border border-gold/10 hover:border-gold/25 px-2 py-1 transition-colors disabled:opacity-40"
+      >
+        {loading ? <span className="animate-spin">⟳</span> : '◈'} OCR
+      </button>
+      {showText && result && (
+        <div className="fixed inset-0 z-50 bg-dark-bg/90 flex items-center justify-center p-4" onClick={() => setShowText(false)}>
+          <div className="bg-dark-surface border border-gold/20 max-w-lg w-full max-h-[80vh] flex flex-col" onClick={e => e.stopPropagation()}>
+            <div className="flex items-center justify-between px-4 py-3 border-b border-gold/10">
+              <p className="text-xs font-semibold text-light">Texte extrait (OCR)</p>
+              <button onClick={() => { navigator.clipboard.writeText(result) }} className="text-xs text-gold/60 hover:text-gold border border-gold/15 px-2 py-1">Copier</button>
+            </div>
+            <pre className="p-4 text-xs text-light/70 overflow-auto leading-relaxed whitespace-pre-wrap">{result}</pre>
+            <button onClick={() => setShowText(false)} className="text-xs text-light/30 hover:text-light py-3 border-t border-gold/10 transition-colors">Fermer</button>
+          </div>
+        </div>
+      )}
+    </div>
+  )
+}
+
 function Documents({ documents, setDocuments }: {
   documents: Document[]
   setDocuments: (d: Document[] | ((prev: Document[]) => Document[])) => void
@@ -383,6 +440,9 @@ function Documents({ documents, setDocuments }: {
               >
                 <Trash2 size={14} strokeWidth={1.5} />
               </button>
+              {doc.content && (doc.type.includes('image') || doc.name.match(/\.(png|jpg|jpeg|webp)$/i)) && (
+                <OCRButton doc={doc} />
+              )}
             </div>
           ))}
         </div>

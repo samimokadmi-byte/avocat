@@ -12,10 +12,11 @@ import {
   Phone, MapPin, BookUser, AtSign, Building2, Save, UserPlus,
   Scale, ScrollText, ChevronDown, ChevronUp, Eye, EyeOff,
   FilePlus, GripVertical, BookOpen, Shield, BarChart3,
-  Copy, Check
+  Copy, Check, Loader2
 } from 'lucide-react'
 import { RAPPORT_TYPES, type RapportData, type RapportSection, type RapportTypeId, downloadRapportPdf } from '../utils/rapportPdf'
 import { getAFRBAnalyses, type AFRBAnalysis, AFRB_KEY } from '../components/AFRBTool'
+import { downloadAFRBReport, generateAFRBBase64 } from '../utils/afrbReportPdf'
 
 // ── Helper API IA — proxy /api/ai ─────────────────────────────────────────────
 async function callAI(prompt: string, maxTokens = 2000): Promise<string> {
@@ -2955,6 +2956,62 @@ function riskCls(level: string) {
   return RISK_COLORS_ADMIN[key]
 }
 
+// ── Envoi email AFRB admin ────────────────────────────────────────────────────
+function AdminSendAFRBEmail({ analysis }: { analysis: AFRBAnalysis }) {
+  const client = analysis.clientId
+    ? JSON.parse(localStorage.getItem(`avocat_user_${analysis.clientId}`) ?? '{}')?.email ?? ''
+    : ''
+  const [email,    setEmail]    = useState(client)
+  const [loading,  setLoading]  = useState(false)
+  const [feedback, setFeedback] = useState('')
+
+  const send = async () => {
+    if (!email.trim()) return
+    setLoading(true); setFeedback('')
+    try {
+      const pdfBase64 = await generateAFRBBase64(analysis)
+      const res = await fetch('/api/send-afrb', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          clientEmail: email,
+          clientName: analysis.clientName,
+          riskLevel: analysis.result?.risk_matrix.overall_risk_level ?? '—',
+          pdfBase64,
+        }),
+      })
+      const data = await res.json()
+      if (!res.ok) throw new Error(data.error)
+      setFeedback(`✓ Envoyé à ${email}`)
+    } catch (e) {
+      setFeedback('✗ ' + (e instanceof Error ? e.message : 'Erreur'))
+    } finally { setLoading(false) }
+  }
+
+  return (
+    <div className="flex flex-col gap-1.5">
+      <div className="flex gap-2">
+        <input
+          type="email"
+          value={email}
+          onChange={e => setEmail(e.target.value)}
+          placeholder="email@client.com"
+          className="flex-1 border-b border-gold/15 bg-transparent py-1.5 text-xs text-light placeholder:text-light/25 focus:outline-none focus:border-gold/50 transition-colors"
+        />
+        <button
+          onClick={send}
+          disabled={loading || !email.trim()}
+          className="flex items-center gap-1.5 text-xs border border-gold/20 text-light/50 hover:text-light px-3 py-1.5 transition-colors disabled:opacity-40"
+        >
+          {loading ? <Loader2 size={11} className="animate-spin" /> : <Mail size={11} strokeWidth={1.5} />}
+          {loading ? 'Envoi…' : 'Envoyer'}
+        </button>
+      </div>
+      {feedback && <p className={`text-[10px] ${feedback.startsWith('✓') ? 'text-emerald-400' : 'text-red-400'}`}>{feedback}</p>}
+    </div>
+  )
+}
+
 function AFRBAdmin({ clients: _clients }: { clients: ClientData[] }) {
   const [analyses, setAnalyses] = useState<AFRBAnalysis[]>(getAFRBAnalyses)
   const [selected, setSelected] = useState<AFRBAnalysis | null>(null)
@@ -3006,6 +3063,15 @@ function AFRBAdmin({ clients: _clients }: { clients: ClientData[] }) {
           className="flex items-center gap-2 text-xs text-light/40 hover:text-light border border-gold/15 px-3 py-2 w-fit transition-colors">
           {copied === selected.id ? <><Check size={11} /> Copié</> : <><Copy size={11} /> Copier JSON</>}
         </button>
+        <div className="flex gap-2">
+          <button
+            onClick={() => downloadAFRBReport(selected)}
+            className="flex items-center gap-2 text-xs bg-gold text-dark-bg px-4 py-2 hover:bg-gold/90 transition-colors font-semibold"
+          >
+            <Download size={12} strokeWidth={1.5} /> Télécharger PDF
+          </button>
+          <AdminSendAFRBEmail analysis={selected} />
+        </div>
       </div>
 
       {selected.result && (

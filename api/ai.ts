@@ -11,27 +11,28 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   if (!apiKey) return res.status(500).json({ error: 'Clé API non configurée.' })
 
   try {
-    const { prompt, maxTokens = 2000, documentBase64, documentMediaType } = req.body ?? {}
+    const { prompt, maxTokens = 2000, documentBase64, documentMediaType, imageBase64, imageMediaType } = req.body ?? {}
     if (!prompt) return res.status(400).json({ error: 'Prompt manquant' })
 
-    // Limiter à 4096 tokens max (évite les timeouts Vercel sur fonctions serverless)
     const safeTokens = Math.min(Number(maxTokens) || 2000, 4096)
 
     // Construire le contenu du message
-    // Si un document est fourni, l'envoyer en tant que document natif Claude
-    const userContent = documentBase64
-      ? [
-          {
-            type: 'document',
-            source: {
-              type:       'base64',
-              media_type: documentMediaType ?? 'application/pdf',
-              data:       documentBase64,
-            },
-          },
-          { type: 'text', text: prompt },
-        ]
-      : prompt
+    let userContent: unknown
+    if (imageBase64) {
+      // Mode OCR / vision — image en base64
+      userContent = [
+        { type: 'image', source: { type: 'base64', media_type: imageMediaType ?? 'image/jpeg', data: imageBase64 } },
+        { type: 'text', text: prompt },
+      ]
+    } else if (documentBase64) {
+      // Mode document PDF natif
+      userContent = [
+        { type: 'document', source: { type: 'base64', media_type: documentMediaType ?? 'application/pdf', data: documentBase64 } },
+        { type: 'text', text: prompt },
+      ]
+    } else {
+      userContent = prompt
+    }
 
     const response = await fetch('https://api.anthropic.com/v1/messages', {
       method: 'POST',

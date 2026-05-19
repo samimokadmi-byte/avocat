@@ -2,9 +2,11 @@ import { useState, useRef, useCallback } from 'react'
 import {
   AlertTriangle, CheckCircle2, ChevronDown, ChevronUp,
   ClipboardList, Copy, Check, FileSearch,
-  Loader2, Scale, Zap, Upload, FileText, X, Sparkles
+  Loader2, Scale, Zap, Upload, FileText, X, Sparkles,
+  Download, Mail
 } from 'lucide-react'
 import { extractFile, SUPPORTED_TYPES, MAX_SIZE_MB } from '../utils/extractText'
+import { downloadAFRBReport, generateAFRBBase64 } from '../utils/afrbReportPdf'
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 export interface AFRBAnalysis {
@@ -574,6 +576,62 @@ function AnalysisHistory({ clientId }: { clientId: string }) {
   )
 }
 
+// ── Bouton envoi email ────────────────────────────────────────────────────────
+function SendEmailButton({ analysis, emailOverride }: { analysis: AFRBAnalysis; emailOverride?: string }) {
+  const [loading,  setLoading]  = useState(false)
+  const [feedback, setFeedback] = useState<{ ok: boolean; msg: string } | null>(null)
+  const [email,    setEmail]    = useState(emailOverride ?? '')
+  const send = async () => {
+    if (!email.trim()) return
+    setLoading(true); setFeedback(null)
+    try {
+      const pdfBase64 = await generateAFRBBase64(analysis)
+      const res = await fetch('/api/send-afrb', {
+        method:  'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body:    JSON.stringify({
+          clientEmail: email,
+          clientName:  analysis.clientName,
+          riskLevel:   analysis.result?.risk_matrix.overall_risk_level ?? '—',
+          pdfBase64,
+        }),
+      })
+      const data = await res.json()
+      if (!res.ok) throw new Error(data.error)
+      setFeedback({ ok: true, msg: `Envoyé à ${email}` })
+    } catch (e) {
+      setFeedback({ ok: false, msg: e instanceof Error ? e.message : 'Erreur' })
+    } finally { setLoading(false) }
+  }
+
+  return (
+    <div className="flex flex-col gap-2">
+      <div className="flex gap-2">
+        <input
+          type="email"
+          value={email}
+          onChange={e => setEmail(e.target.value)}
+          placeholder="email@client.com"
+          className="flex-1 border-b border-gold/15 bg-transparent py-1.5 text-xs text-light placeholder:text-light/25 focus:outline-none focus:border-gold/50 transition-colors"
+        />
+      </div>
+      <button
+        onClick={send}
+        disabled={loading || !email.trim()}
+        className="flex items-center gap-1.5 text-xs text-light/50 hover:text-light border border-gold/10 hover:border-gold/30 px-3 py-2 transition-colors disabled:opacity-40"
+      >
+        {loading ? <Loader2 size={11} className="animate-spin" /> : <Mail size={11} strokeWidth={1.5} />}
+        {loading ? 'Envoi…' : 'Envoyer par email'}
+      </button>
+      {feedback && (
+        <p className={`text-[10px] ${feedback.ok ? 'text-emerald-400' : 'text-red-400'}`}>
+          {feedback.ok ? '✓ ' : '✗ '}{feedback.msg}
+        </p>
+      )}
+    </div>
+  )
+}
+
 // ── Composant principal AFRB ──────────────────────────────────────────────────
 export default function AFRBTool({ clientId, clientName }: { clientId: string; clientName: string }) {
   const [tab, setTab] = useState<'analyse' | 'historique'>('analyse')
@@ -621,9 +679,20 @@ export default function AFRBTool({ clientId, clientName }: { clientId: string; c
           <AFRBForm clientId={clientId} clientName={clientName} onResult={handleResult} />
           {lastResult?.result && (
             <div className="flex flex-col gap-3">
-              <div className="flex items-center gap-2">
-                <CheckCircle2 size={14} strokeWidth={1.5} className="text-emerald-400" />
-                <p className="text-xs font-semibold text-light">Résultat de l'analyse</p>
+              <div className="flex items-center justify-between gap-4 flex-wrap">
+                <div className="flex items-center gap-2">
+                  <CheckCircle2 size={14} strokeWidth={1.5} className="text-emerald-400" />
+                  <p className="text-xs font-semibold text-light">Résultat de l'analyse</p>
+                </div>
+                <div className="flex gap-2">
+                  <button
+                    onClick={() => downloadAFRBReport(lastResult)}
+                    className="flex items-center gap-1.5 text-xs text-gold/70 hover:text-gold border border-gold/20 hover:border-gold/40 px-3 py-2 transition-colors"
+                  >
+                    <Download size={12} strokeWidth={1.5} /> Télécharger PDF
+                  </button>
+                  <SendEmailButton analysis={lastResult} />
+                </div>
               </div>
               <ResultBlock result={lastResult.result} />
             </div>

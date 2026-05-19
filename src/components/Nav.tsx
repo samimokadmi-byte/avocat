@@ -83,8 +83,8 @@ export default function Nav() {
       </div>
 
       {/* Mobile menu */}
-      <div className={`md:hidden absolute top-full left-0 right-0 bg-dark-bg border-b border-t border-gold/10 overflow-hidden transition-all duration-300 ease-in-out ${
-        open ? 'max-h-[560px] opacity-100 py-6 px-6' : 'max-h-0 opacity-0 py-0 px-6'
+      <div className={`md:hidden absolute top-full left-0 right-0 bg-dark-bg border-b border-t border-gold/10 transition-all duration-300 ease-in-out ${
+        open ? 'max-h-[90dvh] opacity-100 py-6 px-6 overflow-y-auto' : 'max-h-0 opacity-0 py-0 px-6 overflow-hidden'
       }`}>
         <div className="flex flex-col gap-1">
           {links.map(l => (

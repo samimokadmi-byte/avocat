@@ -6,6 +6,7 @@
  */
 
 import type { VercelRequest, VercelResponse } from '@vercel/node'
+import pdfParse from 'pdf-parse'
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   res.setHeader('Access-Control-Allow-Origin', '*')
@@ -24,9 +25,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
     // ── PDF ──────────────────────────────────────────────────────────────────
     if ((mediaType as string)?.includes('pdf') || name.endsWith('.pdf')) {
-      // eslint-disable-next-line @typescript-eslint/no-var-requires
-      const pdfParse = require('pdf-parse')
-      const data     = await pdfParse(buffer, { max: 30 })  // max 30 pages
+      const data = await pdfParse(buffer, { max: 30 })
       text = data.text?.replace(/\s{3,}/g, '\n\n').trim() ?? ''
 
       if (!text || text.length < 50) {

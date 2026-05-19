@@ -1,9 +1,10 @@
-import { useState } from 'react'
+import { useState, useRef, useCallback } from 'react'
 import {
   AlertTriangle, CheckCircle2, ChevronDown, ChevronUp,
   ClipboardList, Copy, Check, FileSearch,
-  Loader2, Scale, Zap
+  Loader2, Scale, Zap, Upload, FileText, X, Sparkles
 } from 'lucide-react'
+import { extractTextFromFile, SUPPORTED_TYPES, MAX_SIZE_MB } from '../utils/extractText'
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 export interface AFRBAnalysis {
@@ -60,11 +61,11 @@ function saveAnalysis(a: AFRBAnalysis) {
 }
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
-async function callAI(prompt: string): Promise<string> {
+async function callAI(prompt: string, maxTokens = 2000): Promise<string> {
   const res = await fetch('/api/ai', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ prompt, maxTokens: 3000 }),
+    body: JSON.stringify({ prompt, maxTokens }),
   })
   const data = await res.json()
   if (!res.ok) throw new Error(data.error ?? `Erreur ${res.status}`)
@@ -204,8 +205,88 @@ function AFRBForm({ clientId, clientName, onResult }: {
   const [personalExposure, setPersonalExposure] = useState('')
   const [structuralThreat, setStructuralThreat] = useState('')
   const [loading,          setLoading]          = useState(false)
+  const [extracting,       setExtracting]       = useState(false)
   const [error,            setError]            = useState('')
+  const [dragOver,         setDragOver]         = useState(false)
+  const [uploadedFile,     setUploadedFile]     = useState<File | null>(null)
+  const fileRef = useRef<HTMLInputElement>(null)
 
+  // ── Extraction + auto-remplissage IA ──────────────────────────────────────
+  const processFile = useCallback(async (file: File) => {
+    const sizeOk = file.size / 1024 / 1024 <= MAX_SIZE_MB
+    if (!sizeOk) { setError(`Fichier trop volumineux (max ${MAX_SIZE_MB} Mo)`); return }
+
+    setExtracting(true)
+    setUploadedFile(file)
+    setError('')
+
+    try {
+      // 1. Extraire le texte
+      const rawText = await extractTextFromFile(file)
+      if (!rawText || rawText.length < 50) {
+        throw new Error('Le document semble vide ou illisible. Vérifiez qu\'il contient du texte sélectionnable.')
+      }
+
+      // 2. Demander à l'IA d'extraire et structurer le scénario + les 4 évaluations
+      const extractPrompt = `Tu es un expert en droit des sociétés. Analyse ce document et extrais les informations pour une évaluation AFRB.
+
+DOCUMENT :
+${rawText.substring(0, 8000)}${rawText.length > 8000 ? '\n[...document tronqué à 8000 car...]' : ''}
+
+Renvoie UNIQUEMENT un JSON valide (sans markdown) avec exactement ces champs :
+{
+  "scenario": "Résumé structuré du contexte en 4-8 phrases : nature du pacte, structure actionnariale (noms/pourcentages si disponibles), types d'actionnaires (fondateurs/fonds/tiers), stade de développement, objet principal des négociations.",
+  "reciprocity": "Analyse de la réciprocité : équilibre des clauses de sortie, tag-along, drag-along, droits d'information. Si non mentionné : 'Non renseigné dans le document.'",
+  "enforcement": "Analyse de la force exécutoire : clauses pénales, bad leaver, promesses unilatérales, exécution forcée. Si non mentionné : 'Non renseigné dans le document.'",
+  "personalExposure": "Analyse de l'exposition personnelle : non-concurrence, garanties de passif, responsabilité des dirigeants. Si non mentionné : 'Non renseigné dans le document.'",
+  "structuralThreat": "Analyse de la menace structurelle : deadlock, minorité de blocage, dilution, perte de contrôle. Si non mentionné : 'Non renseigné dans le document.'"
+}
+
+Sois précis, concis et factuel. JSON uniquement.`
+
+      const raw = await callAI(extractPrompt, 1500)
+      const cleaned = raw.replace(/```json|```/g, '').trim()
+      const extracted = JSON.parse(cleaned)
+
+      // 3. Remplir les champs
+      if (extracted.scenario)         setScenario(extracted.scenario)
+      if (extracted.reciprocity)      setReciprocity(extracted.reciprocity)
+      if (extracted.enforcement)      setEnforcement(extracted.enforcement)
+      if (extracted.personalExposure) setPersonalExposure(extracted.personalExposure)
+      if (extracted.structuralThreat) setStructuralThreat(extracted.structuralThreat)
+
+    } catch (e) {
+      const msg = e instanceof Error ? e.message : 'Erreur inconnue'
+      setError(`Extraction impossible : ${msg}`)
+      setUploadedFile(null)
+    } finally {
+      setExtracting(false)
+    }
+  }, [])
+
+  const handleDrop = (e: React.DragEvent) => {
+    e.preventDefault()
+    setDragOver(false)
+    const file = e.dataTransfer.files[0]
+    if (file) processFile(file)
+  }
+
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (file) processFile(file)
+  }
+
+  const clearFile = () => {
+    setUploadedFile(null)
+    setScenario('')
+    setReciprocity('')
+    setEnforcement('')
+    setPersonalExposure('')
+    setStructuralThreat('')
+    if (fileRef.current) fileRef.current.value = ''
+  }
+
+  // ── Lancement de l'analyse AFRB ───────────────────────────────────────────
   const run = async () => {
     if (!scenario.trim()) return
     setLoading(true); setError('')
@@ -224,36 +305,36 @@ ${scenario}
 - **Sévérité de la menace structurelle :** ${structuralThreat || 'Non renseignée — déduire du scénario'}
 
 Applique la logique AFRB strictement au droit des sociétés tunisien (Code des Sociétés Commerciales, COC) et français (Code de commerce).
-Renvoie UNIQUEMENT un objet JSON valide (sans markdown, sans backticks) avec exactement ces champs :
+Renvoie UNIQUEMENT un objet JSON valide (sans markdown, sans backticks) :
 
 {
   "case_context_summary": "Résumé du contexte société, table de capitalisation et typologies d'actionnaires.",
   "observations": "Faits bruts et clauses identifiées textuellement.",
   "inferences": "Déductions juridiques sur les intentions cachées ou déséquilibres contractuels.",
-  "hypotheses": "Scénarios de crise envisagés (activation droit de veto, conflit gouvernance, sortie forcée).",
+  "hypotheses": "Scénarios de crise envisagés.",
   "risk_matrix": {
     "overall_risk_level": "Faible | Modéré | Élevé | Critique",
-    "compliance_risk_level": "Description du risque de non-conformité",
-    "legal_exposure_level": "Description de l'exposition juridique et financière",
-    "operational_risk_level": "Description du risque de blocage opérationnel"
+    "compliance_risk_level": "Description",
+    "legal_exposure_level": "Description",
+    "operational_risk_level": "Description"
   },
   "afrb_classification": {
-    "field": "Domaine AFRB principal (Gouvernance / Liquidité / Droits Financiers / Protection des Minoritaires)",
-    "strategy": "Stratégie de négociation ou d'amendement recommandée",
-    "risk_flags": "Liste des clauses abusives ou hautement risquées, séparées par ·"
+    "field": "Gouvernance / Liquidité / Droits Financiers / Protection des Minoritaires",
+    "strategy": "Stratégie recommandée",
+    "risk_flags": "Clauses abusives séparées par ·"
   },
   "recommended_actions": {
-    "immediate_next_steps": "Modifications prioritaires à exiger avant signature",
-    "documentation_checklist": "Pièces et annexes à vérifier impérativement",
-    "escalation_thresholds": "Deal-breakers non négociables déclenchant arrêt des négociations"
+    "immediate_next_steps": "Modifications prioritaires",
+    "documentation_checklist": "Pièces à vérifier",
+    "escalation_thresholds": "Deal-breakers"
   },
-  "missing_information": "Éléments manquants pour compléter l'analyse"
+  "missing_information": "Éléments manquants"
 }
 
-JSON uniquement, sans aucun texte avant ou après.`
+JSON uniquement.`
 
     try {
-      const raw = await callAI(prompt)
+      const raw = await callAI(prompt, 3000)
       const cleaned = raw.replace(/```json|```/g, '').trim()
       const result: AFRBResult = JSON.parse(cleaned)
 
@@ -278,57 +359,147 @@ JSON uniquement, sans aucun texte avant ou après.`
       <div className="flex items-start gap-3 border border-amber-500/20 bg-amber-500/5 px-4 py-3">
         <AlertTriangle size={13} strokeWidth={1.5} className="text-amber-400 flex-none mt-0.5" />
         <p className="text-xs text-amber-400/80 leading-relaxed">
-          Cet outil produit une analyse structurelle automatisée. Il ne se substitue pas à l'examen juridique approfondi d'un avocat. Toute décision de signature doit être validée par Maître Mokadmi.
+          Cet outil produit une analyse structurelle automatisée. Il ne se substitue pas à l'examen juridique d'un avocat. Toute décision de signature doit être validée par Maître Mokadmi.
         </p>
+      </div>
+
+      {/* ── Zone upload document ────────────────────────────────────────────── */}
+      <div className="flex flex-col gap-3">
+        <div className="flex items-center gap-2">
+          <p className={labelCls}>Importer un document <span className="normal-case text-light/20">(PDF, DOCX, TXT)</span></p>
+          {uploadedFile && (
+            <span className="text-[9px] font-bold text-emerald-400/70 border border-emerald-500/20 px-1.5 py-0.5 uppercase tracking-widest flex items-center gap-1">
+              <Sparkles size={9} /> Champs remplis automatiquement
+            </span>
+          )}
+        </div>
+
+        {!uploadedFile ? (
+          <div
+            onDragOver={e => { e.preventDefault(); setDragOver(true) }}
+            onDragLeave={() => setDragOver(false)}
+            onDrop={handleDrop}
+            onClick={() => fileRef.current?.click()}
+            className={`border-2 border-dashed cursor-pointer flex flex-col items-center gap-3 py-8 px-4 transition-colors ${
+              dragOver
+                ? 'border-gold bg-gold/5 text-light'
+                : 'border-gold/20 hover:border-gold/40 text-light/30 hover:text-light/50'
+            }`}
+          >
+            {extracting ? (
+              <>
+                <Loader2 size={22} strokeWidth={1.5} className="animate-spin text-gold" />
+                <div className="text-center">
+                  <p className="text-sm font-medium text-light/70 mb-1">Extraction & analyse du document…</p>
+                  <p className="text-xs text-light/30">L'IA lit le pacte et remplit les champs automatiquement</p>
+                </div>
+              </>
+            ) : (
+              <>
+                <Upload size={22} strokeWidth={1.5} className={dragOver ? 'text-gold' : ''} />
+                <div className="text-center">
+                  <p className="text-sm font-medium mb-1">Glissez votre pacte d'actionnaires ici</p>
+                  <p className="text-xs text-light/25">PDF · DOCX · TXT — max {MAX_SIZE_MB} Mo</p>
+                </div>
+                <span className="text-xs border border-gold/20 px-3 py-1.5 text-light/40 hover:text-light/60 transition-colors">
+                  Parcourir
+                </span>
+              </>
+            )}
+          </div>
+        ) : (
+          <div className="flex items-center gap-3 border border-emerald-500/20 bg-emerald-500/5 px-4 py-3">
+            <FileText size={16} strokeWidth={1.5} className="text-emerald-400 flex-none" />
+            <div className="flex-1 min-w-0">
+              <p className="text-xs font-medium text-light truncate">{uploadedFile.name}</p>
+              <p className="text-[10px] text-light/30">{(uploadedFile.size / 1024).toFixed(0)} Ko · Champs pré-remplis par l'IA</p>
+            </div>
+            <button onClick={clearFile} className="text-light/30 hover:text-light transition-colors flex-none">
+              <X size={14} strokeWidth={1.5} />
+            </button>
+          </div>
+        )}
+
+        <input
+          ref={fileRef}
+          type="file"
+          accept={SUPPORTED_TYPES}
+          className="hidden"
+          onChange={handleFileChange}
+        />
+
+        {(error && !loading) && (
+          <div className="flex items-center gap-2 border border-red-500/20 bg-red-500/8 px-3 py-2 text-xs text-red-400">
+            <AlertTriangle size={11} strokeWidth={1.5} className="flex-none" /> {error}
+          </div>
+        )}
+
+        {/* Séparateur */}
+        <div className="flex items-center gap-3">
+          <div className="flex-1 h-px bg-gold/8" />
+          <p className="text-[10px] text-light/20 uppercase tracking-widest">ou saisissez manuellement</p>
+          <div className="flex-1 h-px bg-gold/8" />
+        </div>
       </div>
 
       {/* Scénario */}
       <div>
-        <label className={labelCls}>Scénario ou résumé des négociations du pacte *</label>
-        <textarea value={scenario} onChange={e => setScenario(e.target.value)} rows={8}
-          placeholder="Décrivez le contexte : structure actionnariale, nature du pacte, clauses de sortie envisagées, équilibre des droits de vote, clauses de gouvernance, présence d'un investisseur financier, valorisation retenue, etc.
-
-Ex : SARL en phase de scale-up avec 2 fondateurs (60%) et un fonds VC (40%). Le pacte prévoit un droit de veto du fonds sur toute décision d'investissement > 50 KTND, une clause drag-along activable à 75% sans plafond de prix, une clause bad leaver à 50% de la valorisation en cas de démission, sans tag-along pour les fondateurs."
+        <label className={labelCls}>Scénario ou résumé des négociations *</label>
+        <textarea value={scenario} onChange={e => setScenario(e.target.value)} rows={7}
+          placeholder="Décrivez le contexte : structure actionnariale, nature du pacte, clauses de sortie envisagées, équilibre des droits de vote, gouvernance, présence d'un investisseur financier…&#10;&#10;(Ce champ est rempli automatiquement si vous importez un document)"
           className={textareaCls} />
         <p className="text-[10px] text-light/20 mt-1">{scenario.length} car.</p>
       </div>
 
-      {/* Évaluations optionnelles */}
+      {/* Évaluations AFRB */}
       <div className="border border-gold/10 bg-dark-surface p-5 flex flex-col gap-5">
-        <p className="text-[10px] font-bold text-light/30 tracking-[0.25em] uppercase">
-          Évaluations AFRB <span className="font-normal text-light/20">(optionnelles — déduites du scénario si vides)</span>
-        </p>
+        <div className="flex items-center gap-2">
+          <p className="text-[10px] font-bold text-light/30 tracking-[0.25em] uppercase">Évaluations AFRB</p>
+          {uploadedFile && (
+            <span className="text-[9px] text-emerald-400/60 border border-emerald-500/15 px-1.5 py-0.5">
+              Auto-rempli
+            </span>
+          )}
+        </div>
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
           <div>
-            <label className={labelCls}>Réciprocité des engagements</label>
+            <label className={labelCls}>
+              <span className="text-blue-400/70">R</span> — Réciprocité des engagements
+            </label>
             <input type="text" value={reciprocity} onChange={e => setReciprocity(e.target.value)}
               placeholder="Ex : Asymétrie tag-along / drag-along" className={inputCls} />
           </div>
           <div>
-            <label className={labelCls}>Force exécutoire & Sanctions</label>
+            <label className={labelCls}>
+              <span className="text-amber-400/70">E</span> — Force exécutoire & Sanctions
+            </label>
             <input type="text" value={enforcement} onChange={e => setEnforcement(e.target.value)}
               placeholder="Ex : Clauses pénales, promesse unilatérale" className={inputCls} />
           </div>
           <div>
-            <label className={labelCls}>Exposition personnelle</label>
+            <label className={labelCls}>
+              <span className="text-red-400/70">P</span> — Exposition personnelle
+            </label>
             <input type="text" value={personalExposure} onChange={e => setPersonalExposure(e.target.value)}
               placeholder="Ex : Garantie de passif sur patrimoine propre" className={inputCls} />
           </div>
           <div>
-            <label className={labelCls}>Menace structurelle</label>
+            <label className={labelCls}>
+              <span className="text-purple-400/70">S</span> — Menace structurelle
+            </label>
             <input type="text" value={structuralThreat} onChange={e => setStructuralThreat(e.target.value)}
               placeholder="Ex : Deadlock governance, dilution massive" className={inputCls} />
           </div>
         </div>
       </div>
 
-      {error && (
+      {(error && loading) && (
         <div className="flex items-center gap-2 border border-red-500/20 bg-red-500/8 px-4 py-3 text-xs text-red-400">
           <AlertTriangle size={12} strokeWidth={1.5} /> {error}
         </div>
       )}
 
-      <button onClick={run} disabled={loading || scenario.trim().length < 30}
+      <button onClick={run} disabled={loading || extracting || scenario.trim().length < 30}
         className="flex items-center gap-2 bg-gold text-dark-bg text-xs font-bold px-6 py-3.5 hover:bg-gold/90 transition-colors disabled:opacity-40 w-full sm:w-auto justify-center">
         {loading
           ? <><Loader2 size={14} className="animate-spin" /> Analyse AFRB en cours…</>

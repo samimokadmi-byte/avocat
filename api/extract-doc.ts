@@ -1,8 +1,8 @@
 /**
  * api/extract-doc.ts
  * Extrait le texte d'un PDF ou DOCX côté serveur (Node.js)
- * — évite d'envoyer le fichier brut base64 à Claude (rate limit)
- * — renvoie uniquement le texte brut tronqué à 6000 caractères
+ * PDF → pdf-parse (fiable, gère tous les encodages)
+ * DOCX/DOC → mammoth
  */
 
 import type { VercelRequest, VercelResponse } from '@vercel/node'
@@ -16,77 +16,35 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
   try {
     const { fileBase64, mediaType, fileName } = req.body ?? {}
-    if (!fileBase64 || !mediaType) return res.status(400).json({ error: 'Fichier manquant' })
+    if (!fileBase64) return res.status(400).json({ error: 'Fichier manquant' })
 
     const buffer = Buffer.from(fileBase64, 'base64')
-    let text = ''
+    const name   = (fileName as string ?? '').toLowerCase()
+    let text     = ''
 
     // ── PDF ──────────────────────────────────────────────────────────────────
-    if (mediaType === 'application/pdf' || (fileName as string)?.toLowerCase().endsWith('.pdf')) {
-      // Extraction minimaliste : recherche les séquences de texte PDF
-      // (BT ... ET blocks et Tj/TJ operators) sans dépendance lourde
-      const raw = buffer.toString('latin1')
+    if ((mediaType as string)?.includes('pdf') || name.endsWith('.pdf')) {
+      // eslint-disable-next-line @typescript-eslint/no-var-requires
+      const pdfParse = require('pdf-parse')
+      const data     = await pdfParse(buffer, { max: 30 })  // max 30 pages
+      text = data.text?.replace(/\s{3,}/g, '\n\n').trim() ?? ''
 
-      // Extraire toutes les chaînes entre parenthèses (opérateurs Tj)
-      const chunks: string[] = []
-      const tjRegex = /\(([^)]{1,300})\)\s*Tj/g
-      let m: RegExpExecArray | null
-      while ((m = tjRegex.exec(raw)) !== null) {
-        const s = m[1]
-          .replace(/\\r|\\n/g, ' ')
-          .replace(/\\\(/g, '(')
-          .replace(/\\\)/g, ')')
-          .replace(/[^\x20-\x7E\xA0-\xFF]/g, ' ')
-          .trim()
-        if (s.length > 2) chunks.push(s)
-      }
-
-      // Extraire aussi les tableaux TJ : [(str) num (str)]
-      const tjArrRegex = /\[([^\]]{1,500})\]\s*TJ/g
-      while ((m = tjArrRegex.exec(raw)) !== null) {
-        const inner = m[1]
-        const strParts = inner.match(/\(([^)]{1,200})\)/g)
-        if (strParts) {
-          const s = strParts.map(p => p.slice(1, -1)).join('')
-            .replace(/\\r|\\n/g, ' ')
-            .replace(/[^\x20-\x7E\xA0-\xFF]/g, ' ')
-            .trim()
-          if (s.length > 2) chunks.push(s)
-        }
-      }
-
-      text = chunks.join(' ').replace(/\s{3,}/g, ' ').trim()
-
-      // Fallback si le PDF est un scan ou encodé différemment
-      if (text.length < 100) {
-        // Extraire les strings UTF-16 visibles
-        const utf16 = buffer.toString('utf16le')
-          .replace(/[^\x20-\x7E\xA0-\xFF ]/g, ' ')
-          .replace(/\s{4,}/g, '\n')
-          .trim()
-        if (utf16.length > text.length) text = utf16
-      }
-
-      if (text.length < 50) {
+      if (!text || text.length < 50) {
         return res.status(422).json({
-          error: 'Ce PDF semble être un scan (image). Il ne contient pas de texte sélectionnable. Exportez-le avec OCR activé.'
+          error: 'Ce PDF est un scan (image sans texte). Activez l\'OCR ou convertissez-le en DOCX avant d\'uploader.'
         })
       }
     }
 
     // ── DOCX / DOC ────────────────────────────────────────────────────────────
-    else if (
-      mediaType.includes('word') ||
-      mediaType.includes('officedocument') ||
-      (fileName as string)?.match(/\.docx?$/i)
-    ) {
+    else if (name.match(/\.docx?$/) || (mediaType as string)?.includes('word') || (mediaType as string)?.includes('officedocument')) {
       const mammoth = await import('mammoth')
       const result  = await mammoth.extractRawText({ buffer })
       text = result.value.replace(/\s{3,}/g, '\n\n').trim()
 
       if (!text || text.length < 30) {
         return res.status(422).json({
-          error: 'Le document Word est vide ou protégé en lecture.'
+          error: 'Le document Word est vide ou protégé. Essayez de l\'exporter en PDF.'
         })
       }
     }
@@ -98,13 +56,19 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
     // Tronquer à 6000 caractères (~1500 tokens) pour rester sous les rate limits
     const truncated = text.length > 6000
-      ? text.substring(0, 6000) + '\n[...document tronqué — premiers 6000 caractères analysés]'
+      ? text.substring(0, 6000) + '\n[...tronqué aux 6000 premiers caractères]'
       : text
 
-    return res.status(200).json({ text: truncated, length: text.length })
+    return res.status(200).json({ text: truncated, totalLength: text.length })
 
   } catch (err) {
     const msg = err instanceof Error ? err.message : 'Erreur interne'
+    // pdf-parse lance une erreur si le fichier n'est pas un PDF valide
+    if (msg.includes('Invalid PDF') || msg.includes('No password given')) {
+      return res.status(422).json({
+        error: 'PDF invalide ou protégé par mot de passe. Déverrouillez-le avant d\'uploader.'
+      })
+    }
     return res.status(500).json({ error: msg })
   }
 }

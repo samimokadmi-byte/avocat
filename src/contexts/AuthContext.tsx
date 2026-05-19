@@ -17,8 +17,10 @@ interface AuthContextType {
 }
 
 interface StoredAccount {
-  passwordHash: string
-  user: User
+  passwordHash:   string
+  user:           User
+  confirmToken?:  string
+  confirmed?:     boolean
 }
 
 const AuthContext = createContext<AuthContextType | null>(null)
@@ -92,9 +94,29 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     if (accounts[email.toLowerCase()]) return { ok: false, error: 'Un compte existe déjà pour cet email.' }
 
     const newUser: User = { id: crypto.randomUUID(), name, email: email.toLowerCase(), company, role: 'client' }
-    accounts[email.toLowerCase()] = { passwordHash: await hashPassword(password, email.toLowerCase()), user: newUser }
+    const confirmToken = crypto.randomUUID()
+
+    accounts[email.toLowerCase()] = {
+      passwordHash: await hashPassword(password, email.toLowerCase()),
+      user: newUser,
+      confirmToken,
+      confirmed: false,
+    }
     localStorage.setItem('avocat_accounts', JSON.stringify(accounts))
-    seedDemoData(newUser.id)
+
+    // Initialiser l'espace client VIDE — aucune donnée fictive
+    localStorage.setItem(`avocat_dossiers_${newUser.id}`,  JSON.stringify([]))
+    localStorage.setItem(`avocat_documents_${newUser.id}`, JSON.stringify([]))
+    localStorage.setItem(`avocat_rdv_${newUser.id}`,       JSON.stringify([]))
+    localStorage.setItem(`avocat_todos_${newUser.id}`,     JSON.stringify([]))
+
+    // Envoyer l'email de bienvenue (non bloquant)
+    fetch('/api/send-welcome', {
+      method:  'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body:    JSON.stringify({ name, email: email.toLowerCase(), confirmToken }),
+    }).catch(() => {/* silencieux */})
+
     setUser(newUser)
     return { ok: true }
   }
@@ -108,73 +130,4 @@ export function useAuth() {
   const ctx = useContext(AuthContext)
   if (!ctx) throw new Error('useAuth must be used within AuthProvider')
   return ctx
-}
-
-function seedDemoData(userId: string) {
-  const today = new Date()
-  const fmt = (d: Date) => d.toISOString().split('T')[0]
-  const addDays = (n: number) => { const d = new Date(today); d.setDate(d.getDate() + n); return d }
-
-  const dossiers = [
-    {
-      id: crypto.randomUUID(),
-      titre: 'Levée de fonds Série A',
-      statut: 'en_cours',
-      dateOuverture: '2024-01-15',
-      prochainEcheance: '2024-04-01',
-      description: 'Structuration juridique et accompagnement closing Série A.',
-      etapes: [
-        { label: 'Audit capitalistique', statut: 'done', date: '15 jan. 2024' },
-        { label: 'Structuration', statut: 'done', date: '01 fév. 2024' },
-        { label: 'Négociation term sheet', statut: 'current', date: 'En cours' },
-        { label: 'Closing', statut: 'pending', date: null },
-      ],
-    },
-    {
-      id: crypto.randomUUID(),
-      titre: "Pacte d'associés",
-      statut: 'complete',
-      dateOuverture: '2023-09-10',
-      prochainEcheance: null,
-      description: "Rédaction et négociation du pacte entre fondateurs et investisseurs.",
-      etapes: [
-        { label: 'Analyse de la situation', statut: 'done', date: '10 sep. 2023' },
-        { label: 'Rédaction', statut: 'done', date: '01 oct. 2023' },
-        { label: 'Validation parties', statut: 'done', date: '20 oct. 2023' },
-        { label: 'Signature', statut: 'done', date: '05 nov. 2023' },
-      ],
-    },
-    {
-      id: crypto.randomUUID(),
-      titre: 'Protection des données',
-      statut: 'attente',
-      dateOuverture: '2024-02-20',
-      prochainEcheance: '2024-05-01',
-      description: 'Mise en conformité du traitement des données personnelles.',
-      etapes: [
-        { label: 'Diagnostic', statut: 'current', date: '20 fév. 2024' },
-        { label: "Plan d'action", statut: 'pending', date: null },
-        { label: 'Mise en conformité', statut: 'pending', date: null },
-        { label: 'Validation finale', statut: 'pending', date: null },
-      ],
-    },
-  ]
-
-  const rdvs = [
-    { id: crypto.randomUUID(), title: "Point d'avancement — Série A", date: fmt(addDays(3)), time: '10:00', type: 'visio', notes: "Revue du term sheet avec l'investisseur lead.", clientId: userId },
-    { id: crypto.randomUUID(), title: "Signature pacte d'associés", date: fmt(addDays(7)), time: '14:30', type: 'presentiel', notes: 'Réunion au cabinet. Prévoir les documents constitutifs.', clientId: userId },
-    { id: crypto.randomUUID(), title: 'Consultation — Protection des données', date: fmt(addDays(14)), time: '11:00', type: 'telephone', notes: 'Premier point sur le plan de conformité.', clientId: userId },
-  ]
-
-  const todos = [
-    { id: crypto.randomUUID(), title: 'Envoyer les statuts mis à jour', done: false, priority: 'urgente', dueDate: fmt(addDays(2)), clientId: userId, createdAt: today.toISOString() },
-    { id: crypto.randomUUID(), title: 'Préparer le cap table pour la data room', done: false, priority: 'urgente', dueDate: fmt(addDays(5)), clientId: userId, createdAt: today.toISOString() },
-    { id: crypto.randomUUID(), title: 'Valider les clauses de liquidité préférentielle', done: false, priority: 'normale', dueDate: fmt(addDays(10)), clientId: userId, createdAt: today.toISOString() },
-    { id: crypto.randomUUID(), title: 'Transmettre les 3 dernières liasses fiscales', done: true, priority: 'normale', clientId: userId, createdAt: today.toISOString() },
-  ]
-
-  localStorage.setItem(`avocat_dossiers_${userId}`, JSON.stringify(dossiers))
-  localStorage.setItem(`avocat_documents_${userId}`, JSON.stringify([]))
-  localStorage.setItem(`avocat_rdv_${userId}`, JSON.stringify(rdvs))
-  localStorage.setItem(`avocat_todos_${userId}`, JSON.stringify(todos))
 }

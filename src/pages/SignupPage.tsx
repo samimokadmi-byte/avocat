@@ -14,6 +14,8 @@ export default function SignupPage() {
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
 
+  const [done, setDone] = useState(false)
+
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault()
     setError('')
@@ -21,7 +23,7 @@ export default function SignupPage() {
     setLoading(true)
     const result = await signup(name, email, password, company || undefined)
     setLoading(false)
-    if (result.ok) navigate('/dashboard')
+    if (result.ok) { setDone(true); setTimeout(() => navigate('/dashboard'), 3000) }
     else setError(result.error ?? 'Erreur lors de la création du compte.')
   }
 
@@ -40,7 +42,20 @@ export default function SignupPage() {
           <h1 className="font-serif text-3xl text-light mb-2">Créer un accès</h1>
           <p className="text-sm text-light/40 mb-10">Votre espace est activé après validation par le cabinet.</p>
 
-          <form onSubmit={handleSubmit} className="flex flex-col gap-6">
+          {done ? (
+            <div className="border border-emerald-500/25 bg-emerald-500/8 px-6 py-8 flex flex-col items-center gap-4 text-center">
+              <div className="w-12 h-12 rounded-full border border-emerald-500/30 flex items-center justify-center">
+                <span className="text-2xl">✓</span>
+              </div>
+              <p className="text-sm font-semibold text-light">Compte créé avec succès</p>
+              <p className="text-xs text-light/50 leading-relaxed">
+                Un email de confirmation a été envoyé à <strong className="text-light/70">{email}</strong>.
+                Vérifiez votre boîte de réception et cliquez sur le lien pour activer votre accès.
+              </p>
+              <p className="text-[10px] text-light/25">Redirection vers votre espace dans 3 secondes…</p>
+            </div>
+          ) : (
+            <form onSubmit={handleSubmit} className="flex flex-col gap-6">
             <div className="flex flex-col gap-1.5">
               <label className="text-xs font-medium text-light/35 tracking-wide uppercase">Nom complet</label>
               <input type="text" required value={name} onChange={e => setName(e.target.value)}
@@ -87,6 +102,7 @@ export default function SignupPage() {
               {!loading && <ArrowRight size={14} strokeWidth={1.5} />}
             </button>
           </form>
+          )}
 
           <p className="mt-8 text-sm text-light/35 text-center">
             Déjà un compte ?{' '}

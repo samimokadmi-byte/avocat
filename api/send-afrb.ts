@@ -1,23 +1,29 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node'
+import { setCORS, checkRateLimit, isValidEmail, sanitize, requireEmailConfig } from './_security'
 import nodemailer from 'nodemailer'
 
 const GMAIL_USER = process.env.GMAIL_USER ?? ''
-const GMAIL_PASS = process.env.GMAIL_APP_PASSWORD ?? ''
+const GMAIL_PASS = process.env.GMAIL_PASSWORD ?? ''
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
-  res.setHeader('Access-Control-Allow-Origin', '*')
-  res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS')
-  res.setHeader('Access-Control-Allow-Headers', 'Content-Type')
-  if (req.method === 'OPTIONS') return res.status(200).end()
+  if (setCORS(req, res)) return
+  if (checkRateLimit(req, res, 20)) return
   if (req.method !== 'POST')    return res.status(405).json({ error: 'Method not allowed' })
 
   try {
-    const { clientEmail, clientName, riskLevel, pdfBase64 } = req.body ?? {}
-    if (!clientEmail || !pdfBase64) return res.status(400).json({ error: 'Données manquantes' })
+    const rawEmail = req.body?.clientEmail
+    const pdfBase64 = req.body?.pdfBase64
+    if (!rawEmail || !pdfBase64) return res.status(400).json({ error: 'Données manquantes' })
+    if (!isValidEmail(rawEmail)) return res.status(400).json({ error: 'Email invalide' })
+    const clientEmail = (rawEmail as string).toLowerCase().trim()
+    const clientName  = sanitize(req.body?.clientName ?? 'Client', 100)
+    const riskLevel   = sanitize(req.body?.riskLevel ?? '—', 50)
 
+    const mailConfig = requireEmailConfig(res)
+    if (!mailConfig) return
     const transporter = nodemailer.createTransport({
       service: 'gmail',
-      auth: { user: GMAIL_USER, pass: GMAIL_PASS },
+      auth: { user: mailConfig.user, pass: mailConfig.pass },
     })
 
     const level = (riskLevel ?? '').toUpperCase()
@@ -73,7 +79,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
     // Envoi au client
     await transporter.sendMail({
-      from:    `"Cabinet Mokadmi" <${GMAIL_USER}>`,
+      from:    `"Cabinet Mokadmi" <${mailConfig.user}>`,
       to:      clientEmail,
       subject: `Rapport d'analyse AFRB — ${riskLevel} — Cabinet Mokadmi`,
       html,
@@ -82,7 +88,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
     // Copie au cabinet
     await transporter.sendMail({
-      from:    `"Système Cabinet" <${GMAIL_USER}>`,
+      from:    `"Système Cabinet" <${mailConfig.user}>`,
       to:      'office@mokadmi.lawyer',
       subject: `[Copie] AFRB envoyé → ${clientName} (${clientEmail}) · ${riskLevel}`,
       text:    `Rapport AFRB envoyé à ${clientName} <${clientEmail}>.\nNiveau : ${riskLevel}\nDate : ${date}`,

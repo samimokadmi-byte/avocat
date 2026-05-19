@@ -1,20 +1,30 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node'
+import { setCORS, checkRateLimit, isValidEmail, sanitize } from './_security'
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
-  res.setHeader('Access-Control-Allow-Origin', '*')
-  res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS')
-  res.setHeader('Access-Control-Allow-Headers', 'Content-Type')
-  if (req.method === 'OPTIONS') return res.status(200).end()
+  if (setCORS(req, res)) return
+  if (checkRateLimit(req, res, 20)) return
   if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' })
 
   const apiKey = process.env.ANTHROPIC_API_KEY
   if (!apiKey) return res.status(500).json({ error: 'Clé API non configurée.' })
 
   try {
-    const { prompt, maxTokens = 2000, documentBase64, documentMediaType, imageBase64, imageMediaType } = req.body ?? {}
-    if (!prompt) return res.status(400).json({ error: 'Prompt manquant' })
+    const rawPrompt = req.body?.prompt
+    if (!rawPrompt || typeof rawPrompt !== 'string') return res.status(400).json({ error: 'Prompt manquant' })
+    if (rawPrompt.length > 50000) return res.status(400).json({ error: 'Prompt trop long (max 50 000 chars)' })
 
-    const safeTokens = Math.min(Number(maxTokens) || 2000, 4096)
+    const prompt      = rawPrompt
+    const maxTokens   = req.body?.maxTokens ?? 2000
+    const safeTokens  = Math.min(Number(maxTokens) || 2000, 4096)
+    const documentBase64   = req.body?.documentBase64
+    const documentMediaType = req.body?.documentMediaType
+    const imageBase64      = req.body?.imageBase64
+    const imageMediaType   = req.body?.imageMediaType
+
+    // Vérification clé API
+    const apiKey = process.env.ANTHROPIC_API_KEY
+    if (!apiKey) return res.status(500).json({ error: 'Service IA non configuré.' })
 
     // Construire le contenu du message
     let userContent: unknown

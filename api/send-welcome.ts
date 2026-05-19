@@ -1,23 +1,29 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node'
+import { setCORS, checkRateLimit, isValidEmail, sanitize, requireEmailConfig } from './_security'
 import nodemailer from 'nodemailer'
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
-  res.setHeader('Access-Control-Allow-Origin', '*')
-  res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS')
-  res.setHeader('Access-Control-Allow-Headers', 'Content-Type')
-  if (req.method === 'OPTIONS') return res.status(200).end()
+  if (setCORS(req, res)) return
+  if (checkRateLimit(req, res, 20)) return
   if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' })
 
   try {
-    const { name, email, confirmToken } = req.body ?? {}
-    if (!name || !email) return res.status(400).json({ error: 'Données manquantes' })
+    const rawName  = req.body?.name
+    const rawEmail = req.body?.email
+    const confirmToken = req.body?.confirmToken
+
+    if (!rawName || !rawEmail) return res.status(400).json({ error: 'Données manquantes' })
+    if (!isValidEmail(rawEmail)) return res.status(400).json({ error: 'Email invalide' })
+
+    const name  = sanitize(rawName, 100)
+    const email = (rawEmail as string).toLowerCase().trim()
+
+    const mailConfig = requireEmailConfig(res)
+    if (!mailConfig) return
 
     const transporter = nodemailer.createTransport({
       service: 'gmail',
-      auth: {
-        user: process.env.GMAIL_USER ?? '',
-        pass: process.env.GMAIL_APP_PASSWORD ?? '',
-      },
+      auth: { user: mailConfig.user, pass: mailConfig.pass },
     })
 
     const confirmUrl = `https://www.mokadmi.lawyer/confirm?token=${confirmToken}&email=${encodeURIComponent(email)}`
@@ -128,7 +134,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 </html>`
 
     await transporter.sendMail({
-      from:    `"Cabinet Mokadmi" <${process.env.GMAIL_USER}>`,
+      from:    `"Cabinet Mokadmi" <${mailConfig.user}>`,
       to:      email,
       subject: 'Bienvenue — Confirmez votre espace client · Cabinet Mokadmi',
       html,
@@ -136,7 +142,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
     // Notif admin
     await transporter.sendMail({
-      from:    `"Système Cabinet" <${process.env.GMAIL_USER}>`,
+      from:    `"Système Cabinet" <${mailConfig.user}>`,
       to:      'office@mokadmi.lawyer',
       subject: `[Nouveau client] ${name} <${email}>`,
       text:    `Nouveau compte créé :\nNom : ${name}\nEmail : ${email}\nDate : ${new Date().toLocaleString('fr-FR')}`,

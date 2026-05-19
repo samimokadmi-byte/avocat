@@ -46,8 +46,8 @@ async function extractPdfBrowser(file: File): Promise<string> {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const pdfjsLib: any = await import('pdfjs-dist/legacy/build/pdf.mjs')
 
-  // Désactiver le web worker → exécution inline dans le thread principal
-  pdfjsLib.GlobalWorkerOptions.workerSrc = ''
+  // Worker servi depuis notre propre domaine (évite CSP + "No workerSrc" error)
+  pdfjsLib.GlobalWorkerOptions.workerSrc = '/pdf.worker.min.mjs'
 
   const arrayBuffer = await readAsArrayBuffer(file)
   const uint8       = new Uint8Array(arrayBuffer)

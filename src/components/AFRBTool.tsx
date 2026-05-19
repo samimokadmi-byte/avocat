@@ -4,7 +4,7 @@ import {
   ClipboardList, Copy, Check, FileSearch,
   Loader2, Scale, Zap, Upload, FileText, X, Sparkles
 } from 'lucide-react'
-import { extractTextFromFile, SUPPORTED_TYPES, MAX_SIZE_MB } from '../utils/extractText'
+import { extractFile, SUPPORTED_TYPES, MAX_SIZE_MB } from '../utils/extractText'
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 export interface AFRBAnalysis {
@@ -61,11 +61,16 @@ function saveAnalysis(a: AFRBAnalysis) {
 }
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
-async function callAI(prompt: string, maxTokens = 2000): Promise<string> {
+async function callAI(
+  prompt: string,
+  maxTokens = 2000,
+  documentBase64?: string,
+  documentMediaType?: string,
+): Promise<string> {
   const res = await fetch('/api/ai', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ prompt, maxTokens }),
+    body: JSON.stringify({ prompt, maxTokens, documentBase64, documentMediaType }),
   })
   const data = await res.json()
   if (!res.ok) throw new Error(data.error ?? `Erreur ${res.status}`)
@@ -221,43 +226,39 @@ function AFRBForm({ clientId, clientName, onResult }: {
     setError('')
 
     try {
-      // 1. Extraire le texte
-      const rawText = await extractTextFromFile(file)
-      if (!rawText || rawText.length < 50) {
-        throw new Error('Le document semble vide ou illisible. Vérifiez qu\'il contient du texte sélectionnable.')
+      const extracted = await extractFile(file)
+
+      const extractPrompt = `Tu es un expert en droit des sociétés. Analyse ce document (pacte d'actionnaires ou résumé de négociations) et extrais les informations pour une évaluation AFRB.
+
+Renvoie UNIQUEMENT un JSON valide (sans markdown) :
+{
+  "scenario": "Résumé structuré en 4-8 phrases : nature du pacte, structure actionnariale, types d'actionnaires, stade de développement, objet principal.",
+  "reciprocity": "Analyse tag-along, drag-along, droits d'information. 'Non mentionné.' si absent.",
+  "enforcement": "Clauses pénales, bad leaver, promesses unilatérales. 'Non mentionné.' si absent.",
+  "personalExposure": "Non-concurrence, garanties de passif. 'Non mentionné.' si absent.",
+  "structuralThreat": "Deadlock, minorité de blocage, dilution. 'Non mentionné.' si absent."
+}
+JSON uniquement.`
+
+      let raw: string
+      if (extracted.mode === 'document' && extracted.base64) {
+        raw = await callAI(extractPrompt, 1500, extracted.base64, extracted.mediaType)
+      } else {
+        const textPrompt = extractPrompt + '\n\nCONTENU :\n' + (extracted.text ?? '').substring(0, 8000)
+        raw = await callAI(textPrompt, 1500)
       }
 
-      // 2. Demander à l'IA d'extraire et structurer le scénario + les 4 évaluations
-      const extractPrompt = `Tu es un expert en droit des sociétés. Analyse ce document et extrais les informations pour une évaluation AFRB.
-
-DOCUMENT :
-${rawText.substring(0, 8000)}${rawText.length > 8000 ? '\n[...document tronqué à 8000 car...]' : ''}
-
-Renvoie UNIQUEMENT un JSON valide (sans markdown) avec exactement ces champs :
-{
-  "scenario": "Résumé structuré du contexte en 4-8 phrases : nature du pacte, structure actionnariale (noms/pourcentages si disponibles), types d'actionnaires (fondateurs/fonds/tiers), stade de développement, objet principal des négociations.",
-  "reciprocity": "Analyse de la réciprocité : équilibre des clauses de sortie, tag-along, drag-along, droits d'information. Si non mentionné : 'Non renseigné dans le document.'",
-  "enforcement": "Analyse de la force exécutoire : clauses pénales, bad leaver, promesses unilatérales, exécution forcée. Si non mentionné : 'Non renseigné dans le document.'",
-  "personalExposure": "Analyse de l'exposition personnelle : non-concurrence, garanties de passif, responsabilité des dirigeants. Si non mentionné : 'Non renseigné dans le document.'",
-  "structuralThreat": "Analyse de la menace structurelle : deadlock, minorité de blocage, dilution, perte de contrôle. Si non mentionné : 'Non renseigné dans le document.'"
-}
-
-Sois précis, concis et factuel. JSON uniquement.`
-
-      const raw = await callAI(extractPrompt, 1500)
       const cleaned = raw.replace(/```json|```/g, '').trim()
-      const extracted = JSON.parse(cleaned)
+      const data = JSON.parse(cleaned)
 
-      // 3. Remplir les champs
-      if (extracted.scenario)         setScenario(extracted.scenario)
-      if (extracted.reciprocity)      setReciprocity(extracted.reciprocity)
-      if (extracted.enforcement)      setEnforcement(extracted.enforcement)
-      if (extracted.personalExposure) setPersonalExposure(extracted.personalExposure)
-      if (extracted.structuralThreat) setStructuralThreat(extracted.structuralThreat)
+      if (data.scenario)         setScenario(data.scenario)
+      if (data.reciprocity)      setReciprocity(data.reciprocity)
+      if (data.enforcement)      setEnforcement(data.enforcement)
+      if (data.personalExposure) setPersonalExposure(data.personalExposure)
+      if (data.structuralThreat) setStructuralThreat(data.structuralThreat)
 
     } catch (e) {
-      const msg = e instanceof Error ? e.message : 'Erreur inconnue'
-      setError(`Extraction impossible : ${msg}`)
+      setError('Extraction impossible : ' + (e instanceof Error ? e.message : 'Réessayez'))
       setUploadedFile(null)
     } finally {
       setExtracting(false)

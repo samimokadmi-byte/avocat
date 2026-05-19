@@ -2,6 +2,7 @@ import { lazy, Suspense, Component, ReactNode } from 'react'
 import { Routes, Route, Navigate, useLocation } from 'react-router-dom'
 import { useAuth } from './contexts/AuthContext'
 import ScrollToTop from './utils/ScrollToTop'
+import { Analytics } from '@vercel/analytics/react'
 
 // ── Error boundary — catches lazy chunk load failures (network errors, etc.) ─
 class ErrorBoundary extends Component<{ children: ReactNode }, { failed: boolean }> {
@@ -155,6 +156,7 @@ export default function App() {
       </Suspense>
       {!hideFloating && <WhatsAppButton />}
       {!hideFloating && <AssistantIA />}
+      <Analytics />
       </ErrorBoundary>
     </>
   )

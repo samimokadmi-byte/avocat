@@ -119,44 +119,68 @@ function addTextBlock(
 }
 
 // ── En-tête cabinet (première page) ──────────────────────────────────────────
-function drawHeader(doc: jsPDF, W: number) {
+// ── Chargement du logo en base64 ─────────────────────────────────────────────
+async function loadBase64(src: string): Promise<string | null> {
+  try {
+    const res  = await fetch(src)
+    const blob = await res.blob()
+    return await new Promise<string>(resolve => {
+      const r = new FileReader()
+      r.onloadend = () => resolve(r.result as string)
+      r.readAsDataURL(blob)
+    })
+  } catch { return null }
+}
+
+// ── En-tête cabinet (première page) ──────────────────────────────────────────
+async function drawHeaderAsync(doc: jsPDF, W: number) {
   // Bande navy supérieure
   doc.setFillColor(...NAVY)
-  doc.rect(0, 0, W, 42, 'F')
+  doc.rect(0, 0, W, 44, 'F')
+
+  // ── Logo (haut gauche) ────────────────────────────────────────────────────
+  const logoBase64 = await loadBase64('/logo_processed.png')
+  if (logoBase64) {
+    doc.addImage(logoBase64, 'PNG', 6, 3, 20, 20)
+  }
+  const txtX = logoBase64 ? 30 : 14
 
   // Nom cabinet
   doc.setFont('helvetica', 'bold')
   doc.setFontSize(13)
   doc.setTextColor(...WHITE)
-  doc.text(CABINET.nom.toUpperCase(), 14, 14)
+  doc.text(CABINET.nom.toUpperCase(), txtX, 13)
 
   // Qualité + spécialité
   doc.setFont('helvetica', 'normal')
   doc.setFontSize(7.5)
   doc.setTextColor(...NAVYLT)
-  doc.text(CABINET.qualite.toUpperCase(), 14, 21)
-  doc.text(CABINET.specialite, 14, 27)
+  doc.text(CABINET.qualite.toUpperCase(), txtX, 20)
+  doc.text(CABINET.specialite, txtX, 26)
 
   // Coordonnées (droite)
   doc.setFontSize(7)
   doc.setTextColor(...NAVYLT)
   const coordX = W - 14
-  doc.text(CABINET.telephone,  coordX, 14, { align: 'right' })
-  doc.text(CABINET.email,      coordX, 19, { align: 'right' })
-  doc.text(CABINET.adresse1,   coordX, 24, { align: 'right' })
-  doc.text(CABINET.adresse2,   coordX, 29, { align: 'right' })
+  doc.text(CABINET.site,       coordX, 11, { align: 'right' })
+  doc.text(CABINET.email,      coordX, 17, { align: 'right' })
+  doc.text(CABINET.telephone,  coordX, 22, { align: 'right' })
+  doc.text(CABINET.adresse1,   coordX, 27, { align: 'right' })
+  doc.text(CABINET.adresse2,   coordX, 32, { align: 'right' })
 
   // MF cabinet
   doc.setFont('helvetica', 'bold')
   doc.setFontSize(7)
   doc.setTextColor(...NAVYLT)
-  doc.text(`MF : ${CABINET.matriculeFiscal}`, coordX, 37, { align: 'right' })
+  doc.text(`MF : ${CABINET.matriculeFiscal}`, coordX, 39, { align: 'right' })
 
   // Ligne de séparation sous la bande navy
   doc.setDrawColor(...NAVYMD)
   doc.setLineWidth(0.5)
-  doc.line(14, 46, W - 14, 46)
+  doc.line(14, 48, W - 14, 48)
 }
+
+// (drawHeader remplacé par drawHeaderAsync ci-dessus)
 
 // ── Bloc type de document ─────────────────────────────────────────────────────
 function drawDocumentTag(doc: jsPDF, rapport: RapportData, W: number): number {
@@ -510,7 +534,7 @@ export async function downloadRapportPdf(rapport: RapportData): Promise<void> {
   const H = doc.internal.pageSize.getHeight()
 
   // Première page
-  drawHeader(doc, W)
+  await drawHeaderAsync(doc, W)
   const bodyStart = drawDocumentTag(doc, rapport, W)
   drawBody(doc, rapport, bodyStart, W, H)
 
@@ -538,7 +562,7 @@ export async function generateRapportBase64(rapport: RapportData): Promise<strin
   const W = doc.internal.pageSize.getWidth()
   const H = doc.internal.pageSize.getHeight()
 
-  drawHeader(doc, W)
+  await drawHeaderAsync(doc, W)
   const bodyStart = drawDocumentTag(doc, rapport, W)
   drawBody(doc, rapport, bodyStart, W, H)
 

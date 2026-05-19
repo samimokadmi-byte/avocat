@@ -1,4 +1,4 @@
-import { useState, useRef, DragEvent, ChangeEvent } from 'react'
+import { useState, useRef, DragEvent } from 'react'
 import { useNavigate, Link } from 'react-router-dom'
 import { useAuth } from '../contexts/AuthContext'
 import {
@@ -351,7 +351,8 @@ function Documents({ documents, setDocuments }: {
   setDocuments: (d: Document[] | ((prev: Document[]) => Document[])) => void
 }) {
   const [dragging, setDragging] = useState(false)
-  const inputRef = useRef<HTMLInputElement>(null)
+  const fileInputRef  = useRef<HTMLInputElement>(null)   // PDF, Word, Excel
+  const imageInputRef = useRef<HTMLInputElement>(null)   // Photos / caméra
 
   const addFiles = (files: FileList | null) => {
     if (!files) return
@@ -367,27 +368,23 @@ function Documents({ documents, setDocuments }: {
           content: reader.result as string,
         }
         setDocuments((prev: Document[]) => [...prev, doc])
-        // ── Sync automatique dossier ────────────────────────────────────────
       }
       reader.readAsDataURL(f)
     })
   }
 
   const onDrop = (e: DragEvent) => {
-    e.preventDefault()
-    setDragging(false)
+    e.preventDefault(); setDragging(false)
     addFiles(e.dataTransfer.files)
   }
-
-  const onDragOver = (e: DragEvent) => { e.preventDefault(); setDragging(true) }
+  const onDragOver  = (e: DragEvent) => { e.preventDefault(); setDragging(true) }
   const onDragLeave = () => setDragging(false)
-
-  const onInputChange = (e: ChangeEvent<HTMLInputElement>) => addFiles(e.target.files)
 
   const remove = (id: string) => setDocuments(documents.filter(d => d.id !== id))
 
   const fileIcon = (type: string) => {
-    if (type.includes('pdf')) return <FileText size={15} strokeWidth={1.25} className="text-red-400" />
+    if (type.includes('pdf'))   return <FileText size={15} strokeWidth={1.25} className="text-red-400" />
+    if (type.includes('image')) return <File size={15} strokeWidth={1.25} className="text-blue-400" />
     return <File size={15} strokeWidth={1.25} className="text-light/30" />
   }
 
@@ -398,29 +395,57 @@ function Documents({ documents, setDocuments }: {
         <h2 className="font-serif text-2xl text-light">Gestion documentaire</h2>
       </div>
 
+      {/* Zone drag & drop (desktop) + boutons mobiles */}
       <div
         onDrop={onDrop}
         onDragOver={onDragOver}
         onDragLeave={onDragLeave}
-        onClick={() => inputRef.current?.click()}
-        className={`border-2 border-dashed px-8 py-12 flex flex-col items-center justify-center gap-3 cursor-pointer transition-colors ${
-          dragging ? 'border-gold bg-dark-card' : 'border-gold/15 hover:border-gold/30 hover:bg-dark-card'
+        className={`border-2 border-dashed px-6 py-8 flex flex-col items-center justify-center gap-4 transition-colors ${
+          dragging ? 'border-gold bg-dark-card' : 'border-gold/15'
         }`}
       >
         <Upload size={24} strokeWidth={1.25} className="text-light/30" />
         <div className="text-center">
           <p className="text-sm font-medium text-light">Déposer vos fichiers ici</p>
-          <p className="text-xs text-light/40 mt-1">ou cliquez pour parcourir · PDF, Word, Excel, images acceptés</p>
+          <p className="text-xs text-light/35 mt-1">ou utilisez les boutons ci-dessous</p>
         </div>
-        <input
-          ref={inputRef}
-          type="file"
-          multiple
-          accept=".pdf,.doc,.docx,.xls,.xlsx,.csv,.txt,.png,.jpg,.jpeg,.webp,application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document,application/vnd.ms-excel,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,image/*"
-          onChange={onInputChange}
-          className="hidden"
-        />
+
+        {/* Deux boutons séparés — résout le problème Android */}
+        <div className="flex gap-3 flex-wrap justify-center w-full">
+          <button
+            onClick={() => fileInputRef.current?.click()}
+            className="flex items-center gap-2 text-xs font-medium border border-gold/25 text-light/60 hover:text-light hover:border-gold/50 px-4 py-2.5 transition-colors"
+          >
+            <FileText size={13} strokeWidth={1.5} /> Fichiers (PDF, Word, Excel…)
+          </button>
+          <button
+            onClick={() => imageInputRef.current?.click()}
+            className="flex items-center gap-2 text-xs font-medium border border-gold/25 text-light/60 hover:text-light hover:border-gold/50 px-4 py-2.5 transition-colors"
+          >
+            <Upload size={13} strokeWidth={1.5} /> Photos / Images
+          </button>
+        </div>
       </div>
+
+      {/* Input fichiers — SANS image/* → ouvre le gestionnaire de fichiers Android */}
+      <input
+        ref={fileInputRef}
+        type="file"
+        multiple
+        accept=".pdf,.doc,.docx,.xls,.xlsx,.csv,.txt,.ppt,.pptx,application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document,application/vnd.ms-excel,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,text/plain,text/csv"
+        onChange={e => { addFiles(e.target.files); e.target.value = '' }}
+        className="hidden"
+      />
+
+      {/* Input images — image/* → ouvre photos/caméra Android */}
+      <input
+        ref={imageInputRef}
+        type="file"
+        multiple
+        accept="image/*"
+        onChange={e => { addFiles(e.target.files); e.target.value = '' }}
+        className="hidden"
+      />
 
       {documents.length > 0 && (
         <div className="flex flex-col gap-px bg-gold/10">

@@ -14,6 +14,32 @@ import {
   FilePlus, GripVertical, BookOpen, Shield
 } from 'lucide-react'
 import { RAPPORT_TYPES, type RapportData, type RapportSection, type RapportTypeId, downloadRapportPdf } from '../utils/rapportPdf'
+
+// ── Helper API IA — proxy /api/ai ─────────────────────────────────────────────
+async function callAI(prompt: string, maxTokens = 2000): Promise<string> {
+  const res = await fetch('/api/ai', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ prompt, maxTokens }),
+  })
+  const data = await res.json()
+  if (!res.ok) throw new Error(data.error ?? `Erreur ${res.status}`)
+  return data.text ?? ''
+}
+
+// ── Clé de stockage des demandes clients ──────────────────────────────────────
+const RAPPORT_REQUESTS_KEY = 'avocat_rapport_requests'
+interface RapportRequest {
+  id: string
+  clientId: string
+  clientName: string
+  type: RapportTypeId
+  titre: string
+  objet: string
+  source: 'client' | 'email' | 'messagerie'
+  createdAt: string
+  processed: boolean
+}
 import { Invoice, computeAmounts, fmtAmount } from '../components/BillingModule'
 
 // ─── Types ────────────────────────────────────────────────────────────────────
@@ -1857,6 +1883,61 @@ const TYPE_ICONS: Record<string, React.ElementType> = {
 }
 
 // ── Éditeur de section ───────────────────────────────────────────────────────
+// ── Bouton IA rédige ─────────────────────────────────────────────────────────
+function AIWriteButton({ onGenerate, label = 'IA rédige' }: { onGenerate: () => Promise<void>; label?: string }) {
+  const [loading, setLoading] = useState(false)
+  const [ok, setOk] = useState(false)
+  const run = async () => {
+    setLoading(true)
+    try { await onGenerate(); setOk(true); setTimeout(() => setOk(false), 2500) }
+    catch (e) { alert('Erreur IA : ' + (e instanceof Error ? e.message : 'Réessayez')) }
+    finally { setLoading(false) }
+  }
+  return (
+    <button onClick={run} disabled={loading}
+      className="flex items-center gap-1.5 text-[10px] font-medium border border-gold/20 text-gold/60 hover:text-gold hover:border-gold/40 px-2.5 py-1 transition-colors disabled:opacity-40">
+      {loading ? <><Circle size={10} className="animate-spin" /> Génération…</>
+       : ok     ? <><CheckCircle size={10} className="text-green-400" /> Inséré</>
+                : <><Pencil size={10} strokeWidth={1.5} /> {label}</>}
+    </button>
+  )
+}
+
+// ── Injection rapport → Documents client ─────────────────────────────────────
+function injectRapportAsDocument(rapport: RapportData, pdfContent: string): string {
+  if (!rapport.clientId) return ''
+  const docId = crypto.randomUUID()
+  const doc: Document = {
+    id:         docId,
+    name:       `${rapport.reference} — ${rapport.titre}.txt`,
+    size:       pdfContent.length,
+    type:       'text/plain',
+    uploadedAt: new Date().toISOString(),
+    dossierId:  rapport.clientRef,
+    content:    `data:text/plain;base64,${btoa(unescape(encodeURIComponent(pdfContent)))}`,
+  }
+  const existing: Document[] = JSON.parse(localStorage.getItem(`avocat_documents_${rapport.clientId}`) ?? '[]')
+  localStorage.setItem(`avocat_documents_${rapport.clientId}`, JSON.stringify([doc, ...existing]))
+  return docId
+}
+
+// ── Création d'une tâche liée au rapport ─────────────────────────────────────
+function createRapportTodo(rapport: RapportData, action: string) {
+  if (!rapport.clientId) return
+  const todo: Todo = {
+    id:        crypto.randomUUID(),
+    title:     `${action} — ${rapport.reference} : ${rapport.titre.substring(0, 60)}`,
+    done:      false,
+    priority:  'urgente',
+    dueDate:   rapport.dateEcheance?.substring(0, 10),
+    clientId:  rapport.clientId,
+    dossierId: rapport.clientRef,
+    createdAt: new Date().toISOString(),
+  }
+  const existing = JSON.parse(localStorage.getItem(`avocat_todos_${rapport.clientId}`) ?? '[]')
+  localStorage.setItem(`avocat_todos_${rapport.clientId}`, JSON.stringify([todo, ...existing]))
+}
+
 function SectionEditor({
   section, index, total,
   onChange, onDelete, onMoveUp, onMoveDown,
@@ -1896,8 +1977,22 @@ function SectionEditor({
       </div>
       {/* Contenu section */}
       {open && (
-        <div className="px-4 py-3">
-          <label className={labelCls}>Contenu</label>
+        <div className="px-4 py-3 flex flex-col gap-2">
+          <div className="flex items-center justify-between mb-1">
+            <label className={labelCls}>Contenu</label>
+            <AIWriteButton
+              onGenerate={async () => {
+                if (!section.titre) return
+                const text = await callAI(
+                  `Tu es un juriste d'affaires senior tunisien. Rédige le contenu de la section "${section.titre}" pour un document juridique professionnel.
+Contexte existant : ${section.contenu ? section.contenu.substring(0, 300) : 'section vierge'}.
+Écris en français juridique rigoureux, 3-5 paragraphes structurés, sans titres supplémentaires. Uniquement le contenu.`,
+                  1200
+                )
+                onChange({ ...section, contenu: section.contenu ? section.contenu + '\n\n' + text : text })
+              }}
+            />
+          </div>
           <textarea
             value={section.contenu}
             onChange={e => onChange({ ...section, contenu: e.target.value })}
@@ -1905,7 +2000,7 @@ function SectionEditor({
             rows={6}
             className="w-full border border-gold/10 bg-dark-bg text-sm text-light/80 leading-relaxed placeholder:text-light/20 focus:outline-none focus:border-gold/30 p-3 resize-y transition-colors"
           />
-          <p className="text-[10px] text-light/25 mt-1">{section.contenu.length} caractères</p>
+          <p className="text-[10px] text-light/25">{section.contenu.length} caractères</p>
         </div>
       )}
     </div>
@@ -1967,14 +2062,24 @@ function RapportForm({
 
   const handleSave = () => {
     if (!titre.trim() || !clientNom.trim()) return
+
+    // Trouver le clientId correspondant
+    const matchedClient = clientMode === 'select'
+      ? clients.find(c => c.user.name === clientNom)
+      : undefined
+
     const rapport: RapportData = {
-      id:          initial?.id ?? crypto.randomUUID(),
+      id:           initial?.id ?? crypto.randomUUID(),
       type, reference, titre, objet, clientNom, clientRef, clientMF,
+      clientId:     matchedClient?.user.id ?? initial?.clientId,
       dateDoc, confidentiel,
-      sections:    sections.filter(s => s.titre || s.contenu),
-      conclusion:  conclusion || undefined,
+      sections:     sections.filter(s => s.titre || s.contenu),
+      conclusion:   conclusion || undefined,
       reservations: reservations || undefined,
-      createdAt:   initial?.createdAt ?? new Date().toISOString(),
+      status:       initial?.status ?? 'draft',
+      requestedBy:  initial?.requestedBy ?? 'admin',
+      linkedDocId:  initial?.linkedDocId,
+      createdAt:    initial?.createdAt ?? new Date().toISOString(),
     }
     onSave(rapport)
   }
@@ -2184,35 +2289,120 @@ function RapportForm({
 
 // ── Liste des rapports ────────────────────────────────────────────────────────
 function RapportsAdmin({ clients, onRefresh }: { clients: ClientData[]; onRefresh: () => void }) {
-  const [rapports, setRapports] = useState<RapportData[]>(getRapports)
-  const [view,     setView]     = useState<'list' | 'form' | 'preview'>('list')
-  const [editing,  setEditing]  = useState<RapportData | null>(null)
-  const [preview,  setPreview]  = useState<RapportData | null>(null)
-  const [search,   setSearch]   = useState('')
-  const [typeFilter, setTypeFilter] = useState<RapportTypeId | 'all'>('all')
+  const [rapports,    setRapports]    = useState<RapportData[]>(getRapports)
+  const [requests,    setRequests]    = useState<RapportRequest[]>(() => {
+    try { return JSON.parse(localStorage.getItem(RAPPORT_REQUESTS_KEY) ?? '[]') } catch { return [] }
+  })
+  const [view,        setView]        = useState<'list' | 'form' | 'preview'>('list')
+  const [editing,     setEditing]     = useState<RapportData | null>(null)
+  const [preview,     setPreview]     = useState<RapportData | null>(null)
+  const [search,      setSearch]      = useState('')
+  const [typeFilter,  setTypeFilter]  = useState<RapportTypeId | 'all'>('all')
+  const [statusFilter,setStatusFilter]= useState<string>('all')
   const [downloading, setDownloading] = useState<string | null>(null)
+  const [injecting,   setInjecting]   = useState<string | null>(null)
+  const [feedback,    setFeedback]    = useState<{ id: string; msg: string; ok: boolean } | null>(null)
+
+  const pendingRequests = requests.filter(r => !r.processed)
 
   const filtered = useMemo(() => {
     const q = search.toLowerCase()
     return rapports
       .filter(r => typeFilter === 'all' || r.type === typeFilter)
+      .filter(r => statusFilter === 'all' || r.status === statusFilter)
       .filter(r =>
         r.titre.toLowerCase().includes(q) ||
         r.clientNom.toLowerCase().includes(q) ||
         r.reference.toLowerCase().includes(q)
       )
       .sort((a, b) => b.createdAt.localeCompare(a.createdAt))
-  }, [rapports, search, typeFilter])
+  }, [rapports, search, typeFilter, statusFilter])
 
   const handleSave = (rapport: RapportData) => {
-    const updated = rapports.some(r => r.id === rapport.id)
-      ? rapports.map(r => r.id === rapport.id ? rapport : r)
-      : [rapport, ...rapports]
+    const isNew = !rapports.some(r => r.id === rapport.id)
+    const updated = isNew
+      ? [rapport, ...rapports]
+      : rapports.map(r => r.id === rapport.id ? rapport : r)
     setRapports(updated)
     saveRapports(updated)
+    // Créer un todo si nouveau rapport avec client lié
+    if (isNew && rapport.clientId) {
+      createRapportTodo(rapport, 'Réviser et envoyer')
+    }
     setView('list')
     setEditing(null)
     onRefresh()
+  }
+
+  // ── Injecter dans Documents + marquer comme envoyé ──────────────────────────
+  const handleInjectAndSend = async (rapport: RapportData) => {
+    if (!rapport.clientId) {
+      setFeedback({ id: rapport.id, ok: false, msg: 'Aucun compte client lié — sélectionnez un client enregistré.' })
+      return
+    }
+    setInjecting(rapport.id)
+    try {
+      // Générer contenu texte du rapport
+      const content = [
+        `${rapport.reference} — ${rapport.titre}`,
+        `Date : ${rapport.dateDoc}`,
+        `Client : ${rapport.clientNom}`,
+        rapport.clientRef ? `Dossier : ${rapport.clientRef}` : '',
+        '',
+        rapport.objet ? `OBJET : ${rapport.objet}` : '',
+        '',
+        ...rapport.sections.map((s, i) => `${i + 1}. ${s.titre}\n\n${s.contenu}`),
+        '',
+        rapport.conclusion ? `CONCLUSION :\n${rapport.conclusion}` : '',
+        rapport.reservations ? `\nRÉSERVES :\n${rapport.reservations}` : '',
+      ].filter(Boolean).join('\n')
+
+      const docId = injectRapportAsDocument(rapport, content)
+
+      // Mettre à jour le rapport avec status envoyé + linkedDocId
+      const updated = rapports.map(r => r.id === rapport.id
+        ? { ...r, status: 'sent' as const, linkedDocId: docId }
+        : r
+      )
+      setRapports(updated)
+      saveRapports(updated)
+
+      // Créer un todo "Document envoyé au client"
+      createRapportTodo({ ...rapport, status: 'sent', linkedDocId: docId }, 'Document transmis — archiver')
+
+      setFeedback({ id: rapport.id, ok: true, msg: `Injecté dans l'espace client de ${rapport.clientNom} ✓` })
+      setTimeout(() => setFeedback(null), 4000)
+      onRefresh()
+    } catch (e) {
+      setFeedback({ id: rapport.id, ok: false, msg: 'Erreur d\'injection : ' + (e instanceof Error ? e.message : '') })
+    } finally {
+      setInjecting(null)
+    }
+  }
+
+  // ── Traiter une demande client → ouvrir le formulaire pré-rempli ────────────
+  const handleProcessRequest = (req: RapportRequest) => {
+    const client = clients.find(c => c.user.id === req.clientId)
+    const base: Partial<RapportData> = {
+      type:        req.type,
+      titre:       req.titre,
+      objet:       req.objet,
+      clientNom:   req.clientName,
+      clientId:    req.clientId,
+      clientRef:   client?.dossiers[0]?.titre,
+      status:      'in_progress',
+      requestedBy: req.source,
+      sections:    [],
+      confidentiel:false,
+      dateDoc:     new Date().toISOString().slice(0, 10),
+      createdAt:   new Date().toISOString(),
+    }
+    // Marquer la demande comme traitée
+    const updatedReqs = requests.map(r => r.id === req.id ? { ...r, processed: true } : r)
+    setRequests(updatedReqs)
+    localStorage.setItem(RAPPORT_REQUESTS_KEY, JSON.stringify(updatedReqs))
+    setEditing(base as RapportData)
+    setView('form')
   }
 
   const handleDelete = (id: string) => {
@@ -2298,17 +2488,56 @@ function RapportsAdmin({ clients, onRefresh }: { clients: ClientData[]; onRefres
         </button>
       </div>
 
-      {/* Filtres type */}
+      {/* ── Demandes en attente ─────────────────────────────────────────────── */}
+      {pendingRequests.length > 0 && (
+        <div className="border border-amber-500/20 bg-amber-500/5 p-4 flex flex-col gap-3">
+          <div className="flex items-center gap-2">
+            <AlertCircle size={13} strokeWidth={1.5} className="text-amber-400" />
+            <p className="text-xs font-bold text-amber-400 tracking-widest uppercase">
+              {pendingRequests.length} demande{pendingRequests.length > 1 ? 's' : ''} en attente de traitement
+            </p>
+          </div>
+          {pendingRequests.map(req => {
+            const srcLabel = req.source === 'client' ? 'Espace client' : req.source === 'email' ? 'Email' : 'Messagerie'
+            return (
+              <div key={req.id} className="flex items-start justify-between gap-4 bg-dark-surface px-4 py-3">
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center gap-2 mb-1">
+                    <span className="text-[9px] font-bold text-amber-400/70 border border-amber-500/20 px-1.5 py-0.5 uppercase tracking-widest">{srcLabel}</span>
+                    <span className="text-[9px] text-light/30">{new Date(req.createdAt).toLocaleDateString('fr-FR')}</span>
+                  </div>
+                  <p className="text-sm font-medium text-light">{req.titre || '(sans titre)'}</p>
+                  <p className="text-xs text-light/40">{req.clientName} · {RAPPORT_TYPES.find(t => t.id === req.type)?.label}</p>
+                  {req.objet && <p className="text-xs text-light/30 mt-0.5 italic">{req.objet}</p>}
+                </div>
+                <button onClick={() => handleProcessRequest(req)}
+                  className="flex items-center gap-1.5 text-xs bg-gold text-dark-bg px-3 py-2 hover:bg-gold/90 transition-colors flex-none font-medium">
+                  <FilePlus size={11} strokeWidth={1.5} /> Traiter
+                </button>
+              </div>
+            )
+          })}
+        </div>
+      )}
+
+      {/* Feedback injection */}
+      {feedback && (
+        <div className={`flex items-center gap-2 px-4 py-3 text-xs border ${feedback.ok ? 'border-green-500/20 bg-green-500/8 text-green-400' : 'border-red-500/20 bg-red-500/8 text-red-400'}`}>
+          {feedback.ok ? <CheckCircle size={12} strokeWidth={1.5} /> : <AlertCircle size={12} strokeWidth={1.5} />}
+          {feedback.msg}
+        </div>
+      )}
+
+      {/* Filtres type + statut */}
       <div className="flex gap-2 flex-wrap">
-        <button onClick={() => setTypeFilter('all')}
-          className={`text-xs px-3 py-1.5 border transition-colors ${typeFilter === 'all' ? 'border-gold/50 text-light bg-gold/8' : 'border-gold/10 text-light/30 hover:text-light/60'}`}>
-          Tous
-        </button>
+        <button onClick={() => setTypeFilter('all')} className={`text-xs px-3 py-1.5 border transition-colors ${typeFilter === 'all' ? 'border-gold/50 text-light bg-gold/8' : 'border-gold/10 text-light/30 hover:text-light/60'}`}>Tous types</button>
         {RAPPORT_TYPES.map(t => (
-          <button key={t.id} onClick={() => setTypeFilter(t.id)}
-            className={`text-xs px-3 py-1.5 border transition-colors ${typeFilter === t.id ? 'border-gold/50 text-light bg-gold/8' : 'border-gold/10 text-light/30 hover:text-light/60'}`}>
-            {t.label}
-          </button>
+          <button key={t.id} onClick={() => setTypeFilter(t.id)} className={`text-xs px-3 py-1.5 border transition-colors ${typeFilter === t.id ? 'border-gold/50 text-light bg-gold/8' : 'border-gold/10 text-light/30 hover:text-light/60'}`}>{t.label}</button>
+        ))}
+      </div>
+      <div className="flex gap-2 flex-wrap">
+        {([['all','Tous'],[ 'draft','Brouillon'],['in_progress','En cours'],['pending_request','Demandé'],['sent','Envoyé']]) .map(([val, label]) => (
+          <button key={val} onClick={() => setStatusFilter(val)} className={`text-xs px-3 py-1 border transition-colors ${statusFilter === val ? 'border-gold/40 text-light' : 'border-gold/10 text-light/25 hover:text-light/50'}`}>{label}</button>
         ))}
       </div>
 
@@ -2382,10 +2611,20 @@ function RapportsAdmin({ clients, onRefresh }: { clients: ClientData[]; onRefres
                   </button>
                   <button onClick={() => handleDownload(rapport)} disabled={downloading === rapport.id} title="Télécharger PDF"
                     className="text-light/30 hover:text-gold p-1.5 border border-gold/10 hover:border-gold/30 transition-colors disabled:opacity-40">
-                    {downloading === rapport.id
-                      ? <Circle size={12} className="animate-spin" />
-                      : <Download size={12} strokeWidth={1.5} />}
+                    {downloading === rapport.id ? <Circle size={12} className="animate-spin" /> : <Download size={12} strokeWidth={1.5} />}
                   </button>
+                  {rapport.status !== 'sent' && (
+                    <button onClick={() => handleInjectAndSend(rapport)} disabled={injecting === rapport.id || !rapport.clientId} title="Injecter dans l'espace client"
+                      className="text-light/30 hover:text-emerald-400 p-1.5 border border-gold/10 hover:border-emerald-500/30 transition-colors disabled:opacity-30"
+                      style={{ display: 'flex', alignItems: 'center' }}>
+                      {injecting === rapport.id ? <Circle size={12} className="animate-spin" /> : <FileUp size={12} strokeWidth={1.5} />}
+                    </button>
+                  )}
+                  {rapport.status === 'sent' && (
+                    <span title="Document transmis au client" className="p-1.5 text-emerald-400/60">
+                      <CheckCircle size={12} strokeWidth={1.5} />
+                    </span>
+                  )}
                   <button onClick={() => { setEditing(rapport); setView('form') }} title="Modifier"
                     className="text-light/30 hover:text-light p-1.5 border border-gold/10 hover:border-gold/30 transition-colors">
                     <Pencil size={12} strokeWidth={1.5} />

@@ -56,18 +56,22 @@ export interface RapportSection {
 export interface RapportData {
   id:           string
   type:         RapportTypeId
-  reference:    string          // Ex : RPT-2026-001
+  reference:    string
   titre:        string
   objet:        string
   clientNom:    string
-  clientRef?:   string          // Référence dossier client
-  clientMF?:    string          // MF du client si applicable
-  dateDoc:      string          // ISO date
+  clientRef?:   string
+  clientMF?:    string
+  clientId?:    string          // lien vers le compte client
+  dateDoc:      string
   dateEcheance?: string
   confidentiel: boolean
   sections:     RapportSection[]
   conclusion?:  string
-  reservations?: string        // Réserves / limites de l'avis
+  reservations?: string
+  status:       'draft' | 'pending_request' | 'in_progress' | 'sent'  // statut du workflow
+  requestedBy?: 'admin' | 'client' | 'email' | 'messagerie'
+  linkedDocId?: string          // ID du document injecté dans l'espace client
   createdAt:    string
 }
 

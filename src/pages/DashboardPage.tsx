@@ -5,7 +5,7 @@ import {
   LayoutDashboard, FolderOpen, FileUp, MessageSquare, LogOut,
   Upload, File, ChevronRight,
   FileText, Trash2, Menu, X, Shield, CalendarDays, Bell, Receipt,
-  Download, CheckSquare, ShieldCheck
+  Download, CheckSquare, ShieldCheck, CheckCircle
 } from 'lucide-react'
 import ShieldTool from '../components/ShieldTool'
 import { useReminders } from '../hooks/useReminders'
@@ -636,33 +636,119 @@ function RdvViewer({ rdvs, todos, dossiers }: {
 }
 
 function Messagerie() {
+  const { user } = useAuth()
+  const [tab, setTabMsg] = useState<'contact' | 'demande'>('contact')
+  const [form, setForm] = useState({ type: 'rapport', titre: '', objet: '' })
+  const [sent, setSent] = useState(false)
+
+  const submitRequest = () => {
+    if (!form.titre.trim() || !user) return
+    const req = {
+      id:          crypto.randomUUID(),
+      clientId:    user.id,
+      clientName:  user.name,
+      type:        form.type,
+      titre:       form.titre,
+      objet:       form.objet,
+      source:      'client',
+      createdAt:   new Date().toISOString(),
+      processed:   false,
+    }
+    const existing = JSON.parse(localStorage.getItem('avocat_rapport_requests') ?? '[]')
+    localStorage.setItem('avocat_rapport_requests', JSON.stringify([req, ...existing]))
+    setSent(true)
+    setForm({ type: 'rapport', titre: '', objet: '' })
+  }
+
   return (
     <div className="flex flex-col gap-6">
       <div>
         <p className="text-xs font-medium tracking-[0.2em] uppercase text-light/40 mb-2">Messagerie</p>
         <h2 className="font-serif text-2xl text-light">Échanges sécurisés</h2>
       </div>
-      <div className="border border-gold/10 px-8 py-12 flex flex-col items-center text-center gap-6">
-        <div className="w-16 h-16 bg-gold/10 flex items-center justify-center rounded-full">
-          <MessageSquare size={28} strokeWidth={1.25} className="text-gold" />
-        </div>
-        <div className="space-y-2">
-          <p className="text-sm font-medium text-light">Besoin d'une réponse immédiate ?</p>
-          <p className="text-xs text-light/40 max-w-xs mx-auto leading-relaxed">
-            Utilisez notre Assistant IA (en bas à droite) pour vos questions d'ordre général,
-            ou contactez directement Maître Mokadmi pour vos dossiers en cours.
-          </p>
-        </div>
-        <div className="flex flex-col gap-3 w-full max-w-xs">
-          <a
-            href="mailto:office@mokadmi.lawyer"
-            className="flex items-center justify-center gap-2 bg-dark-card border border-gold/20 py-3 text-xs font-medium text-light hover:border-gold transition-colors"
-          >
-            office@mokadmi.lawyer
-          </a>
-          <p className="text-[10px] text-light/20 uppercase tracking-widest">Réponse sous 24h ouvrées</p>
-        </div>
+
+      {/* Onglets */}
+      <div className="flex gap-px bg-gold/8">
+        {[['contact', 'Contacter le cabinet'], ['demande', 'Demander un document']] .map(([id, label]) => (
+          <button key={id} onClick={() => { setTabMsg(id as typeof tab); setSent(false) }}
+            className={`flex-1 text-xs font-medium py-3 px-4 transition-colors ${tab === id ? 'bg-dark-card text-light border-b-2 border-gold' : 'bg-dark-surface text-light/40 hover:text-light/70'}`}>
+            {label}
+          </button>
+        ))}
       </div>
+
+      {tab === 'contact' && (
+        <div className="border border-gold/10 px-8 py-10 flex flex-col items-center text-center gap-6">
+          <div className="w-14 h-14 bg-gold/10 flex items-center justify-center rounded-full">
+            <MessageSquare size={24} strokeWidth={1.25} className="text-gold" />
+          </div>
+          <div className="space-y-2">
+            <p className="text-sm font-medium text-light">Besoin d'une réponse immédiate ?</p>
+            <p className="text-xs text-light/40 max-w-xs mx-auto leading-relaxed">
+              Utilisez notre Assistant IA (en bas à droite) pour vos questions générales,
+              ou contactez directement Maître Mokadmi pour vos dossiers en cours.
+            </p>
+          </div>
+          <div className="flex flex-col gap-3 w-full max-w-xs">
+            <a href="mailto:office@mokadmi.lawyer"
+              className="flex items-center justify-center gap-2 bg-dark-card border border-gold/20 py-3 text-xs font-medium text-light hover:border-gold transition-colors">
+              office@mokadmi.lawyer
+            </a>
+            <p className="text-[10px] text-light/20 uppercase tracking-widest">Réponse sous 24h ouvrées</p>
+          </div>
+        </div>
+      )}
+
+      {tab === 'demande' && (
+        <div className="flex flex-col gap-5">
+          {sent ? (
+            <div className="border border-green-500/20 bg-green-500/8 px-6 py-8 flex flex-col items-center gap-3 text-center">
+              <CheckCircle size={24} strokeWidth={1.5} className="text-green-400" />
+              <p className="text-sm font-semibold text-light">Demande transmise</p>
+              <p className="text-xs text-light/40 max-w-xs">Maître Mokadmi prendra en charge votre demande et vous communiquera le document dans les meilleurs délais.</p>
+              <button onClick={() => setSent(false)} className="text-xs text-light/40 hover:text-light mt-2">Nouvelle demande</button>
+            </div>
+          ) : (
+            <>
+              <p className="text-xs text-light/40 leading-relaxed">
+                Soumettez une demande de rapport, avis ou mémorandum juridique.
+                Le cabinet vous préparera le document et le déposera dans votre espace Documents.
+              </p>
+
+              <div className="flex flex-col gap-4">
+                <div>
+                  <label className="text-[10px] font-medium text-light/40 tracking-widest uppercase block mb-2">Type de document *</label>
+                  <select value={form.type} onChange={e => setForm(f => ({ ...f, type: e.target.value }))}
+                    className="w-full border-b border-gold/15 bg-transparent py-2.5 text-sm text-light focus:outline-none focus:border-gold/50 transition-colors appearance-none">
+                    <option value="rapport">Rapport</option>
+                    <option value="avis">Avis Juridique</option>
+                    <option value="memorandum">Mémorandum</option>
+                    <option value="opinion_fiscale">Opinion Fiscale</option>
+                    <option value="note_juridique">Note Juridique</option>
+                    <option value="consultation">Consultation</option>
+                  </select>
+                </div>
+                <div>
+                  <label className="text-[10px] font-medium text-light/40 tracking-widest uppercase block mb-2">Intitulé de la demande *</label>
+                  <input type="text" value={form.titre} onChange={e => setForm(f => ({ ...f, titre: e.target.value }))}
+                    placeholder="Ex : Analyse de la clause de non-concurrence de mon contrat"
+                    className="w-full border-b border-gold/15 bg-transparent py-2.5 text-sm text-light placeholder:text-light/25 focus:outline-none focus:border-gold/50 transition-colors" />
+                </div>
+                <div>
+                  <label className="text-[10px] font-medium text-light/40 tracking-widest uppercase block mb-2">Contexte / Objet</label>
+                  <textarea value={form.objet} onChange={e => setForm(f => ({ ...f, objet: e.target.value }))} rows={3}
+                    placeholder="Décrivez brièvement la situation et vos attentes…"
+                    className="w-full border border-gold/10 bg-dark-bg text-sm text-light/80 placeholder:text-light/20 focus:outline-none focus:border-gold/25 p-3 resize-none transition-colors" />
+                </div>
+                <button onClick={submitRequest} disabled={!form.titre.trim()}
+                  className="flex items-center gap-2 bg-gold text-dark-bg text-xs font-semibold px-5 py-3 hover:bg-gold/90 transition-colors disabled:opacity-40 w-full justify-center">
+                  <FileText size={13} strokeWidth={1.5} /> Envoyer la demande
+                </button>
+              </div>
+            </>
+          )}
+        </div>
+      )}
     </div>
   )
 }

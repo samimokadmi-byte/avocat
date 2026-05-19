@@ -14,6 +14,9 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     const { prompt, maxTokens = 2000, documentBase64, documentMediaType } = req.body ?? {}
     if (!prompt) return res.status(400).json({ error: 'Prompt manquant' })
 
+    // Limiter à 4096 tokens max (évite les timeouts Vercel sur fonctions serverless)
+    const safeTokens = Math.min(Number(maxTokens) || 2000, 4096)
+
     // Construire le contenu du message
     // Si un document est fourni, l'envoyer en tant que document natif Claude
     const userContent = documentBase64
@@ -40,7 +43,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       },
       body: JSON.stringify({
         model:      'claude-sonnet-4-5',
-        max_tokens: maxTokens,
+        max_tokens: safeTokens,
         messages:   [{ role: 'user', content: userContent }],
       }),
     })

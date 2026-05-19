@@ -228,28 +228,45 @@ function AFRBForm({ clientId, clientName, onResult }: {
     try {
       const extracted = await extractFile(file)
 
-      const extractPrompt = `Tu es un expert en droit des sociétés. Analyse ce document (pacte d'actionnaires ou résumé de négociations) et extrais les informations pour une évaluation AFRB.
+      // Prompt compact — valeurs courtes pour éviter la troncature JSON
+      const extractPrompt = `Expert droit des sociétés. Analyse ce pacte d'actionnaires et extrais en JSON.
 
-Renvoie UNIQUEMENT un JSON valide (sans markdown) :
+IMPORTANT : Chaque valeur doit faire MAX 2 phrases courtes. JSON valide sans markdown.
+
 {
-  "scenario": "Résumé structuré en 4-8 phrases : nature du pacte, structure actionnariale, types d'actionnaires, stade de développement, objet principal.",
-  "reciprocity": "Analyse tag-along, drag-along, droits d'information. 'Non mentionné.' si absent.",
-  "enforcement": "Clauses pénales, bad leaver, promesses unilatérales. 'Non mentionné.' si absent.",
-  "personalExposure": "Non-concurrence, garanties de passif. 'Non mentionné.' si absent.",
-  "structuralThreat": "Deadlock, minorité de blocage, dilution. 'Non mentionné.' si absent."
+  "scenario": "2-3 phrases max : parties, pourcentages, objet du pacte.",
+  "reciprocity": "1-2 phrases sur tag-along/drag-along. 'Non mentionné.' si absent.",
+  "enforcement": "1-2 phrases sur clauses pénales/bad leaver. 'Non mentionné.' si absent.",
+  "personalExposure": "1-2 phrases sur non-concurrence/garanties. 'Non mentionné.' si absent.",
+  "structuralThreat": "1-2 phrases sur deadlock/dilution. 'Non mentionné.' si absent."
 }
-JSON uniquement.`
+JSON strict uniquement. Sois CONCIS — max 150 mots par champ.`
 
       let raw: string
       if (extracted.mode === 'document' && extracted.base64) {
-        raw = await callAI(extractPrompt, 1500, extracted.base64, extracted.mediaType)
+        raw = await callAI(extractPrompt, 2500, extracted.base64, extracted.mediaType)
       } else {
-        const textPrompt = extractPrompt + '\n\nCONTENU :\n' + (extracted.text ?? '').substring(0, 8000)
-        raw = await callAI(textPrompt, 1500)
+        const textPrompt = extractPrompt + '\n\nDOCUMENT :\n' + (extracted.text ?? '').substring(0, 6000)
+        raw = await callAI(textPrompt, 2500)
       }
 
-      const cleaned = raw.replace(/```json|```/g, '').trim()
-      const data = JSON.parse(cleaned)
+      // Parser robuste : réparer JSON tronqué si besoin
+      let data: Record<string, string>
+      try {
+        const cleaned = raw.replace(/```json|```/g, '').trim()
+        data = JSON.parse(cleaned)
+      } catch {
+        // Tentative de récupération : extraire les champs déjà présents via regex
+        data = {}
+        const fields = ['scenario', 'reciprocity', 'enforcement', 'personalExposure', 'structuralThreat']
+        for (const field of fields) {
+          const match = raw.match(new RegExp(`"${field}"\\s*:\\s*"((?:[^"\\\\]|\\\\.)*)"`, 's'))
+          if (match) data[field] = match[1].replace(/\\n/g, '\n').replace(/\\"/g, '"')
+        }
+        if (Object.keys(data).length === 0) {
+          throw new Error('Réponse IA incomplète — réessayez avec un document plus court.')
+        }
+      }
 
       if (data.scenario)         setScenario(data.scenario)
       if (data.reciprocity)      setReciprocity(data.reciprocity)
@@ -335,7 +352,7 @@ Renvoie UNIQUEMENT un objet JSON valide (sans markdown, sans backticks) :
 JSON uniquement.`
 
     try {
-      const raw = await callAI(prompt, 3000)
+      const raw = await callAI(prompt, 4000)
       const cleaned = raw.replace(/```json|```/g, '').trim()
       const result: AFRBResult = JSON.parse(cleaned)
 

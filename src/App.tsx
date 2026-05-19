@@ -40,6 +40,7 @@ import SuiviNumerique from './components/SuiviNumerique'
 import Veille from './components/Veille'
 import ServicesAssocies from './components/ServicesAssocies'
 import ShieldSection from './components/ShieldSection'
+import AFRBSection from './components/AFRBSection'
 import BlogSection from './components/BlogSection'
 import FAQ from './components/FAQ'
 import Booking from './components/Booking'
@@ -93,6 +94,7 @@ function LandingPage() {
         <Veille />
         <ServicesAssocies />
         <ShieldSection />
+        <AFRBSection />
 
         {/* ── Blog & FAQ & Contact ── */}
         <BlogSection />

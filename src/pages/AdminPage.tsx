@@ -11,9 +11,11 @@ import {
   CalendarDays, Plus, X, Menu, Receipt, Pencil, Mail, CheckCircle,
   Phone, MapPin, BookUser, AtSign, Building2, Save, UserPlus,
   Scale, ScrollText, ChevronDown, ChevronUp, Eye, EyeOff,
-  FilePlus, GripVertical, BookOpen, Shield
+  FilePlus, GripVertical, BookOpen, Shield, BarChart3,
+  Copy, Check
 } from 'lucide-react'
 import { RAPPORT_TYPES, type RapportData, type RapportSection, type RapportTypeId, downloadRapportPdf } from '../utils/rapportPdf'
+import { getAFRBAnalyses, type AFRBAnalysis, AFRB_KEY } from '../components/AFRBTool'
 
 // ── Helper API IA — proxy /api/ai ─────────────────────────────────────────────
 async function callAI(prompt: string, maxTokens = 2000): Promise<string> {
@@ -2939,14 +2941,209 @@ function ContactsAdmin({ clients, onRefresh }: { clients: ClientData[]; onRefres
 
 // ─── Admin Page ───────────────────────────────────────────────────────────────
 
+// ─── AFRB Admin ───────────────────────────────────────────────────────────────
+
+const RISK_COLORS_ADMIN: Record<string, string> = {
+  'Faible':   'text-emerald-400 border-emerald-500/25 bg-emerald-500/8',
+  'Modéré':  'text-amber-400 border-amber-500/25 bg-amber-500/8',
+  'Élevé':   'text-orange-400 border-orange-500/25 bg-orange-500/8',
+  'Critique': 'text-red-400 border-red-500/30 bg-red-500/10',
+}
+
+function riskCls(level: string) {
+  const key = Object.keys(RISK_COLORS_ADMIN).find(k => level?.includes(k)) ?? 'Modéré'
+  return RISK_COLORS_ADMIN[key]
+}
+
+function AFRBAdmin({ clients: _clients }: { clients: ClientData[] }) {
+  const [analyses, setAnalyses] = useState<AFRBAnalysis[]>(getAFRBAnalyses)
+  const [selected, setSelected] = useState<AFRBAnalysis | null>(null)
+  const [search,   setSearch]   = useState('')
+  const [copied,   setCopied]   = useState('')
+
+  const filtered = useMemo(() => {
+    const q = search.toLowerCase()
+    return analyses.filter(a =>
+      a.clientName.toLowerCase().includes(q) ||
+      a.scenario.toLowerCase().includes(q) ||
+      (a.result?.risk_matrix.overall_risk_level ?? '').toLowerCase().includes(q)
+    ).sort((a, b) => b.createdAt.localeCompare(a.createdAt))
+  }, [analyses, search])
+
+  const copyJSON = (a: AFRBAnalysis) => {
+    navigator.clipboard.writeText(JSON.stringify(a.result, null, 2))
+    setCopied(a.id); setTimeout(() => setCopied(''), 2000)
+  }
+
+  const deleteAnalysis = (id: string) => {
+    if (!confirm('Supprimer cette analyse ?')) return
+    const updated = analyses.filter(a => a.id !== id)
+    setAnalyses(updated)
+    localStorage.setItem(AFRB_KEY, JSON.stringify(updated))
+  }
+
+  if (selected) return (
+    <div className="flex flex-col gap-6">
+      <button onClick={() => setSelected(null)}
+        className="flex items-center gap-2 text-xs text-light/40 hover:text-light transition-colors w-fit">
+        <ArrowLeft size={13} strokeWidth={1.5} /> Retour à la liste
+      </button>
+      <div className="border border-gold/15 bg-dark-surface p-5 flex flex-col gap-3">
+        <div className="flex items-start justify-between gap-4">
+          <div>
+            <p className="text-[10px] text-light/30 uppercase tracking-widest mb-1">
+              {selected.clientName} · {new Date(selected.createdAt).toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric' })}
+            </p>
+            <p className="text-sm text-light/70 leading-relaxed">{selected.scenario.substring(0, 200)}{selected.scenario.length > 200 ? '…' : ''}</p>
+          </div>
+          {selected.result && (
+            <span className={`text-[10px] font-bold border px-2 py-1 flex-none ${riskCls(selected.result.risk_matrix.overall_risk_level)}`}>
+              {selected.result.risk_matrix.overall_risk_level}
+            </span>
+          )}
+        </div>
+        <button onClick={() => copyJSON(selected)}
+          className="flex items-center gap-2 text-xs text-light/40 hover:text-light border border-gold/15 px-3 py-2 w-fit transition-colors">
+          {copied === selected.id ? <><Check size={11} /> Copié</> : <><Copy size={11} /> Copier JSON</>}
+        </button>
+      </div>
+
+      {selected.result && (
+        <div className="flex flex-col gap-3">
+          {/* Résumé */}
+          {[
+            ['Contexte', selected.result.case_context_summary],
+            ['Observations', selected.result.observations],
+            ['Inférences', selected.result.inferences],
+            ['Hypothèses de crise', selected.result.hypotheses],
+          ].map(([label, value]) => (
+            <div key={label} className="border border-gold/10 bg-dark-surface px-5 py-4">
+              <p className="text-[10px] text-light/30 uppercase tracking-widest mb-2">{label}</p>
+              <p className="text-xs text-light/60 leading-relaxed">{value}</p>
+            </div>
+          ))}
+
+          {/* Matrice */}
+          <div className="border border-gold/10 bg-dark-surface px-5 py-4">
+            <p className="text-[10px] text-light/30 uppercase tracking-widest mb-3">Matrice de risques</p>
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-px bg-gold/8">
+              {[
+                ['Conformité', selected.result.risk_matrix.compliance_risk_level],
+                ['Exposition juridique', selected.result.risk_matrix.legal_exposure_level],
+                ['Impact opérationnel', selected.result.risk_matrix.operational_risk_level],
+              ].map(([label, val]) => (
+                <div key={label} className={`bg-dark-bg px-4 py-3 border-l-2 ${riskCls(val)}`}>
+                  <p className="text-[10px] text-light/30 uppercase tracking-widest mb-1">{label}</p>
+                  <p className="text-xs text-light/60 leading-relaxed">{val}</p>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {/* AFRB + Actions */}
+          <div className="border border-gold/10 bg-dark-surface px-5 py-4">
+            <p className="text-[10px] text-light/30 uppercase tracking-widest mb-2">Classification AFRB</p>
+            <p className="text-xs font-semibold text-gold/70 mb-2">{selected.result.afrb_classification.field}</p>
+            <p className="text-xs text-light/55 leading-relaxed mb-3">{selected.result.afrb_classification.strategy}</p>
+            <p className="text-[10px] text-light/30 uppercase tracking-widest mb-2">Clauses à risque</p>
+            <div className="flex flex-col gap-1">
+              {(selected.result.afrb_classification.risk_flags || '').split(/[·•\-\n]/).filter(f => f.trim()).map((f, i) => (
+                <div key={i} className="flex items-start gap-2 text-xs text-red-400/70">
+                  <AlertCircle size={11} strokeWidth={1.5} className="flex-none mt-0.5" />
+                  <span>{f.trim()}</span>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          <div className="border border-red-500/15 bg-red-500/5 px-5 py-4">
+            <p className="text-[10px] text-red-400/60 uppercase tracking-widest mb-2">Deal-breakers</p>
+            <p className="text-xs text-red-400/70 leading-relaxed">{selected.result.recommended_actions.escalation_thresholds}</p>
+          </div>
+
+          {/* JSON brut */}
+          <details className="border border-gold/10">
+            <summary className="px-4 py-3 text-xs text-light/30 cursor-pointer hover:text-light/50">
+              JSON brut de l'analyse
+            </summary>
+            <pre className="px-4 pb-4 text-[11px] text-light/40 overflow-auto max-h-96 font-mono leading-relaxed">
+              {JSON.stringify(selected.result, null, 2)}
+            </pre>
+          </details>
+        </div>
+      )}
+    </div>
+  )
+
+  return (
+    <div className="flex flex-col gap-6">
+      <div className="flex items-start justify-between gap-4 flex-wrap">
+        <div>
+          <p className="text-xs font-medium tracking-[0.2em] uppercase text-light/40 mb-2">Analyses clients</p>
+          <h2 className="font-serif text-2xl text-light">Moteur AFRB</h2>
+          <p className="text-xs text-light/35 mt-1">{analyses.length} analyse{analyses.length > 1 ? 's' : ''} enregistrée{analyses.length > 1 ? 's' : ''}</p>
+        </div>
+      </div>
+
+      <div className="relative">
+        <Search size={14} strokeWidth={1.5} className="absolute left-3 top-1/2 -translate-y-1/2 text-light/30" />
+        <input type="text" value={search} onChange={e => setSearch(e.target.value)}
+          placeholder="Rechercher par client, scénario, niveau de risque…"
+          className="w-full border border-gold/15 bg-transparent pl-9 pr-4 py-2.5 text-sm text-light placeholder:text-light/20 focus:outline-none focus:border-gold transition-colors" />
+      </div>
+
+      {filtered.length === 0 ? (
+        <div className="border border-gold/10 py-16 flex flex-col items-center gap-3">
+          <BarChart3 size={28} strokeWidth={1} className="text-light/15" />
+          <p className="text-sm text-light/30">Aucune analyse AFRB disponible</p>
+          <p className="text-xs text-light/20">Les analyses soumises par vos clients apparaîtront ici.</p>
+        </div>
+      ) : (
+        <div className="flex flex-col gap-px bg-gold/8">
+          {filtered.map(a => {
+            const level = a.result?.risk_matrix.overall_risk_level ?? '—'
+            return (
+              <div key={a.id} className="bg-dark-surface px-4 sm:px-6 py-4 flex items-center gap-4 hover:bg-dark-card transition-colors group">
+                <div className={`text-[9px] font-bold border px-2 py-1 flex-none ${riskCls(level)}`}>{level}</div>
+                <div className="flex-1 min-w-0">
+                  <p className="text-xs font-semibold text-light mb-0.5">{a.clientName}</p>
+                  <p className="text-xs text-light/40 truncate">{a.scenario.substring(0, 80)}…</p>
+                </div>
+                <p className="text-[10px] text-light/25 flex-none hidden sm:block">
+                  {new Date(a.createdAt).toLocaleDateString('fr-FR')}
+                </p>
+                <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                  <button onClick={() => setSelected(a)}
+                    className="text-xs text-light/40 hover:text-gold border border-gold/10 px-3 py-1.5 transition-colors">
+                    <Eye size={11} strokeWidth={1.5} />
+                  </button>
+                  <button onClick={() => copyJSON(a)}
+                    className="text-xs text-light/30 hover:text-light border border-gold/10 px-3 py-1.5 transition-colors">
+                    {copied === a.id ? <Check size={11} /> : <Copy size={11} />}
+                  </button>
+                  <button onClick={() => deleteAnalysis(a.id)}
+                    className="text-light/20 hover:text-red-500 border border-gold/10 px-2 py-1.5 transition-colors">
+                    <Trash2 size={11} strokeWidth={1.5} />
+                  </button>
+                </div>
+              </div>
+            )
+          })}
+        </div>
+      )}
+    </div>
+  )
+}
+
 const navItems = [
-  { id: 'overview',   label: "Vue d'ensemble", icon: LayoutDashboard },
-  { id: 'clients',    label: 'Clients',         icon: Users },
-  { id: 'contacts',   label: 'Contacts',        icon: BookUser },
-  { id: 'documents',  label: 'Documents',       icon: FileUp },
-  { id: 'rapports',   label: 'Rapports',        icon: Scale },
-  { id: 'agenda',     label: 'Agenda',          icon: CalendarDays },
-  { id: 'facturation',label: 'Facturation',     icon: Receipt },
+  { id: 'overview',    label: "Vue d'ensemble", icon: LayoutDashboard },
+  { id: 'clients',     label: 'Clients',         icon: Users },
+  { id: 'contacts',    label: 'Contacts',        icon: BookUser },
+  { id: 'documents',   label: 'Documents',       icon: FileUp },
+  { id: 'rapports',    label: 'Rapports',        icon: Scale },
+  { id: 'afrb_admin',  label: 'AFRB',           icon: BarChart3 },
+  { id: 'agenda',      label: 'Agenda',          icon: CalendarDays },
+  { id: 'facturation', label: 'Facturation',     icon: Receipt },
 ]
 
 export default function AdminPage() {
@@ -3125,6 +3322,7 @@ export default function AdminPage() {
           {tab === 'contacts' && <ContactsAdmin clients={clients} onRefresh={refresh} />}
           {tab === 'documents' && <AllDocuments clients={clients} onRefresh={refresh} />}
           {tab === 'rapports' && <RapportsAdmin clients={clients} onRefresh={refresh} />}
+          {tab === 'afrb_admin' && <AFRBAdmin clients={clients} />}
           {tab === 'agenda' && <AgendaAdmin clients={clients} onRefresh={refresh} />}
           {tab === 'facturation' && <AllInvoicesAdmin clients={clients} onRefresh={refresh} />}
         </main>

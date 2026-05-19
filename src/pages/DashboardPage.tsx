@@ -5,9 +5,10 @@ import {
   LayoutDashboard, FolderOpen, FileUp, MessageSquare, LogOut,
   Upload, File, ChevronRight,
   FileText, Trash2, Menu, X, Shield, CalendarDays, Bell, Receipt,
-  Download, CheckSquare, ShieldCheck, CheckCircle
+  Download, CheckSquare, ShieldCheck, CheckCircle, Scale
 } from 'lucide-react'
 import ShieldTool from '../components/ShieldTool'
+import AFRBTool from '../components/AFRBTool'
 import { useReminders } from '../hooks/useReminders'
 import { Invoice, computeAmounts, fmtAmount, CURRENCIES } from '../components/BillingModule'
 import type { Appointment } from '../components/CalendarView'
@@ -762,6 +763,7 @@ const navItems = [
   { id: 'rendezvous',  label: 'Agenda',      icon: CalendarDays },
   { id: 'facturation', label: 'Facturation', icon: Receipt },
   { id: 'shield',      label: 'Shield',      icon: ShieldCheck },
+  { id: 'afrb',        label: 'AFRB',        icon: Scale },
   { id: 'messagerie',  label: 'Messagerie',  icon: MessageSquare },
 ]
 
@@ -914,6 +916,7 @@ export default function DashboardPage() {
             />
           )}
           {tab === 'shield' && <ShieldTool />}
+          {tab === 'afrb' && <AFRBTool clientId={user?.id ?? ''} clientName={user?.name ?? ''} />}
           {tab === 'messagerie' && <Messagerie />}
         </main>
       </div>

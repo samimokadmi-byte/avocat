@@ -6,7 +6,11 @@
  */
 
 import type { VercelRequest, VercelResponse } from '@vercel/node'
-import pdfParse from 'pdf-parse'
+// pdf-parse n'a pas d'export ESM default — import namespace
+import * as pdfParseModule from 'pdf-parse'
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+const pdfParse: (buf: Buffer, opts?: { max?: number }) => Promise<{ text: string }> =
+  (pdfParseModule as any).default ?? pdfParseModule
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   res.setHeader('Access-Control-Allow-Origin', '*')

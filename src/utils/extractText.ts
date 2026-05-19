@@ -25,17 +25,27 @@ function readAsArrayBuffer(fileOrBlob: File | Blob): Promise<ArrayBuffer> {
   })
 }
 
-// ── PDF via pdfjs-dist ────────────────────────────────────────────────────────
+// ── PDF via pdfjs-dist (sans worker pour compatibilité CSP) ──────────────────
 async function extractPdf(file: File): Promise<string> {
   const pdfjsLib = await import('pdfjs-dist')
-  pdfjsLib.GlobalWorkerOptions.workerSrc =
-    `https://cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjsLib.version}/pdf.worker.min.mjs`
+
+  // Désactiver le worker — extraction inline, plus lent mais sans CSP
+  pdfjsLib.GlobalWorkerOptions.workerSrc = ''
 
   const arrayBuffer = await readAsArrayBuffer(file)
-  const pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise
+
+  // Timeout de sécurité : 30 secondes max
+  const loadingTask = pdfjsLib.getDocument({ data: new Uint8Array(arrayBuffer) })
+
+  const pdf = await Promise.race([
+    loadingTask.promise,
+    new Promise<never>((_, reject) =>
+      setTimeout(() => reject(new Error('Délai dépassé — fichier PDF trop lourd ou protégé')), 30000)
+    ),
+  ])
 
   const pages: string[] = []
-  for (let i = 1; i <= pdf.numPages; i++) {
+  for (let i = 1; i <= Math.min(pdf.numPages, 50); i++) {
     const page    = await pdf.getPage(i)
     const content = await page.getTextContent()
     const text    = content.items
@@ -46,7 +56,17 @@ async function extractPdf(file: File): Promise<string> {
       .join('')
     pages.push(text)
   }
-  return pages.join('\n\n').replace(/\s{3,}/g, '\n\n').trim()
+
+  const fullText = pages.join('\n\n').replace(/\s{3,}/g, '\n\n').trim()
+
+  if (!fullText || fullText.length < 20) {
+    throw new Error(
+      'Ce PDF ne contient pas de texte sélectionnable (document scanné / image). ' +
+      'Exportez-le avec OCR activé ou convertissez-le en DOCX.'
+    )
+  }
+
+  return fullText
 }
 
 // ── DOCX via mammoth ──────────────────────────────────────────────────────────

@@ -1,16 +1,11 @@
 /**
  * api/extract-doc.ts
- * Extrait le texte d'un PDF ou DOCX côté serveur (Node.js)
- * PDF → pdf-parse (fiable, gère tous les encodages)
- * DOCX/DOC → mammoth
+ * Convertit un PDF via Claude API (lecture native base64)
+ * ou un DOCX via mammoth côté serveur.
+ * Pas de pdf-parse, pas de pdfjs.
  */
 
 import type { VercelRequest, VercelResponse } from '@vercel/node'
-// pdf-parse n'a pas d'export ESM default — import namespace
-import * as pdfParseModule from 'pdf-parse'
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-const pdfParse: (buf: Buffer, opts?: { max?: number }) => Promise<{ text: string }> =
-  (pdfParseModule as any).default ?? pdfParseModule
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   res.setHeader('Access-Control-Allow-Origin', '*')
@@ -19,59 +14,86 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   if (req.method === 'OPTIONS') return res.status(200).end()
   if (req.method !== 'POST')    return res.status(405).json({ error: 'Method not allowed' })
 
+  const apiKey = process.env.ANTHROPIC_API_KEY
+  if (!apiKey) return res.status(500).json({ error: 'Clé API non configurée.' })
+
   try {
     const { fileBase64, mediaType, fileName } = req.body ?? {}
     if (!fileBase64) return res.status(400).json({ error: 'Fichier manquant' })
 
-    const buffer = Buffer.from(fileBase64, 'base64')
-    const name   = (fileName as string ?? '').toLowerCase()
-    let text     = ''
+    const name = (fileName as string ?? '').toLowerCase()
+    const mime = (mediaType as string ?? '')
 
-    // ── PDF ──────────────────────────────────────────────────────────────────
-    if ((mediaType as string)?.includes('pdf') || name.endsWith('.pdf')) {
-      const data = await pdfParse(buffer, { max: 30 })
-      text = data.text?.replace(/\s{3,}/g, '\n\n').trim() ?? ''
-
-      if (!text || text.length < 50) {
-        return res.status(422).json({
-          error: 'Ce PDF est un scan (image sans texte). Activez l\'OCR ou convertissez-le en DOCX avant d\'uploader.'
-        })
-      }
-    }
-
-    // ── DOCX / DOC ────────────────────────────────────────────────────────────
-    else if (name.match(/\.docx?$/) || (mediaType as string)?.includes('word') || (mediaType as string)?.includes('officedocument')) {
+    // DOCX → mammoth (Node.js natif, pas de problème Vercel)
+    if (name.match(/\.docx?$/) || mime.includes('word') || mime.includes('officedocument')) {
       const mammoth = await import('mammoth')
-      const result  = await mammoth.extractRawText({ buffer })
-      text = result.value.replace(/\s{3,}/g, '\n\n').trim()
-
-      if (!text || text.length < 30) {
+      const buffer  = Buffer.from(fileBase64 as string, 'base64')
+      let result: { value: string }
+      try {
+        result = await mammoth.extractRawText({ buffer })
+      } catch {
         return res.status(422).json({
-          error: 'Le document Word est vide ou protégé. Essayez de l\'exporter en PDF.'
+          error: 'Fichier Word illisible. Exportez-le en PDF depuis Word puis réessayez.'
         })
       }
+      const text = result.value.replace(/\s{3,}/g, '\n\n').trim()
+      if (!text || text.length < 30) {
+        return res.status(422).json({ error: 'Document Word vide ou protégé.' })
+      }
+      return res.status(200).json({ text: text.substring(0, 6000), totalLength: text.length })
     }
 
-    // ── Texte brut ─────────────────────────────────────────────────────────────
-    else {
-      text = buffer.toString('utf8').trim()
+    // PDF → Claude lit le document nativement via API
+    const response = await fetch('https://api.anthropic.com/v1/messages', {
+      method: 'POST',
+      headers: {
+        'Content-Type':      'application/json',
+        'x-api-key':         apiKey,
+        'anthropic-version': '2023-06-01',
+        'anthropic-beta':    'pdfs-2024-09-25',
+      },
+      body: JSON.stringify({
+        model:      'claude-sonnet-4-5',
+        max_tokens: 1500,
+        messages: [{
+          role: 'user',
+          content: [
+            {
+              type: 'document',
+              source: {
+                type:       'base64',
+                media_type: 'application/pdf',
+                data:       fileBase64,
+              },
+            },
+            {
+              type: 'text',
+              text: 'Extrais le contenu textuel de ce document. Conserve la structure : titres, parties, articles. Maximum 5000 caractères. Texte uniquement.',
+            },
+          ],
+        }],
+      }),
+    })
+
+    if (!response.ok) {
+      const errData = await response.json().catch(() => ({}))
+      const msg = (errData as { error?: { message?: string } }).error?.message ?? `Erreur API ${response.status}`
+      return res.status(response.status).json({ error: msg })
     }
 
-    // Tronquer à 6000 caractères (~1500 tokens) pour rester sous les rate limits
-    const truncated = text.length > 6000
-      ? text.substring(0, 6000) + '\n[...tronqué aux 6000 premiers caractères]'
-      : text
+    const data = await response.json()
+    const text = (data.content?.[0]?.text ?? '').trim()
 
-    return res.status(200).json({ text: truncated, totalLength: text.length })
+    if (!text || text.length < 30) {
+      return res.status(422).json({
+        error: 'Le PDF est vide ou scanné (image sans texte). Activez l\'OCR avant d\'uploader.'
+      })
+    }
+
+    return res.status(200).json({ text, totalLength: text.length })
 
   } catch (err) {
     const msg = err instanceof Error ? err.message : 'Erreur interne'
-    // pdf-parse lance une erreur si le fichier n'est pas un PDF valide
-    if (msg.includes('Invalid PDF') || msg.includes('No password given')) {
-      return res.status(422).json({
-        error: 'PDF invalide ou protégé par mot de passe. Déverrouillez-le avant d\'uploader.'
-      })
-    }
     return res.status(500).json({ error: msg })
   }
 }

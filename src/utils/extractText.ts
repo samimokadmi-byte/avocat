@@ -1,24 +1,27 @@
 /**
  * extractText.ts
- * Extraction de texte depuis un document uploadé.
- *
- * Stratégie :
- *   PDF  → base64 envoyé directement à Claude (lecture native)
- *   DOCX → mammoth (extraction texte brut)
- *   DOC  → mammoth avec fallback message clair
- *   TXT/MD → FileReader UTF-8
+ * Délègue l'extraction de texte à la fonction serverless /api/extract-doc
+ * Évite d'envoyer le fichier brut base64 directement à Claude (rate limit)
  */
 
-// ── Types ─────────────────────────────────────────────────────────────────────
 export interface ExtractionResult {
-  mode:          'document' | 'text'  // 'document' = envoyer à Claude, 'text' = texte brut
-  text?:         string               // mode text
-  base64?:       string               // mode document
-  mediaType?:    string               // MIME type pour Claude
-  fileName:      string
+  mode:     'text'
+  text:     string
+  fileName: string
 }
 
-// ── Helpers ───────────────────────────────────────────────────────────────────
+export const SUPPORTED_TYPES = '.pdf,.docx,.doc,.txt,.md'
+export const MAX_SIZE_MB     = 20
+
+function readAsBase64(file: File): Promise<string> {
+  return new Promise((resolve, reject) => {
+    const r = new FileReader()
+    r.onload  = () => resolve((r.result as string).split(',')[1] ?? '')
+    r.onerror = () => reject(new Error('Lecture impossible'))
+    r.readAsDataURL(file)
+  })
+}
+
 function readAsText(file: File): Promise<string> {
   return new Promise((resolve, reject) => {
     const r = new FileReader()
@@ -28,85 +31,36 @@ function readAsText(file: File): Promise<string> {
   })
 }
 
-function readAsBase64(file: File): Promise<string> {
-  return new Promise((resolve, reject) => {
-    const r = new FileReader()
-    r.onload  = () => {
-      const dataUrl = r.result as string
-      // Extraire la partie base64 après la virgule
-      resolve(dataUrl.split(',')[1] ?? '')
-    }
-    r.onerror = () => reject(new Error('Lecture impossible'))
-    r.readAsDataURL(file)
-  })
-}
-
-function readAsArrayBuffer(fileOrBlob: File | Blob): Promise<ArrayBuffer> {
-  return new Promise((resolve, reject) => {
-    const r = new FileReader()
-    r.onload  = () => resolve(r.result as ArrayBuffer)
-    r.onerror = () => reject(new Error('Lecture impossible'))
-    r.readAsArrayBuffer(fileOrBlob)
-  })
-}
-
-// ── Détection par magic bytes ──────────────────────────────────────────────────
-async function detectFormat(file: File): Promise<'pdf' | 'zip' | 'text'> {
-  const buf   = await readAsArrayBuffer(file.slice(0, 8))
-  const bytes = new Uint8Array(buf)
-  if (bytes[0] === 0x25 && bytes[1] === 0x50) return 'pdf' // %PDF
-  if (bytes[0] === 0x50 && bytes[1] === 0x4B) return 'zip' // PK (DOCX/ZIP)
-  return 'text'
-}
-
-// ── Extraction principale ─────────────────────────────────────────────────────
 export async function extractFile(file: File): Promise<ExtractionResult> {
   const name = file.name.toLowerCase()
-  const fmt  = await detectFormat(file)
 
-  // ── PDF → base64 pour Claude API (lecture native) ─────────────────────────
-  if (fmt === 'pdf' || name.endsWith('.pdf')) {
-    const base64 = await readAsBase64(file)
-    return {
-      mode:      'document',
-      base64,
-      mediaType: 'application/pdf',
-      fileName:  file.name,
-    }
+  // Texte brut : lecture directe, pas besoin du serveur
+  if (name.endsWith('.txt') || name.endsWith('.md')) {
+    const text = await readAsText(file)
+    return { mode: 'text', text: text.substring(0, 6000), fileName: file.name }
   }
 
-  // ── DOCX → mammoth ─────────────────────────────────────────────────────────
-  if (fmt === 'zip' || name.endsWith('.docx') || name.endsWith('.doc')) {
-    const mammoth     = await import('mammoth')
-    const arrayBuffer = await readAsArrayBuffer(file)
-    let result: { value: string }
+  // PDF / DOCX / DOC → extraction côté serveur via /api/extract-doc
+  const base64    = await readAsBase64(file)
+  const mediaType = name.endsWith('.pdf')
+    ? 'application/pdf'
+    : 'application/vnd.openxmlformats-officedocument.wordprocessingml.document'
 
-    try {
-      result = await mammoth.extractRawText({ arrayBuffer })
-    } catch {
-      throw new Error(
-        'Ce fichier Word ne peut pas être lu directement. ' +
-        'Enregistrez-le en PDF depuis Word (Fichier → Exporter → PDF) et réessayez.'
-      )
-    }
+  const res = await fetch('/api/extract-doc', {
+    method:  'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body:    JSON.stringify({ fileBase64: base64, mediaType, fileName: file.name }),
+  })
 
-    const text = result.value.replace(/\s{3,}/g, '\n\n').trim()
-    if (!text || text.length < 30) {
-      throw new Error('Le document Word semble vide ou protégé en lecture.')
-    }
+  const data = await res.json()
 
-    return { mode: 'text', text, fileName: file.name }
+  if (!res.ok) {
+    throw new Error(data.error ?? `Erreur extraction (${res.status})`)
   }
 
-  // ── Texte brut (TXT, MD, RTF…) ────────────────────────────────────────────
-  const text = await readAsText(file)
-  if (!text || text.length < 20) {
-    throw new Error('Le fichier est vide ou illisible.')
+  if (!data.text || data.text.length < 30) {
+    throw new Error("Document vide ou illisible. Vérifiez qu'il contient du texte sélectionnable.")
   }
-  return { mode: 'text', text, fileName: file.name }
+
+  return { mode: 'text', text: data.text, fileName: file.name }
 }
-
-export const SUPPORTED_TYPES = '.pdf,.docx,.doc,.txt,.md'
-export const MAX_SIZE_MB     = 20
-
-

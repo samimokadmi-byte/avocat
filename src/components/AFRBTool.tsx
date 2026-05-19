@@ -61,16 +61,11 @@ function saveAnalysis(a: AFRBAnalysis) {
 }
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
-async function callAI(
-  prompt: string,
-  maxTokens = 2000,
-  documentBase64?: string,
-  documentMediaType?: string,
-): Promise<string> {
+async function callAI(prompt: string, maxTokens = 2000): Promise<string> {
   const res = await fetch('/api/ai', {
-    method: 'POST',
+    method:  'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ prompt, maxTokens, documentBase64, documentMediaType }),
+    body:    JSON.stringify({ prompt, maxTokens }),
   })
   const data = await res.json()
   if (!res.ok) throw new Error(data.error ?? `Erreur ${res.status}`)
@@ -228,27 +223,24 @@ function AFRBForm({ clientId, clientName, onResult }: {
     try {
       const extracted = await extractFile(file)
 
-      // Prompt compact — valeurs courtes pour éviter la troncature JSON
-      const extractPrompt = `Expert droit des sociétés. Analyse ce pacte d'actionnaires et extrais en JSON.
+      // Tout est du texte maintenant (extraction serveur)
+      const textPrompt = `Expert droit des sociétés. Analyse ce pacte d'actionnaires et extrais en JSON concis.
 
-IMPORTANT : Chaque valeur doit faire MAX 2 phrases courtes. JSON valide sans markdown.
+IMPORTANT : Chaque valeur MAX 2 phrases courtes. JSON valide sans markdown.
 
 {
-  "scenario": "2-3 phrases max : parties, pourcentages, objet du pacte.",
+  "scenario": "2-3 phrases : parties, pourcentages, objet.",
   "reciprocity": "1-2 phrases sur tag-along/drag-along. 'Non mentionné.' si absent.",
   "enforcement": "1-2 phrases sur clauses pénales/bad leaver. 'Non mentionné.' si absent.",
   "personalExposure": "1-2 phrases sur non-concurrence/garanties. 'Non mentionné.' si absent.",
   "structuralThreat": "1-2 phrases sur deadlock/dilution. 'Non mentionné.' si absent."
 }
-JSON strict uniquement. Sois CONCIS — max 150 mots par champ.`
+JSON strict uniquement.
 
-      let raw: string
-      if (extracted.mode === 'document' && extracted.base64) {
-        raw = await callAI(extractPrompt, 2500, extracted.base64, extracted.mediaType)
-      } else {
-        const textPrompt = extractPrompt + '\n\nDOCUMENT :\n' + (extracted.text ?? '').substring(0, 6000)
-        raw = await callAI(textPrompt, 2500)
-      }
+DOCUMENT :
+${extracted.text}`
+
+      const raw = await callAI(textPrompt, 1200)
 
       // Parser robuste : réparer JSON tronqué si besoin
       let data: Record<string, string>

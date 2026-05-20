@@ -118,6 +118,48 @@ function fileIcon(type: string) {
   return <FileIcon size={14} strokeWidth={1.25} className="text-light/30 flex-none" />
 }
 
+// ─── Nettoyage des dossiers fictifs (seedDemoData hérités) ────────────────────
+const DEMO_TITRES = ['Levée de fonds Série A', "Pacte d'associés", 'Protection des données']
+
+function purgeDemoDossiers() {
+  const accounts: Record<string, { user: User }> = JSON.parse(
+    localStorage.getItem('avocat_accounts') || '{}'
+  )
+  Object.values(accounts)
+    .filter(a => a.user.role === 'client')
+    .forEach(a => {
+      const key = `avocat_dossiers_${a.user.id}`
+      const dossiers: Dossier[] = JSON.parse(localStorage.getItem(key) || '[]')
+      const filtered = dossiers.filter(d => !DEMO_TITRES.includes(d.titre))
+      if (filtered.length !== dossiers.length) {
+        localStorage.setItem(key, JSON.stringify(filtered))
+      }
+      // Purger aussi les RDV et todos fictifs
+      const rdvKey = `avocat_rdv_${a.user.id}`
+      const rdvs: Appointment[] = JSON.parse(localStorage.getItem(rdvKey) || '[]')
+      const cleanRdvs = rdvs.filter(r =>
+        !r.title.includes("Point d'avancement — Série A") &&
+        !r.title.includes("Signature pacte d'associés") &&
+        !r.title.includes('Consultation — Protection des données')
+      )
+      if (cleanRdvs.length !== rdvs.length) {
+        localStorage.setItem(rdvKey, JSON.stringify(cleanRdvs))
+      }
+      // Purger todos fictifs
+      const todoKey = `avocat_todos_${a.user.id}`
+      const todos: Todo[] = JSON.parse(localStorage.getItem(todoKey) || '[]')
+      const cleanTodos = todos.filter(t =>
+        !t.title.includes('Envoyer les statuts mis à jour') &&
+        !t.title.includes('Préparer le cap table') &&
+        !t.title.includes('Valider les clauses de liquidité') &&
+        !t.title.includes('Transmettre les 3 dernières liasses')
+      )
+      if (cleanTodos.length !== todos.length) {
+        localStorage.setItem(todoKey, JSON.stringify(cleanTodos))
+      }
+    })
+}
+
 // ─── getAllClients ─────────────────────────────────────────────────────────────
 
 function getAllClients(): ClientData[] {
@@ -195,7 +237,6 @@ function Overview({ clients }: { clients: ClientData[] }) {
   const totalDossiers = clients.reduce((s, c) => s + c.dossiers.length, 0)
   const dossiersActifs = clients.reduce((s, c) => s + c.dossiers.filter(d => d.statut === 'en_cours').length, 0)
   const totalDocs = clients.reduce((s, c) => s + c.documents.length, 0)
-  const totalSize = clients.reduce((s, c) => s + c.documents.reduce((ss, d) => ss + d.size, 0), 0)
 
   return (
     <div className="flex flex-col gap-8">
@@ -209,7 +250,7 @@ function Overview({ clients }: { clients: ClientData[] }) {
           { label: 'Clients actifs', value: clients.length },
           { label: 'Dossiers en cours', value: dossiersActifs },
           { label: 'Dossiers totaux', value: totalDossiers },
-          { label: 'Documents reçus', value: `${totalDocs} (${formatSize(totalSize)})` },
+          { label: 'Documents reçus', value: totalDocs },
         ].map(({ label, value }) => (
           <div key={label} className="bg-dark-surface p-6">
             <p className="text-xs text-light/40 uppercase tracking-wide mb-2">{label}</p>
@@ -3227,7 +3268,10 @@ export default function AdminPage() {
   const [tick, setTick] = useState(0)
   const [rdvNotif, setRdvNotif] = useState<string | null>(null)
 
-  const clients = useMemo(() => getAllClients(), [tick])
+  const clients = useMemo(() => {
+    purgeDemoDossiers()   // nettoie les dossiers fictifs à chaque refresh
+    return getAllClients()
+  }, [tick])
   const refresh = () => setTick(t => t + 1)
 
   // ── Magic link : /admin?rdv=BASE64 → crée le RDV automatiquement ──────────

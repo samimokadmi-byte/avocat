@@ -1,4 +1,4 @@
-import { useState, useRef, DragEvent } from 'react'
+import { useState, useRef, useEffect, DragEvent } from 'react'
 import { useNavigate, Link } from 'react-router-dom'
 import { useAuth } from '../contexts/AuthContext'
 import {
@@ -861,10 +861,16 @@ export default function DashboardPage() {
   // ── Purge : supprimer les dossiers auto-créés par dossierSync ───────────────
   // Les dossiers côté client doivent être créés uniquement par l'admin.
   // On nettoie une seule fois au chargement les dossiers marqués autoCreated.
-  const [dossiers] = useLocalState<Dossier[]>(`avocat_dossiers_${user?.id}`, [])
+  const [dossiers, setDossiers] = useLocalState<Dossier[]>(`avocat_dossiers_${user?.id}`, [])
 
-  // Filtrer en mémoire (sans modifier le storage) — seuls les dossiers
-  // sans marqueur autoCreated sont affichés au client
+  // Purge des dossiers fictifs hérités de seedDemoData — une seule fois
+  useEffect(() => {
+    const DEMO = ['Levée de fonds Série A', "Pacte d'associés", 'Protection des données']
+    const clean = dossiers.filter((d: Dossier) => !DEMO.includes(d.titre))
+    if (clean.length !== dossiers.length) setDossiers(clean)
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
+
   const dossiersVisibles = dossiers.filter((d: Dossier & { autoCreated?: boolean }) => !d.autoCreated)
   const [documents, setDocuments] = useLocalState<Document[]>(`avocat_documents_${user?.id}`, [])
   const [rdvs] = useLocalState<Appointment[]>(`avocat_rdv_${user?.id}`, [])

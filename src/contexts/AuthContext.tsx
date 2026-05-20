@@ -110,12 +110,17 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     localStorage.setItem(`avocat_rdv_${newUser.id}`,       JSON.stringify([]))
     localStorage.setItem(`avocat_todos_${newUser.id}`,     JSON.stringify([]))
 
-    // Envoyer l'email de bienvenue (non bloquant)
+    // Envoyer l'email de bienvenue (non bloquant mais on log les erreurs)
     fetch('/api/send-welcome', {
       method:  'POST',
       headers: { 'Content-Type': 'application/json' },
       body:    JSON.stringify({ name, email: email.toLowerCase(), confirmToken }),
-    }).catch(() => {/* silencieux */})
+    }).then(async r => {
+      if (!r.ok) {
+        const err = await r.json().catch(() => ({}))
+        console.error('[send-welcome] Erreur:', r.status, err)
+      }
+    }).catch(err => console.error('[send-welcome] Fetch error:', err))
 
     setUser(newUser)
     return { ok: true }

@@ -1,6 +1,6 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node'
 import { setCORS, checkRateLimit, isValidEmail, sanitize, requireEmailConfig } from './_security'
-import nodemailer from 'nodemailer'
+import * as nodemailer from 'nodemailer'
 
 const GMAIL_USER = process.env.GMAIL_USER ?? ''
 const GMAIL_PASS = process.env.GMAIL_PASSWORD ?? ''

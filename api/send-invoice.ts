@@ -10,7 +10,7 @@
  *   GMAIL_PASSWORD = mot de passe d'application Google (16 chars)
  */
 import type { VercelRequest, VercelResponse } from '@vercel/node'
-import nodemailer from 'nodemailer'
+import * as nodemailer from 'nodemailer'
 
 const CABINET = {
   nom:             'Maître Mokadmi Sami',

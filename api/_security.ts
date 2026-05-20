@@ -14,15 +14,23 @@ const ALLOWED_ORIGINS = [
 
 export function setCORS(req: VercelRequest, res: VercelResponse): boolean {
   const origin  = (req.headers.origin ?? '') as string
-  const allowed = ALLOWED_ORIGINS.includes(origin) ? origin : ALLOWED_ORIGINS[0]
-  res.setHeader('Access-Control-Allow-Origin', allowed)
+
+  // Same-origin requests (pas d'Origin header) ou origine autorisée
+  if (origin === '' || ALLOWED_ORIGINS.includes(origin)) {
+    const headerOrigin = origin || ALLOWED_ORIGINS[0]
+    res.setHeader('Access-Control-Allow-Origin', headerOrigin)
+  } else {
+    // Origine inconnue — bloquer
+    res.setHeader('Access-Control-Allow-Origin', ALLOWED_ORIGINS[0])
+  }
+
   res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS')
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type')
   res.setHeader('Vary', 'Origin')
 
   if (req.method === 'OPTIONS') {
     res.status(200).end()
-    return true   // caller doit retourner
+    return true
   }
   return false
 }
